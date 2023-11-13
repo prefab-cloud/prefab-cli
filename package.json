@@ -6,9 +6,10 @@
   "dependencies": {
     "@oclif/core": "^3",
     "@oclif/plugin-help": "^5",
-    "@oclif/plugin-plugins": "^4"
+    "@oclif/plugin-plugins": "^4",
+    "@prefab-cloud/prefab-cloud-node": "^0.1.8"
   },
-  "description": "oclif example Hello World CLI (ESM)",
+  "description": "Prefab CLI",
   "devDependencies": {
     "@oclif/prettier-config": "^0.2.1",
     "@oclif/test": "^3",
@@ -42,10 +43,7 @@
     "bin": "prefab",
     "dirname": "prefab",
     "commands": "./dist/commands",
-    "plugins": [
-      "@oclif/plugin-help",
-      "@oclif/plugin-plugins"
-    ],
+    "plugins": [],
     "topicSeparator": " ",
     "topics": {
       "hello": {

@@ -25,3 +25,5 @@ export const initPrefab = async (ctx: Command, flags: Flags) => {
 
   return prefab
 }
+
+export type GetValue = ReturnType<typeof Prefab.prototype.get>

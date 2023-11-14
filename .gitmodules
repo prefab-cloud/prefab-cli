@@ -1,0 +1,3 @@
+[submodule "src/prefab-common"]
+	path = src/prefab-common
+	url = git@github.com:prefab-cloud/prefab-common.git

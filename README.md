@@ -26,6 +26,7 @@ USAGE
 
 <!-- commands -->
 * [`prefab get [NAME]`](#prefab-get-name)
+* [`prefab info [NAME]`](#prefab-info-name)
 * [`prefab list`](#prefab-list)
 
 ## `prefab get [NAME]`
@@ -34,7 +35,7 @@ Get the value of a config/feature-flag/etc.
 
 ```
 USAGE
-  $ prefab get [NAME] --api-key <value> [--json] [--interactive]
+  $ prefab get [NAME] --api-key <value> [--json] [--interactive] [--verbose]
 
 ARGUMENTS
   NAME  config/feature-flag/etc. name
@@ -42,6 +43,7 @@ ARGUMENTS
 FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
   --[no-]interactive  Force interactive mode
+  --verbose           Verbose output
 
 GLOBAL FLAGS
   --json  Format output as json.
@@ -55,14 +57,43 @@ EXAMPLES
 
 _See code: [src/commands/get.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.1/src/commands/get.ts)_
 
+## `prefab info [NAME]`
+
+Show details about the provided config/feature-flag/etc.
+
+```
+USAGE
+  $ prefab info [NAME] --api-key <value> [--json] [--interactive] [--verbose] [--exclude-evaluations]
+
+ARGUMENTS
+  NAME  config/feature-flag/etc. name
+
+FLAGS
+  --api-key=<value>      (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
+  --exclude-evaluations  Exclude evaluation data
+  --[no-]interactive     Force interactive mode
+  --verbose              Verbose output
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Show details about the provided config/feature-flag/etc.
+
+EXAMPLES
+  $ prefab info
+```
+
+_See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.1/src/commands/info.ts)_
+
 ## `prefab list`
 
 show keys for your config/feature flags/etc.
 
 ```
 USAGE
-  $ prefab list --api-key <value> [--json] [--interactive] [--configs] [--feature-flags] [--log-levels]
-    [--segments]
+  $ prefab list --api-key <value> [--json] [--interactive] [--verbose] [--configs] [--feature-flags]
+    [--log-levels] [--segments]
 
 FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
@@ -71,6 +102,7 @@ FLAGS
   --[no-]interactive  Force interactive mode
   --log-levels        include log levels
   --segments          include segments
+  --verbose           Verbose output
 
 GLOBAL FLAGS
   --json  Format output as json.

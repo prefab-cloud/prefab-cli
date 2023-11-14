@@ -9,8 +9,6 @@ export default class List extends APICommand {
 
   All types are returned by default. If you pass one or more type flags (e.g. --configs), only those types will be returned`
 
-  public static enableJsonFlag = true
-
   static examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> <%= command.id %> --feature-flags']
 
   static flags = {

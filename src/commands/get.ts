@@ -1,16 +1,12 @@
-import {Args} from '@oclif/core'
-
 import {APICommand} from '../index.js'
-import {type GetValue, initPrefab} from '../prefab.js'
-import autocomplete from '../util/autocomplete.js'
-import isInteractive from '../util/is-interactive.js'
+import {type GetValue} from '../prefab.js'
+import getKey from '../util/get-key.js'
+import nameArg from '../util/name-arg.js'
 
 type Response = Promise<Error | Record<string, GetValue> | undefined>
 
 export default class Get extends APICommand {
-  static args = {
-    name: Args.string({description: 'config/feature-flag/etc. name'}),
-  }
+  static args = {...nameArg}
 
   static description = 'Get the value of a config/feature-flag/etc.'
 
@@ -21,23 +17,9 @@ export default class Get extends APICommand {
   public async run(): Response {
     const {args, flags} = await this.parse(Get)
 
-    if (!args.name && !isInteractive(flags)) {
-      this.logToStderr("Error: 'name' argument is required when interactive mode isn't available.")
-      return
-    }
+    const {key, prefab} = await getKey(this, args, flags)
 
-    const prefab = await initPrefab(this, flags)
-
-    let key = args.name
-
-    if (!key && isInteractive(flags)) {
-      key = await autocomplete({
-        message: 'Select your key',
-        source: () => prefab.keys(),
-      })
-    }
-
-    if (key) {
+    if (key && prefab) {
       try {
         const value = prefab.get(key)
 

@@ -7,12 +7,18 @@ const commonFlags = {
     default: true,
     description: 'Force interactive mode',
   }),
+  verbose: Flags.boolean({
+    default: false,
+    description: 'Verbose output',
+  }),
 }
 
 export abstract class BaseCommand extends Command {
   static baseFlags = {
     ...commonFlags,
   }
+
+  public static enableJsonFlag = true
 }
 
 export abstract class APICommand extends BaseCommand {

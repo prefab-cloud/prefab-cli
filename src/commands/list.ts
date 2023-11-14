@@ -5,17 +5,17 @@ import {APICommand} from '../index.js'
 import {initPrefab} from '../prefab.js'
 
 export default class List extends APICommand {
-  static description = `show keys for your config/flags/etc.
+  static description = `show keys for your config/feature flags/etc.
 
   All types are returned by default. If you pass one or more type flags (e.g. --configs), only those types will be returned`
 
   public static enableJsonFlag = true
 
-  static examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> <%= command.id %> --flags']
+  static examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> <%= command.id %> --feature-flags']
 
   static flags = {
     configs: Flags.boolean({default: false, description: 'include configs'}),
-    flags: Flags.boolean({default: false, description: 'include flags'}),
+    'feature-flags': Flags.boolean({default: false, description: 'include flags'}),
     'log-levels': Flags.boolean({default: false, description: 'include log levels'}),
     segments: Flags.boolean({default: false, description: 'include segments'}),
   }
@@ -33,7 +33,7 @@ export default class List extends APICommand {
       types.push(1)
     }
 
-    if (flags.flags) {
+    if (flags['feature-flags']) {
       types.push(2)
     }
 
@@ -49,7 +49,10 @@ export default class List extends APICommand {
       keys = keys.filter((key) => types.includes(prefab.raw(key)!.configType))
     }
 
-    console.log(keys.join('\n'))
+    if (!flags.json) {
+      console.log(keys.join('\n'))
+    }
+
     return {keys}
   }
 }

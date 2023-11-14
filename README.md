@@ -33,19 +33,23 @@ show keys for your config/flags/etc.
 
 ```
 USAGE
-  $ prefab list [--configs] [--flags] [--logLevels] [--segments] [--apiKey <value>]
+  $ prefab list --api-key <value> [--json] [--configs] [--flags] [--log-levels] [--segments]
 
 FLAGS
-  --apiKey=<value>
-  --configs
-  --flags
-  --logLevels
-  --segments
+  --api-key=<value>  (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
+  --configs          include configs
+  --flags            include flags
+  --log-levels       include log levels
+  --segments         include segments
+
+GLOBAL FLAGS
+  --json  Format output as json.
 
 DESCRIPTION
   show keys for your config/flags/etc.
 
-  All types are returned by default. If you pass one or more flags, only those types will be returned
+  All types are returned by default. If you pass one or more type flags (e.g. --configs), only those types will be
+  returned
 
 EXAMPLES
   $ prefab list

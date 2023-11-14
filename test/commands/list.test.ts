@@ -10,7 +10,7 @@ describe('list', () => {
     .stdout()
     .command(['list'])
     .it('lists everything by default', (ctx) => {
-      const keys = JSON.parse(ctx.stdout)
+      const keys = ctx.stdout.split('\n')
 
       expect(keys).to.contain(exampleSegment)
       expect(keys).to.contain(exampleLL)
@@ -20,9 +20,9 @@ describe('list', () => {
 
   test
     .stdout()
-    .command(['list', '--flags'])
+    .command(['list', '--feature-flags'])
     .it('lists only flags', (ctx) => {
-      const keys = JSON.parse(ctx.stdout)
+      const keys = ctx.stdout.split('\n')
 
       expect(keys).to.contain(exampleFF)
       expect(keys).to.not.contain(exampleLL)
@@ -34,7 +34,7 @@ describe('list', () => {
     .stdout()
     .command(['list', '--configs'])
     .it('lists only configs', (ctx) => {
-      const keys = JSON.parse(ctx.stdout)
+      const keys = ctx.stdout.split('\n')
 
       expect(keys).to.not.contain(exampleFF)
       expect(keys).to.not.contain(exampleLL)
@@ -46,7 +46,7 @@ describe('list', () => {
     .stdout()
     .command(['list', '--log-levels'])
     .it('lists only log levels', (ctx) => {
-      const keys = JSON.parse(ctx.stdout)
+      const keys = ctx.stdout.split('\n')
 
       expect(keys).to.not.contain(exampleFF)
       expect(keys).to.contain(exampleLL)
@@ -58,7 +58,7 @@ describe('list', () => {
     .stdout()
     .command(['list', '--segments'])
     .it('lists only segments', (ctx) => {
-      const keys = JSON.parse(ctx.stdout)
+      const keys = ctx.stdout.split('\n')
 
       expect(keys).to.not.contain(exampleFF)
       expect(keys).to.not.contain(exampleLL)
@@ -68,9 +68,9 @@ describe('list', () => {
 
   test
     .stdout()
-    .command(['list', '--flags', '--configs'])
+    .command(['list', '--feature-flags', '--configs'])
     .it('lists multiple types', (ctx) => {
-      const keys = JSON.parse(ctx.stdout)
+      const keys = ctx.stdout.split('\n')
 
       expect(keys).to.contain(exampleFF)
       expect(keys).to.not.contain(exampleLL)

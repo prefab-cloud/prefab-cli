@@ -14,7 +14,7 @@ $ npm install -g @prefab-cloud/prefab
 $ prefab COMMAND
 running command...
 $ prefab (--version)
-@prefab-cloud/prefab/0.0.2 darwin-arm64 node-v18.14.2
+@prefab-cloud/prefab/0.0.3 darwin-arm64 node-v18.14.2
 $ prefab --help [COMMAND]
 USAGE
   $ prefab COMMAND
@@ -55,7 +55,7 @@ EXAMPLES
   $ prefab get
 ```
 
-_See code: [src/commands/get.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.2/src/commands/get.ts)_
+_See code: [src/commands/get.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.3/src/commands/get.ts)_
 
 ## `prefab info [NAME]`
 
@@ -84,7 +84,7 @@ EXAMPLES
   $ prefab info
 ```
 
-_See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.2/src/commands/info.ts)_
+_See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.3/src/commands/info.ts)_
 
 ## `prefab list`
 
@@ -119,5 +119,5 @@ EXAMPLES
   $ prefab list --feature-flags
 ```
 
-_See code: [src/commands/list.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.2/src/commands/list.ts)_
+_See code: [src/commands/list.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.3/src/commands/list.ts)_
 <!-- commandsstop -->

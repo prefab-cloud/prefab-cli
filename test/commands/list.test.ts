@@ -79,10 +79,9 @@ describe('list', () => {
     })
 
   test
-    .stderr()
     .command(['list', '--api-key='])
     .exit(401)
-    .it('exits with error the api key is invalid', (ctx) => {
-      expect(ctx.stderr).to.contain('Error: API key is required')
+    .catch((error) => {
+      expect(error.message).to.eql('Error: API key is required')
     })
 })

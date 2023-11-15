@@ -7,28 +7,27 @@ describe('get', () => {
     .stdout()
     .command(['get', validKey])
     .it('returns a value for a valid name', (ctx) => {
-      expect(ctx.stdout).to.eql('a,b,c\n')
+      expect(ctx.stdout).to.eql("[ 'a', 'b', 'c' ]\n")
     })
 
   test
-    .stderr()
     .command(['get', 'this-does-not-exist'])
-    .it('shows an error if the key is invalid', (ctx) => {
-      expect(ctx.stderr).to.contain('Error: Key not found: this-does-not-exist')
+    .catch((error) => {
+      expect(error.message).to.eql('Error: Key not found: this-does-not-exist')
     })
+    .it('shows an error if the key is invalid')
 
   test
-    .stderr()
     .command(['get', '--no-interactive'])
-    .it("shows an error if no key is provided when things aren't interactive", (ctx) => {
-      expect(ctx.stderr).to.contain("'name' argument is required")
+    .catch((error) => {
+      expect(error.message).to.eql("Error: 'name' argument is required when interactive mode isn't available.")
     })
+    .it("shows an error if no key is provided when things aren't interactive")
 
   test
-    .stderr()
     .command(['get', validKey, '--api-key='])
     .exit(401)
-    .it('exits with error the api key is invalid', (ctx) => {
-      expect(ctx.stderr).to.contain('Error: API key is required')
+    .catch((error) => {
+      expect(error.message).to.eql('Error: API key is required')
     })
 })

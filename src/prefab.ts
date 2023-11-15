@@ -7,8 +7,7 @@ type Flags = {
 
 export const initPrefab = async (ctx: Command, flags: Flags) => {
   if (!flags['api-key']) {
-    ctx.logToStderr('Error: API key is required')
-    ctx.exit(401)
+    ctx.error('Error: API key is required', {exit: 401})
   }
 
   const prefab = new Prefab({

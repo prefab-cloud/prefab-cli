@@ -25,9 +25,38 @@ USAGE
 # Commands
 
 <!-- commands -->
+* [`prefab create`](#prefab-create)
 * [`prefab get [NAME]`](#prefab-get-name)
 * [`prefab info [NAME]`](#prefab-info-name)
 * [`prefab list`](#prefab-list)
+
+## `prefab create`
+
+Create a new item in Prefab
+
+```
+USAGE
+  $ prefab create --api-key <value> --name <value> --type boolean-flag [--json] [--interactive] [--verbose]
+
+FLAGS
+  --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
+  --[no-]interactive  Force interactive mode
+  --name=<value>      (required) name for your new item (e.g. my.new.flag)
+  --type=<option>     (required)
+                      <options: boolean-flag>
+  --verbose           Verbose output
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Create a new item in Prefab
+
+EXAMPLES
+  $ prefab create
+```
+
+_See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.3/src/commands/create.ts)_
 
 ## `prefab get [NAME]`
 

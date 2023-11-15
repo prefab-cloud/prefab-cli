@@ -33,8 +33,7 @@ export default class Info extends APICommand {
 
       if (!flags.json) {
         if (!evaluations) {
-          this.logToStderr(`No evaluations found for ${key} in the past 24 hours`)
-          return
+          this.error(`No evaluations found for ${key} in the past 24 hours`)
         }
 
         this.log('Evaluations over the last 24 hours:\n')
@@ -67,7 +66,7 @@ export default class Info extends APICommand {
       }
 
       if (!evaluations) {
-        return {[key]: null, message: `No evaluations found for ${key} in the past 24 hours`}
+        throw {[key]: null, message: `No evaluations found for ${key} in the past 24 hours`}
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars

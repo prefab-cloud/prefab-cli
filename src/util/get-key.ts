@@ -11,8 +11,7 @@ const getKey = async (
   flags: Record<string, unknown>,
 ): Promise<{key: string | undefined; prefab: Prefab | undefined}> => {
   if (!args.name && !isInteractive(flags)) {
-    command.logToStderr("Error: 'name' argument is required when interactive mode isn't available.")
-    return {key: undefined, prefab: undefined}
+    command.error("Error: 'name' argument is required when interactive mode isn't available.")
   }
 
   const prefab = await initPrefab(command, flags)

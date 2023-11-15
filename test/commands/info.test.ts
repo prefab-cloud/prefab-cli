@@ -35,11 +35,11 @@ const server = setupServer(
 
 const validKey = 'my-string-list-key'
 
-before(() => server.listen())
-afterEach(() => server.resetHandlers())
-after(() => server.close())
-
 describe('info', () => {
+  before(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  after(() => server.close())
+
   test
     .stdout()
     .command(['info', validKey])
@@ -88,27 +88,28 @@ Development: 7
     })
 
   test
-    .stderr()
     .command(['info', 'hatcat'])
-    .it('returns a message if no evaluations exist in the last 24 hours', (ctx) => {
-      expect(ctx.stderr.trim()).to.eql('No evaluations found for hatcat in the past 24 hours')
+    .catch((error) => {
+      expect(error.message).to.eql('No evaluations found for hatcat in the past 24 hours')
     })
+    .it('returns a message if no evaluations exist in the last 24 hours')
 
   test
     .stdout()
     .command(['info', 'hatcat', '--json'])
     .it('returns JSON if no evaluations exist in the last 24 hours', (ctx) => {
       expect(JSON.parse(ctx.stdout)).to.eql({
-        hatcat: null,
-        message: 'No evaluations found for hatcat in the past 24 hours',
+        error: {
+          hatcat: null,
+          message: 'No evaluations found for hatcat in the past 24 hours',
+        },
       })
     })
 
-  // test
-  //   .stderr()
-  //   .command(['info', validKey, '--api-key='])
-  //   .exit(401)
-  //   .it('exits with error the api key is invalid', (ctx) => {
-  //     expect(ctx.stderr).to.contain('Error: API key is required')
-  //   })
+  test
+    .command(['info', validKey, '--api-key='])
+    .exit(401)
+    .catch((error) => {
+      expect(error.message).to.eql('Error: API key is required')
+    })
 })

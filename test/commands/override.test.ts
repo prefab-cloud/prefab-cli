@@ -2,14 +2,37 @@ import {expect, test} from '@oclif/test'
 import {HttpResponse, http, passthrough} from 'msw'
 import {setupServer} from 'msw/node'
 
-const assignResponses = {
-  'feature-flag.simple': {
-    true: [200, {message: '', newId: '17001604601640547'}],
-  },
-  'my-double-key': {
-    '42.1': [200, {message: '', newId: '17001604601640547'}],
-    pumpkin: [
-      400,
+import {CannedResponses, getCannedResponse} from '../test-helper.js'
+
+const cannedResponses: CannedResponses = {
+  'https://api.staging-prefab.cloud/api/v1/config/assign-variant': [
+    [
+      {
+        configKey: 'feature-flag.simple',
+        variant: {
+          bool: 'true',
+        },
+      },
+      {response: {message: '', newId: '17002327855857830'}},
+      200,
+    ],
+    [
+      {
+        configKey: 'my-double-key',
+        variant: {
+          double: '42.1',
+        },
+      },
+      {response: {message: '', newId: '17002327855857830'}},
+      200,
+    ],
+    [
+      {
+        configKey: 'my-double-key',
+        variant: {
+          double: 'pumpkin',
+        },
+      },
       {
         _embedded: {
           errors: [
@@ -23,24 +46,17 @@ const assignResponses = {
         _links: {self: {href: '/api/v1/config/assign-variant', templated: false}},
         message: 'Bad Request',
       },
+      400,
     ],
-  },
-}
-
-type AssignVariantRequestBody = {
-  configKey: string
-  variant: Record<string, unknown>
+  ],
 }
 
 const server = setupServer(
   http.get('https://api-staging-prefab-cloud.global.ssl.fastly.net/api/v1/configs/0', () => passthrough()),
 
-  http.post('https://api.staging-prefab.cloud/api/v1/config/assign-variant', async ({request}) => {
-    const {configKey, variant} = (await request.json()) as AssignVariantRequestBody
-    const variantValue = Object.values(variant)[0]
-    const [status, response] = assignResponses[configKey][variantValue]
-    return HttpResponse.json(response, {status})
-  }),
+  http.post('https://api.staging-prefab.cloud/api/v1/config/assign-variant', async ({request}) =>
+    getCannedResponse(request, cannedResponses),
+  ),
 
   http.post('https://api.staging-prefab.cloud/api/v1/config/remove-variant', async () =>
     HttpResponse.json({message: '', newId: '17001604601640547'}),

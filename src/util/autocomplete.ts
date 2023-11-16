@@ -11,7 +11,12 @@ const options = {
 
 const unformat = (str: string) => str.replaceAll(options.pre, '').replaceAll(options.post, '')
 
-const autocomplete = async ({message, source}: {message: string; source: (() => string[]) | string[]}) => {
+type Args = {
+  message: string
+  source: (() => string[]) | string[]
+}
+
+const autocomplete = async ({message, source}: Args) => {
   try {
     const result = await internalAutocomplete({
       message: chalk.green(message),

@@ -1,9 +1,9 @@
 import {Flags} from '@oclif/core'
 
 import {APICommand} from '../index.js'
-import {EvaluationStats, getEvaluationStats} from '../prefab-common/src/evaluations/stats.js'
+import getKey from '../pickers/get-key.js'
+import {getEvaluationStats} from '../prefab-common/src/evaluations/stats.js'
 import {valueOfToString} from '../prefab-common/src/valueOf.js'
-import getKey from '../util/get-key.js'
 import {log} from '../util/log.js'
 import nameArg from '../util/name-arg.js'
 
@@ -31,20 +31,14 @@ export default class Info extends APICommand {
       })
 
       if (!evaluations) {
-        this.errorForCurrentFormat(`No evaluations found for ${key} in the past 24 hours`)
+        return this.errorForCurrentFormat(`No evaluations found for ${key} in the past 24 hours`)
       }
 
       this.log('Evaluations over the last 24 hours:\n')
 
       const contents = []
 
-      // Sort environments by most to least number of evaluations
-      const sortedKeys = Object.keys(evaluations.environments)
-        .sort((a, b) => evaluations.environments[a].total - evaluations.environments[b].total)
-        .reverse()
-
-      for (const envId of sortedKeys) {
-        const env = evaluations.environments[envId] as EvaluationStats['environments'][0]
+      for (const env of evaluations.environments) {
         contents.push(`${env.name}: ${env.total.toLocaleString()}`)
 
         const counts: string[] = []

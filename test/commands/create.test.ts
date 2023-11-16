@@ -31,22 +31,18 @@ const createResponses = {
   'brand.new.flag': [successResponse, 200],
 }
 
-type RecipeRequestBody = {
-  key: string
-}
-
-type CreateRequestBody = {
+type KeyRequestBody = {
   key: string
 }
 
 const server = setupServer(
   http.post('https://api.staging-prefab.cloud/api/v1/config-recipes/feature-flag/boolean', async ({request}) => {
-    const {key} = (await request.json()) as RecipeRequestBody
+    const {key} = (await request.json()) as KeyRequestBody
     return HttpResponse.json(recipeResponse(key))
   }),
 
   http.post('https://api.staging-prefab.cloud/api/v1/config/', async ({request}) => {
-    const {key} = (await request.json()) as CreateRequestBody
+    const {key} = (await request.json()) as KeyRequestBody
     const [response, status] = createResponses[key]
     return HttpResponse.json(response, {status})
   }),
@@ -59,14 +55,14 @@ describe('create', () => {
 
   test
     .stdout()
-    .command(['create', '--name=brand.new.flag', '--type=boolean-flag'])
+    .command(['create', 'brand.new.flag', '--type=boolean-flag'])
     .it('can create a boolean flag', (ctx) => {
-      expect(ctx.stdout).to.contain(`Prefab: Created boolean flag: brand.new.flag`)
+      expect(ctx.stdout).to.contain(`Created boolean flag: brand.new.flag`)
     })
 
   test
     .stdout()
-    .command(['create', '--name=brand.new.flag', '--type=boolean-flag', '--json'])
+    .command(['create', 'brand.new.flag', '--type=boolean-flag', '--json'])
     .it('can create a boolean flag and return a JSON response', (ctx) => {
       expect(JSON.parse(ctx.stdout)).to.deep.equal({
         key: 'brand.new.flag',
@@ -76,15 +72,15 @@ describe('create', () => {
     })
 
   test
-    .command(['create', '--name=already.in.use', '--type=boolean-flag'])
+    .command(['create', 'already.in.use', '--type=boolean-flag'])
     .catch((error) => {
-      expect(error.message).to.contain(`Prefab: Failed to create boolean flag: already.in.use already exists`)
+      expect(error.message).to.contain(`Failed to create boolean flag: already.in.use already exists`)
     })
     .it('returns an error if the flag exists')
 
   test
     .stdout()
-    .command(['create', '--name=already.in.use', '--type=boolean-flag', '--json'])
+    .command(['create', 'already.in.use', '--type=boolean-flag', '--json'])
     .it('returns a JSON error if the flag exists', (ctx) => {
       expect(JSON.parse(ctx.stdout)).to.deep.equal({
         error: {
@@ -102,7 +98,7 @@ describe('create', () => {
     })
 
   test
-    .command(['create', '--name=brand.new.flag', '--type=boolean-flag', '--api-key='])
+    .command(['create', 'brand.new.flag', '--type=boolean-flag', '--api-key='])
     .exit(401)
     .catch((error) => {
       expect(error.message).to.eql('Error: API key is required')

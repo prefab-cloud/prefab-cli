@@ -22,6 +22,8 @@ const rawEvaluationResponse = {
 }
 
 const server = setupServer(
+  http.get('https://api-staging-prefab-cloud.global.ssl.fastly.net/api/v1/configs/0', () => passthrough()),
+
   http.get('https://api.staging-prefab.cloud/api/v1/evaluation-stats/my-string-list-key', () =>
     HttpResponse.json(rawEvaluationResponse),
   ),
@@ -29,8 +31,6 @@ const server = setupServer(
   http.get('https://api.staging-prefab.cloud/api/v1/evaluation-stats/hatcat', () =>
     HttpResponse.json({end: 1_700_059_396_635, key: 'hatcat', start: 1_699_972_996_635, total: 0}),
   ),
-
-  http.get('https://api-staging-prefab-cloud.global.ssl.fastly.net/api/v1/configs/0', () => passthrough()),
 )
 
 const validKey = 'my-string-list-key'
@@ -99,10 +99,7 @@ Development: 7
     .command(['info', 'hatcat', '--json'])
     .it('returns JSON if no evaluations exist in the last 24 hours', (ctx) => {
       expect(JSON.parse(ctx.stdout)).to.eql({
-        error: {
-          hatcat: null,
-          message: 'No evaluations found for hatcat in the past 24 hours',
-        },
+        error: 'No evaluations found for hatcat in the past 24 hours',
       })
     })
 

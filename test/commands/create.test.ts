@@ -1,8 +1,21 @@
 import {expect, test} from '@oclif/test'
-import {HttpResponse, http} from 'msw'
+import {http} from 'msw'
 import {setupServer} from 'msw/node'
 
+import {CannedResponses, getCannedResponse} from '../test-helper.js'
+
 const recipeResponse = (key: string) => ({
+  allowableValues: [{bool: true}, {bool: false}],
+  changedBy: {apiKeyId: '315', email: '', userId: '4'},
+  configType: 'FEATURE_FLAG',
+  id: '0',
+  key,
+  projectId: '124',
+  rows: [{projectEnvId: '143', values: [{value: {bool: false}}]}],
+  valueType: 'NOT_SET_VALUE_TYPE',
+})
+
+const createRequest = (key: string) => ({
   allowableValues: [{bool: true}, {bool: false}],
   changedBy: {apiKeyId: '315', email: '', userId: '4'},
   configType: 'FEATURE_FLAG',
@@ -26,26 +39,26 @@ const successResponse = {
   newId: '17000801114938347',
 }
 
-const createResponses = {
-  'already.in.use': [conflictResponse, 409],
-  'brand.new.flag': [successResponse, 200],
-}
+const cannedResponses: CannedResponses = {
+  'https://api.staging-prefab.cloud/api/v1/config/': [
+    [createRequest('brand.new.flag'), successResponse, 200],
+    [createRequest('already.in.use'), conflictResponse, 409],
+  ],
 
-type KeyRequestBody = {
-  key: string
+  'https://api.staging-prefab.cloud/api/v1/config-recipes/feature-flag/boolean': [
+    [{defaultValue: false, key: 'brand.new.flag'}, recipeResponse('brand.new.flag'), 200],
+    [{defaultValue: false, key: 'already.in.use'}, recipeResponse('already.in.use'), 200],
+  ],
 }
 
 const server = setupServer(
-  http.post('https://api.staging-prefab.cloud/api/v1/config-recipes/feature-flag/boolean', async ({request}) => {
-    const {key} = (await request.json()) as KeyRequestBody
-    return HttpResponse.json(recipeResponse(key))
-  }),
+  http.post('https://api.staging-prefab.cloud/api/v1/config-recipes/feature-flag/boolean', async ({request}) =>
+    getCannedResponse(request, cannedResponses),
+  ),
 
-  http.post('https://api.staging-prefab.cloud/api/v1/config/', async ({request}) => {
-    const {key} = (await request.json()) as KeyRequestBody
-    const [response, status] = createResponses[key]
-    return HttpResponse.json(response, {status})
-  }),
+  http.post('https://api.staging-prefab.cloud/api/v1/config/', async ({request}) =>
+    getCannedResponse(request, cannedResponses),
+  ),
 )
 
 describe('create', () => {

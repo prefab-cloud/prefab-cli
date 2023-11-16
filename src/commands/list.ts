@@ -48,7 +48,7 @@ export default class List extends APICommand {
     }
 
     if (!this.jsonEnabled()) {
-      console.log(keys.join('\n'))
+      this.log(keys.join('\n'))
     }
 
     return {keys}

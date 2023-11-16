@@ -1,6 +1,7 @@
+import type {GetValue} from '../prefab-common/src/types.js'
+
 import {APICommand} from '../index.js'
-import {type GetValue} from '../prefab.js'
-import getKey from '../util/get-key.js'
+import getKey from '../pickers/get-key.js'
 import nameArg from '../util/name-arg.js'
 
 type Response = Promise<Error | Record<string, GetValue> | Record<string, unknown> | undefined | void>

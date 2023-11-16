@@ -5,7 +5,8 @@
     "outDir": "dist",
     "rootDir": "src",
     "target": "es2022",
-    "moduleResolution": "nodenext"
+    "moduleResolution": "nodenext",
+    "strict": true
   },
   "include": ["./src/**/*"],
   "exclude": ["./src/prefab-common/**/*.test.ts"],

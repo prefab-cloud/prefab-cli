@@ -1,7 +1,7 @@
 import {Command} from '@oclif/core'
 import {Prefab} from '@prefab-cloud/prefab-cloud-node'
 
-import type {ConfigValue} from './prefab-common/src/types.js'
+import type {ConfigValue, GetValue} from './prefab-common/src/types.js'
 
 import {getProjectEnvFromApiKey} from './prefab-common/src/getProjectEnvFromApiKey.js'
 
@@ -39,44 +39,55 @@ export const initPrefab = async (ctx: Command, flags: Flags) => {
 
 export const configValueType = (key: string): string | undefined => {
   const config = prefab.raw(key)
-  const value = config.rows[0]?.values[0]?.value
+  const value = config?.rows[0]?.values[0]?.value
 
   if (value) {
     return Object.keys(value)[0]
   }
-
-  return undefined
 }
 
 const getUserId = (): string =>
-  prefab.defaultContext().get(DEFAULT_CONTEXT_USER_ID_NAMESPACE)?.get(DEFAULT_CONTEXT_USER_ID) as string
+  prefab.defaultContext()?.get(DEFAULT_CONTEXT_USER_ID_NAMESPACE)?.get(DEFAULT_CONTEXT_USER_ID) as string
 
-export const overrideFor = (key: string): ConfigValue | undefined => {
-  const envId = getProjectEnvFromApiKey(apiKey).id
-  const userId = getUserId()
-
-  let override: ConfigValue | undefined
+const getRowInEnvironment = (key: string, desiredEnvId?: string) => {
+  const envId = desiredEnvId ?? getProjectEnvFromApiKey(apiKey).id
 
   const config = prefab.raw(key)
 
-  console.log(JSON.stringify(config, null, 2))
+  if (!config) {
+    return
+  }
 
-  for (const row of config.rows) {
-    if (row.projectEnvId.toString() !== envId) continue
+  return config.rows.find((row) => row.projectEnvId?.toString() === envId)
+}
 
+export const overrideFor = (key: string): ConfigValue | undefined => {
+  const userId = getUserId()
+
+  const row = getRowInEnvironment(key)
+
+  if (row) {
     for (const value of row.values) {
       for (const criterion of value.criteria) {
         if (
           criterion.propertyName === `${DEFAULT_CONTEXT_USER_ID_NAMESPACE}.${DEFAULT_CONTEXT_USER_ID}` &&
           criterion.valueToMatch?.stringList?.values.includes(userId)
         ) {
-          override = value.value
+          return value.value
         }
       }
     }
   }
 
-  return override
+  
 }
 
-export type GetValue = ReturnType<typeof Prefab.prototype.get>
+export const defaultValueFor = (key: string, envId: string): GetValue | undefined => {
+  const row = getRowInEnvironment(key, envId)
+
+  const value = row?.values.at(-1)?.value
+
+  if (value) {
+    return Object.values(value)[0]
+  }
+}

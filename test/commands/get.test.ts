@@ -13,14 +13,14 @@ describe('get', () => {
   test
     .command(['get', 'this-does-not-exist'])
     .catch((error) => {
-      expect(error.message).to.eql('Error: Key not found: this-does-not-exist')
+      expect(error.message).to.eql(`this-does-not-exist does not exist`)
     })
     .it('shows an error if the key is invalid')
 
   test
     .command(['get', '--no-interactive'])
     .catch((error) => {
-      expect(error.message).to.eql("Error: 'name' argument is required when interactive mode isn't available.")
+      expect(error.message).to.eql("'name' argument is required when interactive mode isn't available.")
     })
     .it("shows an error if no key is provided when things aren't interactive")
 

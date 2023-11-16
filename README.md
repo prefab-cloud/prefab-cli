@@ -25,23 +25,26 @@ USAGE
 # Commands
 
 <!-- commands -->
-* [`prefab create`](#prefab-create)
+* [`prefab create NAME`](#prefab-create-name)
 * [`prefab get [NAME]`](#prefab-get-name)
 * [`prefab info [NAME]`](#prefab-info-name)
 * [`prefab list`](#prefab-list)
+* [`prefab override [NAME]`](#prefab-override-name)
 
-## `prefab create`
+## `prefab create NAME`
 
 Create a new item in Prefab
 
 ```
 USAGE
-  $ prefab create --api-key <value> --name <value> --type boolean-flag [--json] [--interactive] [--verbose]
+  $ prefab create NAME --api-key <value> --type boolean-flag [--json] [--interactive] [--verbose]
+
+ARGUMENTS
+  NAME  name for your new item (e.g. my.new.flag)
 
 FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
   --[no-]interactive  Force interactive mode
-  --name=<value>      (required) name for your new item (e.g. my.new.flag)
   --type=<option>     (required)
                       <options: boolean-flag>
   --verbose           Verbose output
@@ -53,7 +56,7 @@ DESCRIPTION
   Create a new item in Prefab
 
 EXAMPLES
-  $ prefab create
+  $ prefab create my.new.flag --type boolean-flag
 ```
 
 _See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.3/src/commands/create.ts)_
@@ -81,7 +84,7 @@ DESCRIPTION
   Get the value of a config/feature-flag/etc.
 
 EXAMPLES
-  $ prefab get
+  $ prefab get my.config.name
 ```
 
 _See code: [src/commands/get.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.3/src/commands/get.ts)_
@@ -110,7 +113,7 @@ DESCRIPTION
   Show details about the provided config/feature-flag/etc.
 
 EXAMPLES
-  $ prefab info
+  $ prefab info my.config.name
 ```
 
 _See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.3/src/commands/info.ts)_
@@ -149,4 +152,39 @@ EXAMPLES
 ```
 
 _See code: [src/commands/list.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.3/src/commands/list.ts)_
+
+## `prefab override [NAME]`
+
+Override the value of an item for your user/API key combo
+
+```
+USAGE
+  $ prefab override [NAME] --api-key <value> [--json] [--interactive] [--verbose] [--remove] [--variant
+    <value>]
+
+ARGUMENTS
+  NAME  config/feature-flag/etc. name
+
+FLAGS
+  --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
+  --[no-]interactive  Force interactive mode
+  --remove            remove your override (if present)
+  --variant=<value>   variant to use for your override
+  --verbose           Verbose output
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Override the value of an item for your user/API key combo
+
+EXAMPLES
+  $ prefab override my.flag.name --variant=true
+
+  $ prefab override my.flag.name --remove
+
+  $ prefab override my.double.config --variant=3.14159
+```
+
+_See code: [src/commands/override.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.3/src/commands/override.ts)_
 <!-- commandsstop -->

@@ -1,6 +1,9 @@
 export {run} from '@oclif/core'
 import {Command, Flags} from '@oclif/core'
 
+import rawGetClient, {unwrapRequest} from './util/get-client.js'
+import {log} from './util/log.js'
+
 const commonFlags = {
   interactive: Flags.boolean({
     allowNo: true,
@@ -19,6 +22,22 @@ export abstract class BaseCommand extends Command {
   }
 
   public static enableJsonFlag = true
+
+  public errorForCurrentFormat = (error: Error | object | string): never => {
+    if (this.jsonEnabled()) {
+      throw error
+    }
+
+    if (typeof error === 'string') {
+      this.error(error)
+    }
+
+    this.error(this.toErrorJson(error))
+  }
+
+  public verboseLog = (...args: unknown[]): void => {
+    log(...args)
+  }
 }
 
 export abstract class APICommand extends BaseCommand {
@@ -29,5 +48,25 @@ export abstract class APICommand extends BaseCommand {
       env: 'PREFAB_API_KEY',
       required: true,
     }),
+  }
+
+  getApiClient = async () => {
+    const {flags} = await this.parse()
+
+    return rawGetClient(flags['api-key'])
+  }
+
+  get apiClient() {
+    return {
+      get: async (path: string) => {
+        const client = await this.getApiClient()
+        return unwrapRequest(client.get(path))
+      },
+
+      post: async (path: string, payload: unknown) => {
+        const client = await this.getApiClient()
+        return unwrapRequest(client.post(path, payload))
+      },
+    }
   }
 }

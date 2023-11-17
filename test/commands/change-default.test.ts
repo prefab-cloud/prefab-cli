@@ -2,14 +2,14 @@ import {expect, test} from '@oclif/test'
 import {HttpResponse, http, passthrough} from 'msw'
 import {setupServer} from 'msw/node'
 
-import {CannedResponses, getCannedResponse} from '../test-helper.js'
+import {ANY, CannedResponses, getCannedResponse} from '../test-helper.js'
 
 const cannedResponses: CannedResponses = {
   'https://api.staging-prefab.cloud/api/v1/config/set-default/': [
     [
       {
         configKey: 'feature-flag.simple',
-        currentVersionId: '17001616738538608',
+        currentVersionId: ANY,
         environmentId: '5',
         value: {bool: 'true'},
       },
@@ -20,7 +20,7 @@ const cannedResponses: CannedResponses = {
     [
       {
         configKey: 'jeffreys.test.key',
-        currentVersionId: '17001633930007834',
+        currentVersionId: ANY,
         environmentId: '6',
         value: {string: 'hello default world'},
       },
@@ -46,7 +46,7 @@ const server = setupServer(
   ),
 
   http.post('https://api.staging-prefab.cloud/api/v1/config/set-default/', async ({request}) =>
-    getCannedResponse(request, cannedResponses),
+    getCannedResponse(request, cannedResponses).catch(console.error),
   ),
 )
 

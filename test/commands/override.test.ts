@@ -7,32 +7,17 @@ import {CannedResponses, getCannedResponse} from '../test-helper.js'
 const cannedResponses: CannedResponses = {
   'https://api.staging-prefab.cloud/api/v1/config/assign-variant': [
     [
-      {
-        configKey: 'feature-flag.simple',
-        variant: {
-          bool: 'true',
-        },
-      },
+      {configKey: 'feature-flag.simple', variant: {bool: 'true'}},
       {response: {message: '', newId: '17002327855857830'}},
       200,
     ],
     [
-      {
-        configKey: 'my-double-key',
-        variant: {
-          double: '42.1',
-        },
-      },
+      {configKey: 'my-double-key', variant: {double: '42.1'}},
       {response: {message: '', newId: '17002327855857830'}},
       200,
     ],
     [
-      {
-        configKey: 'my-double-key',
-        variant: {
-          double: 'pumpkin',
-        },
-      },
+      {configKey: 'my-double-key', variant: {double: 'pumpkin'}},
       {
         _embedded: {
           errors: [
@@ -70,56 +55,48 @@ describe('override', () => {
 
   test
     .stdout()
-    .command(['override', 'feature-flag.simple', '--variant=true'])
-    .it('overrides a boolean flag when given a valid key and variant', (ctx) => {
+    .command(['override', 'feature-flag.simple', '--value=true'])
+    .it('overrides a boolean flag when given a valid key and value', (ctx) => {
       expect(ctx.stdout).to.contain(`Override set`)
     })
 
   test
     .stdout()
-    .command(['override', 'my-double-key', '--variant=42.1'])
-    .it('overrides a string list config when given a valid key and variant', (ctx) => {
+    .command(['override', 'my-double-key', '--value=42.1'])
+    .it('overrides a string list config when given a valid key and value', (ctx) => {
       expect(ctx.stdout).to.contain(`Override set`)
     })
 
   test
     .stdout()
     .skip()
-    .command(['override', 'my-string-list-key', '--variant=a,b,c,d'])
-    .it('overrides a string list config when given a valid key and variant', (ctx) => {
+    .command(['override', 'my-string-list-key', '--value=a,b,c,d'])
+    .it('overrides a string list config when given a valid key and value', (ctx) => {
       expect(ctx.stdout).to.contain(`Override set`)
     })
 
   test
     .stderr()
-    .command(['override', 'my-double-key', '--variant=pumpkin'])
+    .command(['override', 'my-double-key', '--value=pumpkin'])
     .catch((error) => {
-      expect(error.message).to.contain(`Failed to override variant: 400 -- is pumpkin a valid double?`)
+      expect(error.message).to.contain(`Failed to override value: 400 -- is pumpkin a valid double?`)
     })
-    .it('shows an error when the variant type is wrong')
+    .it('shows an error when the value type is wrong')
 
   test
     .stderr()
-    .command(['override', 'my-double-key'])
-    .catch((error) => {
-      expect(error.message).to.contain(`variant is required for non-flag items`)
-    })
-    .it('shows an error when the variant type is not provided for a flag')
-
-  test
-    .stderr()
-    .command(['override', 'this.does.not.exist', '--variant=true'])
+    .command(['override', 'this.does.not.exist', '--value=true'])
     .catch((error) => {
       expect(error.message).to.contain(`Could not find config named this.does.not.exist`)
     })
     .it('shows an error when the key does not exist')
 
   test
-    .command(['override', 'this.does.not.exist', '--variant=true', '--remove'])
+    .command(['override', 'this.does.not.exist', '--value=true', '--remove'])
     .catch((error) => {
-      expect(error.message).to.contain(`remove and variant flags are mutually exclusive`)
+      expect(error.message).to.contain(`remove and value flags are mutually exclusive`)
     })
-    .it('shows an error when given remove and a variant')
+    .it('shows an error when given remove and a value')
 
   test
     .stdout()
@@ -134,7 +111,4 @@ describe('override', () => {
     .it('succeeds when trying to remove an override that does not exist', (ctx) => {
       expect(ctx.stdout).to.contain(`No override found for my-double-key`)
     })
-
-  // it prompts for a variant when not given one for a boolean flag
-  // it prompts for a key when not given one
 })

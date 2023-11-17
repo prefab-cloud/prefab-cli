@@ -22,9 +22,7 @@ const cannedResponses: CannedResponses = {
         configKey: 'jeffreys.test.key',
         currentVersionId: '17001633930007834',
         environmentId: '6',
-        value: {
-          string: 'hello default world',
-        },
+        value: {string: 'hello default world'},
       },
 
       {response: {message: '', newId: '17002327855857830'}},
@@ -60,14 +58,14 @@ describe('change-default', () => {
   describe('success', () => {
     test
       .stdout()
-      .command(['change-default', 'feature-flag.simple', '--environment=Development', '--variant=true'])
+      .command(['change-default', 'feature-flag.simple', '--environment=Development', '--value=true'])
       .it('can change the default for a boolean flag', (ctx) => {
         expect(ctx.stdout).to.contain('Successfully changed default to `true`.')
       })
 
     test
       .stdout()
-      .command(['change-default', 'feature-flag.simple', '--environment=Development', '--variant=true', '--json'])
+      .command(['change-default', 'feature-flag.simple', '--environment=Development', '--value=true', '--json'])
       .it('can change the default for a boolean flag with json output', (ctx) => {
         expect(JSON.parse(ctx.stdout)).to.deep.equal({
           environment: {
@@ -76,13 +74,13 @@ describe('change-default', () => {
           },
           key: 'feature-flag.simple',
           success: true,
-          variant: 'true',
+          value: 'true',
         })
       })
 
     test
       .stdout()
-      .command(['change-default', 'jeffreys.test.key', '--environment=Staging', '--variant=hello default world'])
+      .command(['change-default', 'jeffreys.test.key', '--environment=Staging', '--value=hello default world'])
       .it('can change the default for a string flag', (ctx) => {
         expect(ctx.stdout).to.contain('Successfully changed default to `hello default world`.')
       })
@@ -93,7 +91,7 @@ describe('change-default', () => {
         'change-default',
         'jeffreys.test.key',
         '--environment=Staging',
-        '--variant=hello default world',
+        '--value=hello default world',
         '--json',
       ])
       .it('can change the default for a string flag with json output', (ctx) => {
@@ -104,7 +102,7 @@ describe('change-default', () => {
           },
           key: 'jeffreys.test.key',
           success: true,
-          variant: 'hello default world',
+          value: 'hello default world',
         })
       })
   })
@@ -112,7 +110,7 @@ describe('change-default', () => {
   describe('failure', () => {
     test
       .stderr()
-      .command(['change-default', 'this.does.not.exist', '--environment=Staging', '--variant=hello default world'])
+      .command(['change-default', 'this.does.not.exist', '--environment=Staging', '--value=hello default world'])
       .catch((error) => {
         expect(error.message).to.contain(`Could not find config named this.does.not.exist`)
       })

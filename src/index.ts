@@ -1,6 +1,7 @@
 export {run} from '@oclif/core'
 import {Command, Flags} from '@oclif/core'
 
+import {Result} from './result.js'
 import rawGetClient, {unwrapRequest} from './util/get-client.js'
 import {log} from './util/log.js'
 
@@ -33,6 +34,14 @@ export abstract class BaseCommand extends Command {
     }
 
     this.error(this.toErrorJson(error))
+  }
+
+  public resultMessage = (result: Result<unknown>): void => {
+    if (result.error) {
+      this.errorForCurrentFormat(result.message)
+    } else if (result.message) {
+      this.log(result.message)
+    }
   }
 
   public verboseLog = (...args: unknown[]): void => {

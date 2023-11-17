@@ -34,12 +34,12 @@ USAGE
 
 ## `prefab change-default [NAME]`
 
-change the default value for an environment (other rules still apply)
+Change the default value for an environment (other rules still apply)
 
 ```
 USAGE
   $ prefab change-default [NAME] --api-key <value> [--json] [--interactive] [--verbose] [--environment <value>]
-    [--variant <value>]
+    [--value <value>]
 
 ARGUMENTS
   NAME  config/feature-flag/etc. name
@@ -48,19 +48,19 @@ FLAGS
   --api-key=<value>      (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
   --environment=<value>  environment to change
   --[no-]interactive     Force interactive mode
-  --variant=<value>      new default variant
+  --value=<value>        new default value
   --verbose              Verbose output
 
 GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  change the default value for an environment (other rules still apply)
+  Change the default value for an environment (other rules still apply)
 
 EXAMPLES
-  $ prefab change-default my.flag.name # will prompt for variant and env
+  $ prefab change-default my.flag.name # will prompt for value and env
 
-  $ prefab change-default my.flag.name --variant=true --environment=staging
+  $ prefab change-default my.flag.name --value=true --environment=staging
 ```
 
 _See code: [src/commands/change-default.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.4/src/commands/change-default.ts)_
@@ -154,7 +154,7 @@ _See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blo
 
 ## `prefab list`
 
-show keys for your config/feature flags/etc.
+Show keys for your config/feature flags/etc.
 
 ```
 USAGE
@@ -174,7 +174,7 @@ GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  show keys for your config/feature flags/etc.
+  Show keys for your config/feature flags/etc.
 
   All types are returned by default. If you pass one or more type flags (e.g. --configs), only those types will be
   returned
@@ -193,8 +193,7 @@ Override the value of an item for your user/API key combo
 
 ```
 USAGE
-  $ prefab override [NAME] --api-key <value> [--json] [--interactive] [--verbose] [--remove] [--variant
-    <value>]
+  $ prefab override [NAME] --api-key <value> [--json] [--interactive] [--verbose] [--remove] [--value <value>]
 
 ARGUMENTS
   NAME  config/feature-flag/etc. name
@@ -203,7 +202,7 @@ FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
   --[no-]interactive  Force interactive mode
   --remove            remove your override (if present)
-  --variant=<value>   variant to use for your override
+  --value=<value>     value to use for your override
   --verbose           Verbose output
 
 GLOBAL FLAGS
@@ -213,13 +212,13 @@ DESCRIPTION
   Override the value of an item for your user/API key combo
 
 EXAMPLES
-  $ prefab override my.flag.name # will prompt for variant
+  $ prefab override # will prompt for name and value
 
-  $ prefab override my.flag.name --variant=true
+  $ prefab override my.flag.name --value=true
 
   $ prefab override my.flag.name --remove
 
-  $ prefab override my.double.config --variant=3.14159
+  $ prefab override my.double.config --value=3.14159
 ```
 
 _See code: [src/commands/override.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.4/src/commands/override.ts)_

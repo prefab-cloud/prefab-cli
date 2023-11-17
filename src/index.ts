@@ -24,9 +24,9 @@ export abstract class BaseCommand extends Command {
 
   public static enableJsonFlag = true
 
-  public errorForCurrentFormat = (error: Error | object | string): never => {
+  public err = (error: Error | object | string, json?: Record<string, unknown>): never => {
     if (this.jsonEnabled()) {
-      throw error
+      throw json ?? error
     }
 
     if (typeof error === 'string') {
@@ -38,7 +38,7 @@ export abstract class BaseCommand extends Command {
 
   public resultMessage = (result: Result<unknown>): void => {
     if (result.error) {
-      this.errorForCurrentFormat(result.message)
+      this.err(result.message, result.json)
     } else if (result.message) {
       this.log(result.message)
     }

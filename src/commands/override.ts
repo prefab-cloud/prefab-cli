@@ -27,7 +27,7 @@ export default class Override extends APICommand {
     const {args, flags} = await this.parse(Override)
 
     if (flags.remove && flags.value) {
-      this.errorForCurrentFormat('remove and value flags are mutually exclusive')
+      this.err('remove and value flags are mutually exclusive')
     }
 
     const {key, prefab} = await getKey({
@@ -45,7 +45,7 @@ export default class Override extends APICommand {
       return this.removeOverride(key)
     }
 
-    const value = await getValue({desiredValue: flags.value, flags, key, prefab, message: 'Override value'})
+    const value = await getValue({desiredValue: flags.value, flags, key, message: 'Override value', prefab})
 
     if (value.ok) {
       return this.setOverride(key, value.value)
@@ -67,25 +67,19 @@ export default class Override extends APICommand {
       variant: override,
     })
 
-    if (request.success) {
+    if (request.ok) {
       this.log('Override removed')
       return
     }
 
-    if (this.jsonEnabled()) {
-      throw {key, serverError: request.error}
-    }
-
-    this.verboseLog(request.error)
-
-    this.error(`Failed to remove override: ${request.status}`)
+    this.err(`Failed to remove override: ${request.status}`, {key, serverError: request.error})
   }
 
   private async setOverride(key: string, value: string): Promise<Record<string, unknown> | void> {
     const type = configValueType(key)
 
     if (!type) {
-      return this.errorForCurrentFormat(`Could not find type for config named ${key}`)
+      return this.err(`Could not find type for config named ${key}`)
     }
 
     const request = await this.apiClient.post('/api/v1/config/assign-variant', {
@@ -93,22 +87,17 @@ export default class Override extends APICommand {
       variant: {[type]: type === 'stringList' ? value.split(',') : value},
     })
 
-    if (request.success) {
+    if (request.ok) {
       this.log('Override set')
 
       return {key, success: true}
     }
 
-    if (this.jsonEnabled()) {
-      throw {key, serverError: request.error}
-    }
+    const errMsg =
+      request.status === 400
+        ? `Failed to override value: ${request.status} -- is ${value} a valid ${type}?`
+        : `Failed to override value: ${request.status}`
 
-    this.verboseLog(request.error)
-
-    if (request.status === 400) {
-      this.error(`Failed to override value: ${request.status} -- is ${value} a valid ${type}?`)
-    }
-
-    this.error(`Failed to override value: ${request.status}`)
+    this.err(errMsg, {key, serverError: request.error})
   }
 }

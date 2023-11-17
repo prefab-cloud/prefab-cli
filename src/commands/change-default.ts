@@ -53,7 +53,7 @@ export default class ChangeDefault extends APICommand {
       return
     }
 
-    const value = await getValue({desiredValue: flags.value, environment, flags, key, prefab, message: 'Default value'})
+    const value = await getValue({desiredValue: flags.value, environment, flags, key, message: 'Default value', prefab})
 
     if (value.ok) {
       return this.submitChange(prefab, key, value.value, environment)
@@ -66,13 +66,13 @@ export default class ChangeDefault extends APICommand {
     const type = configValueType(key)
 
     if (!type) {
-      return this.errorForCurrentFormat(`no type found for ${key}`)
+      return this.err(`no type found for ${key}`)
     }
 
     const config = prefab.raw(key)
 
     if (!config) {
-      return this.errorForCurrentFormat(`no config found for ${key}`)
+      return this.err(`no config found for ${key}`)
     }
 
     const payload = {
@@ -84,18 +84,14 @@ export default class ChangeDefault extends APICommand {
 
     const request = await this.apiClient.post('/api/v1/config/set-default/', payload)
 
-    if (request.success) {
+    if (request.ok) {
       this.log(`Successfully changed default to \`${value}\`.`)
 
       return {environment, key, success: true, value}
     }
 
-    if (this.jsonEnabled()) {
-      throw {key, serverError: request.error}
-    }
-
     this.verboseLog(request.error)
 
-    this.error(`Failed to change default: ${request.status}`)
+    this.err(`Failed to change default: ${request.status}`, {key, serverError: request.error})
   }
 }

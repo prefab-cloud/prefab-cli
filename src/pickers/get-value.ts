@@ -15,15 +15,15 @@ const getValue = async ({
   environment,
   flags,
   key,
-  prefab,
   message,
+  prefab,
 }: {
   desiredValue: string | undefined
   environment?: Environment
   flags: {interactive: boolean}
   key: string
-  prefab: Prefab
   message: string
+  prefab: Prefab
 }): Promise<Result<string>> => {
   if (desiredValue === undefined && !flags.interactive) {
     return failure(`No value provided for ${key}`)

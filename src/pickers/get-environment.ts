@@ -21,7 +21,7 @@ const getEnvironment = async ({
   providedEnvironment: string | undefined
 }): Promise<Environment | undefined> => {
   if (!providedEnvironment && !isInteractive(flags)) {
-    command.errorForCurrentFormat("'environment' is required when interactive mode isn't available.")
+    command.err("'environment' is required when interactive mode isn't available.")
   }
 
   const environments = await getEnvironmentsFromApi({client, log})
@@ -34,7 +34,7 @@ const getEnvironment = async ({
     )
 
     if (!matchingEnvironment) {
-      command.errorForCurrentFormat(`Environment \`${providedEnvironment}\` not found`)
+      command.err(`Environment \`${providedEnvironment}\` not found`)
     }
 
     return matchingEnvironment

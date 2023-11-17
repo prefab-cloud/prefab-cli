@@ -1,13 +1,15 @@
 import {DefaultBodyType, HttpResponse, StrictRequest} from 'msw'
 
-type Json = Record<string, unknown>
-export type CannedResponse = [Json, Json, number]
+import type {JsonObj} from '../src/result.js'
+
+export type CannedResponse = [JsonObj, JsonObj, number]
 export type CannedResponses = Record<string, CannedResponse[]>
 
 // NOTE: This is a bit brittle in that it can break if currentVersionId changes
 // We can cross that bridge when we get there (possibly by iterating over the
 // object and comparing keys/values and having a special ANY or NUMBER
-// placeholder)
+// placeholder. Alternatively we could just ignore currentVersionId
+// specifically)
 export const getCannedResponse = async (
   request: StrictRequest<DefaultBodyType>,
   cannedResponses: CannedResponses,

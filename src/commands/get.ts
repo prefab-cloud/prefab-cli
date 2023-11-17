@@ -22,7 +22,7 @@ export default class Get extends APICommand {
 
     if (key && prefab) {
       if (!prefab.keys().includes(key)) {
-        this.errorForCurrentFormat(`${key} does not exist`)
+        this.err(`${key} does not exist`)
       }
 
       const value = prefab.get(key)

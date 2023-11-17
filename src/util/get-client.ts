@@ -1,3 +1,5 @@
+import type {RequestResult} from '../result.js'
+
 import {Client} from '../prefab-common/src/api/client.js'
 import jsonMaybe from '../util/json-maybe.js'
 import version from '../version.js'
@@ -18,21 +20,19 @@ const getClient = (apiKey: string) => {
   return clientInstance
 }
 
-type Json = Record<string, unknown> & {success: boolean}
-
-export const unwrapRequest = async (promise: Promise<Response>) => {
+export const unwrapRequest = async (promise: Promise<Response>): Promise<RequestResult> => {
   const request = await promise
 
   if (request.status.toString().startsWith('2')) {
     const json = await request.json()
     log('ApiClient', {response: json})
 
-    return {success: true, ...json} as Json
+    return {json, ok: true, status: request.status}
   }
 
   const error = jsonMaybe(await request.text())
 
-  return {error, status: request.status, success: false}
+  return {error, ok: false, status: request.status}
 }
 
 export default getClient

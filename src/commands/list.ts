@@ -5,7 +5,7 @@ import {APICommand} from '../index.js'
 import {initPrefab} from '../prefab.js'
 
 export default class List extends APICommand {
-  static description = `show keys for your config/feature flags/etc.
+  static description = `Show keys for your config/feature flags/etc.
 
   All types are returned by default. If you pass one or more type flags (e.g. --configs), only those types will be returned`
 

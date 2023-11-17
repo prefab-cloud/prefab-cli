@@ -1,13 +1,10 @@
 import {Flags} from '@oclif/core'
-import {Prefab} from '@prefab-cloud/prefab-cloud-node'
 
 import {APICommand} from '../index.js'
 import getKey from '../pickers/get-key.js'
+import getValue from '../pickers/get-value.js'
 import {configValueType, overrideFor} from '../prefab.js'
-import {valueOfToString} from '../prefab-common/src/valueOf.js'
-import autocomplete from '../util/autocomplete.js'
 import nameArg from '../util/name-arg.js'
-import doValidateVariant from '../validations/variant.js'
 
 export default class Override extends APICommand {
   static args = {...nameArg}
@@ -15,22 +12,22 @@ export default class Override extends APICommand {
   static description = 'Override the value of an item for your user/API key combo'
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> my.flag.name # will prompt for variant',
-    '<%= config.bin %> <%= command.id %> my.flag.name --variant=true',
+    '<%= config.bin %> <%= command.id %> # will prompt for name and value',
+    '<%= config.bin %> <%= command.id %> my.flag.name --value=true',
     '<%= config.bin %> <%= command.id %> my.flag.name --remove',
-    '<%= config.bin %> <%= command.id %> my.double.config --variant=3.14159',
+    '<%= config.bin %> <%= command.id %> my.double.config --value=3.14159',
   ]
 
   static flags = {
     remove: Flags.boolean({default: false, description: 'remove your override (if present)'}),
-    variant: Flags.string({description: 'variant to use for your override'}),
+    value: Flags.string({description: 'value to use for your override'}),
   }
 
   public async run(): Promise<Record<string, unknown> | void> {
     const {args, flags} = await this.parse(Override)
 
-    if (flags.remove && flags.variant) {
-      this.errorForCurrentFormat('remove and variant flags are mutually exclusive')
+    if (flags.remove && flags.value) {
+      this.errorForCurrentFormat('remove and value flags are mutually exclusive')
     }
 
     const {key, prefab} = await getKey({
@@ -48,34 +45,13 @@ export default class Override extends APICommand {
       return this.removeOverride(key)
     }
 
-    const variant = flags.variant || (await this.promptForVariant(prefab, key))
+    const value = await getValue({desiredValue: flags.value, flags, key, prefab, message: 'Override value'})
 
-    if (!variant) {
-      return
+    if (value.ok) {
+      return this.setOverride(key, value.value)
     }
 
-    this.validateVariant(prefab, key, variant)
-
-    return this.setOverride(key, variant)
-  }
-
-  private async promptForVariant(prefab: Prefab, key: string): Promise<string | undefined> {
-    const config = prefab.raw(key)
-
-    if (!config) {
-      return this.errorForCurrentFormat(`No config found for ${key}`)
-    }
-
-    const variants = config.allowableValues.map((v) => valueOfToString(v))
-
-    if (variants.length > 0) {
-      return autocomplete({
-        message: 'Which variant would you like for your override?',
-        source: variants,
-      })
-    }
-
-    this.error('variant is required for non-flag items')
+    this.resultMessage(value)
   }
 
   private async removeOverride(key: string): Promise<void> {
@@ -105,7 +81,7 @@ export default class Override extends APICommand {
     this.error(`Failed to remove override: ${request.status}`)
   }
 
-  private async setOverride(key: string, variant: string): Promise<Record<string, unknown> | void> {
+  private async setOverride(key: string, value: string): Promise<Record<string, unknown> | void> {
     const type = configValueType(key)
 
     if (!type) {
@@ -114,7 +90,7 @@ export default class Override extends APICommand {
 
     const request = await this.apiClient.post('/api/v1/config/assign-variant', {
       configKey: key,
-      variant: {[type]: type === 'stringList' ? variant.split(',') : variant},
+      variant: {[type]: type === 'stringList' ? value.split(',') : value},
     })
 
     if (request.success) {
@@ -130,13 +106,9 @@ export default class Override extends APICommand {
     this.verboseLog(request.error)
 
     if (request.status === 400) {
-      this.error(`Failed to override variant: ${request.status} -- is ${variant} a valid ${type}?`)
+      this.error(`Failed to override value: ${request.status} -- is ${value} a valid ${type}?`)
     }
 
-    this.error(`Failed to override variant: ${request.status}`)
-  }
-
-  private validateVariant(prefab: Prefab, key: string, variant: string) {
-    return doValidateVariant(this, prefab, key, variant)
+    this.error(`Failed to override value: ${request.status}`)
   }
 }

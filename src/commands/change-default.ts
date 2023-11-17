@@ -2,30 +2,27 @@ import {Flags} from '@oclif/core'
 import {Prefab} from '@prefab-cloud/prefab-cloud-node'
 
 import type {Environment} from '../prefab-common/src/api/getEnvironmentsFromApi.js'
-import type {GetValue} from '../prefab-common/src/types.js'
 
 import {APICommand} from '../index.js'
 import getEnvironment from '../pickers/get-environment.js'
 import getKey from '../pickers/get-key.js'
-import {configValueType, defaultValueFor} from '../prefab.js'
-import {valueOfToString} from '../prefab-common/src/valueOf.js'
-import autocomplete from '../util/autocomplete.js'
+import getValue from '../pickers/get-value.js'
+import {configValueType} from '../prefab.js'
 import nameArg from '../util/name-arg.js'
-import doValidateVariant from '../validations/variant.js'
 
 export default class ChangeDefault extends APICommand {
   static args = {...nameArg}
 
-  static description = 'change the default value for an environment (other rules still apply)'
+  static description = 'Change the default value for an environment (other rules still apply)'
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> my.flag.name # will prompt for variant and env',
-    '<%= config.bin %> <%= command.id %> my.flag.name --variant=true --environment=staging',
+    '<%= config.bin %> <%= command.id %> my.flag.name # will prompt for value and env',
+    '<%= config.bin %> <%= command.id %> my.flag.name --value=true --environment=staging',
   ]
 
   static flags = {
     environment: Flags.string({description: 'environment to change'}),
-    variant: Flags.string({description: 'new default variant'}),
+    value: Flags.string({description: 'new default value'}),
   }
 
   public async run(): Promise<Record<string, unknown> | void> {
@@ -56,55 +53,16 @@ export default class ChangeDefault extends APICommand {
       return
     }
 
-    const currentDefault = defaultValueFor(key, environment.id)
+    const value = await getValue({desiredValue: flags.value, environment, flags, key, prefab, message: 'Default value'})
 
-    const variant = flags.variant || (await this.promptForVariant(prefab, key, currentDefault))
-
-    if (!variant) {
-      return
+    if (value.ok) {
+      return this.submitChange(prefab, key, value.value, environment)
     }
 
-    if (variant.toString() === currentDefault?.toString()) {
-      this.log(`The default is already \`${variant}\``)
-      return
-    }
-
-    this.validateVariant(prefab, key, variant)
-
-    this.log(this.toSuccessJson({environment, key, variant}))
-
-    return this.submitChange(prefab, key, variant, environment)
+    this.resultMessage(value)
   }
 
-  private async promptForVariant(
-    prefab: Prefab,
-    key: string,
-    currentDefault?: GetValue | undefined,
-  ): Promise<string | undefined> {
-    const config = prefab.raw(key)
-
-    if (!config) {
-      return this.errorForCurrentFormat(`no config found for ${key}`)
-    }
-
-    const variants = config.allowableValues.map((v) => valueOfToString(v))
-
-    if (variants.length > 0) {
-      const message =
-        currentDefault === undefined
-          ? `Choose your new default.`
-          : `The current default is \`${currentDefault}\`. Choose your new default.`
-
-      return autocomplete({
-        message,
-        source: variants.filter((v) => v.toString() !== currentDefault?.toString()),
-      })
-    }
-
-    this.error('variant is required for non-flag items')
-  }
-
-  private async submitChange(prefab: Prefab, key: string, variant: string, environment: Environment) {
+  private async submitChange(prefab: Prefab, key: string, value: string, environment: Environment) {
     const type = configValueType(key)
 
     if (!type) {
@@ -121,15 +79,15 @@ export default class ChangeDefault extends APICommand {
       configKey: key,
       currentVersionId: config.id.toString(),
       environmentId: environment.id,
-      value: {[type]: variant},
+      value: {[type]: value},
     }
 
     const request = await this.apiClient.post('/api/v1/config/set-default/', payload)
 
     if (request.success) {
-      this.log(`Successfully changed default to \`${variant}\`.`)
+      this.log(`Successfully changed default to \`${value}\`.`)
 
-      return {environment, key, success: true, variant}
+      return {environment, key, success: true, value}
     }
 
     if (this.jsonEnabled()) {
@@ -139,9 +97,5 @@ export default class ChangeDefault extends APICommand {
     this.verboseLog(request.error)
 
     this.error(`Failed to change default: ${request.status}`)
-  }
-
-  private validateVariant(prefab: Prefab, key: string, variant: string) {
-    return doValidateVariant(this, prefab, key, variant)
   }
 }

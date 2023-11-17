@@ -33,11 +33,11 @@ export default class Create extends APICommand {
     if (recipeRequest.status !== 200) {
       const error = jsonMaybe(await recipeRequest.text())
 
-      if (this.jsonEnabled()) {
-        throw {key, phase: 'recipe', serverError: error}
-      }
-
-      this.error(`Failed to create boolean flag recipe: ${recipeRequest.status} | ${error}`)
+      this.err(`Failed to create boolean flag recipe: ${recipeRequest.status} | ${error}`, {
+        key,
+        phase: 'recipe',
+        serverError: error,
+      })
     }
 
     const payload = (await recipeRequest.json()) as Record<string, unknown>
@@ -47,23 +47,18 @@ export default class Create extends APICommand {
     if (request.status !== 200) {
       const error = jsonMaybe(await request.text())
 
-      if (this.jsonEnabled()) {
-        throw {key, phase: 'creation', serverError: error}
-      }
+      const errMsg =
+        request.status === 409
+          ? `Failed to create boolean flag: ${key} already exists`
+          : `Failed to create boolean flag: ${request.status} | ${JSON.stringify(error)}`
 
-      if (request.status === 409) {
-        this.error(`Failed to create boolean flag: ${key} already exists`)
-      } else {
-        this.error(`Failed to create boolean flag: ${request.status} | ${JSON.stringify(error)}`)
-      }
+      this.err(errMsg, {key, phase: 'creation', serverError: error})
     }
 
     const response = await request.json()
 
-    if (this.jsonEnabled()) {
-      return {key, ...response}
-    }
-
     this.log(`Created boolean flag: ${key}`)
+
+    return {key, ...response}
   }
 }

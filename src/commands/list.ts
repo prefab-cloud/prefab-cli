@@ -47,9 +47,7 @@ export default class List extends APICommand {
       keys = keys.filter((key) => types.includes(prefab.raw(key)!.configType))
     }
 
-    if (!this.jsonEnabled()) {
-      this.log(keys.join('\n'))
-    }
+    this.log(keys.join('\n'))
 
     return {keys}
   }

@@ -31,7 +31,7 @@ export default class Info extends APICommand {
       })
 
       if (!evaluations) {
-        return this.errorForCurrentFormat(`No evaluations found for ${key} in the past 24 hours`)
+        return this.err(`No evaluations found for ${key} in the past 24 hours`)
       }
 
       this.log('Evaluations over the last 24 hours:\n')

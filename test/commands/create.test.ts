@@ -53,11 +53,11 @@ const cannedResponses: CannedResponses = {
 
 const server = setupServer(
   http.post('https://api.staging-prefab.cloud/api/v1/config-recipes/feature-flag/boolean', async ({request}) =>
-    getCannedResponse(request, cannedResponses),
+    getCannedResponse(request, cannedResponses).catch(console.error),
   ),
 
   http.post('https://api.staging-prefab.cloud/api/v1/config/', async ({request}) =>
-    getCannedResponse(request, cannedResponses),
+    getCannedResponse(request, cannedResponses).catch(console.error),
   ),
 )
 

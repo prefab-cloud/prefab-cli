@@ -34,7 +34,7 @@ USAGE
 
 ## `prefab change-default [NAME]`
 
-change the default value for an environment
+change the default value for an environment (other rules still apply)
 
 ```
 USAGE
@@ -55,7 +55,7 @@ GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  change the default value for an environment
+  change the default value for an environment (other rules still apply)
 
 EXAMPLES
   $ prefab change-default my.flag.name # will prompt for variant and env

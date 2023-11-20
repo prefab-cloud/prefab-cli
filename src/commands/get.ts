@@ -27,9 +27,7 @@ export default class Get extends APICommand {
 
       const value = prefab.get(key)
 
-      this.log(this.toSuccessJson(value))
-
-      return {[key]: value}
+      return this.ok(this.toSuccessJson(value), {[key]: value})
     }
   }
 }

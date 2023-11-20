@@ -18,7 +18,7 @@ export default class List extends APICommand {
     segments: Flags.boolean({default: false, description: 'include segments'}),
   }
 
-  public async run(): Promise<{keys: string[]}> {
+  public async run() {
     const {flags} = await this.parse(List)
 
     const prefab = await initPrefab(this, flags)
@@ -47,8 +47,6 @@ export default class List extends APICommand {
       keys = keys.filter((key) => types.includes(prefab.raw(key)!.configType))
     }
 
-    this.log(keys.join('\n'))
-
-    return {keys}
+    return this.ok(keys.join('\n'), {keys})
   }
 }

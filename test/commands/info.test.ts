@@ -51,6 +51,9 @@ describe('info', () => {
           `
 https://app.staging-prefab.cloud/account/projects/124/configs/my-string-list-key
 
+- Default: a,b,c
+- Production: [inherit]
+
 Evaluations over the last 24 hours:
 
 Production: 34,789
@@ -72,23 +75,28 @@ Development: 7
       .it('returns JSON for a name', (ctx) => {
         expect(JSON.parse(ctx.stdout)).to.deep.equal({
           'my-string-list-key': {
-            end: 1_700_061_992_151,
-            environments: [
-              {
-                counts: [
-                  {configValue: {bool: false}, count: 11_473},
-                  {configValue: {bool: true}, count: 23_316},
-                ],
-                envId: '4',
-                name: 'Production',
-                total: 34_789,
-              },
-              {counts: [{configValue: {bool: true}, count: 17_138}], envId: '3', name: 'Staging', total: 17_138},
-              {counts: [{configValue: {bool: false}, count: 7}], envId: '2', name: 'Development', total: 7},
-            ],
-            start: 1_699_975_592_151,
-            total: 51_934,
+            evaluations: {
+              end: 1_700_061_992_151,
+              environments: [
+                {
+                  counts: [
+                    {configValue: {bool: false}, count: 11_473},
+                    {configValue: {bool: true}, count: 23_316},
+                  ],
+                  envId: '4',
+                  name: 'Production',
+                  total: 34_789,
+                },
+                {counts: [{configValue: {bool: true}, count: 17_138}], envId: '3', name: 'Staging', total: 17_138},
+                {counts: [{configValue: {bool: false}, count: 7}], envId: '2', name: 'Development', total: 7},
+              ],
+              start: 1_699_975_592_151,
+              total: 51_934,
+            },
             url: 'https://app.staging-prefab.cloud/account/projects/124/configs/my-string-list-key',
+            values: {
+              Default: ['a', 'b', 'c'],
+            },
           },
         })
       })
@@ -103,6 +111,8 @@ Development: 7
           `
 https://app.staging-prefab.cloud/account/projects/124/configs/my-test-key
 
+- Production: [see rules](https://app.staging-prefab.cloud/account/projects/124/configs/my-test-key?environment=143)
+
 No evaluations found for my-test-key in the past 24 hours
 `.trim(),
         )
@@ -113,7 +123,15 @@ No evaluations found for my-test-key in the past 24 hours
       .command(['info', keyWithNoEvaluations, '--json'])
       .it('returns JSON', (ctx) => {
         expect(JSON.parse(ctx.stdout)).to.eql({
-          message: `No evaluations found for ${keyWithNoEvaluations} in the past 24 hours`,
+          [keyWithNoEvaluations]: {
+            evaluations: {
+              error: `No evaluations found for ${keyWithNoEvaluations} in the past 24 hours`,
+            },
+
+            url: 'https://app.staging-prefab.cloud/account/projects/124/configs/my-test-key',
+
+            values: {Production: '[see rules]'},
+          },
         })
       })
   })

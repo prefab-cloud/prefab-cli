@@ -17,6 +17,11 @@ const cannedResponses: CannedResponses = {
       200,
     ],
     [
+      {configKey: 'my-string-list-key', variant: {stringList: {values: ['a', 'b', 'c', 'd']}}},
+      {response: {message: '', newId: '17002327855857830'}},
+      200,
+    ],
+    [
       {configKey: 'my-double-key', variant: {double: 'pumpkin'}},
       {
         _embedded: {
@@ -69,7 +74,6 @@ describe('override', () => {
 
   test
     .stdout()
-    .skip()
     .command(['override', 'my-string-list-key', '--value=a,b,c,d'])
     .it('overrides a string list config when given a valid key and value', (ctx) => {
       expect(ctx.stdout).to.contain(`Override set`)

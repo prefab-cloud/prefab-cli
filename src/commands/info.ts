@@ -5,6 +5,7 @@ import type {PrefabConfig} from '../prefab-common/src/types.js'
 import {DEFAULT_ENVIRONMENT_NAME, INHERIT} from '../constants.js'
 import {APICommand} from '../index.js'
 import getKey from '../pickers/get-key.js'
+import {overrideFor, unwrap} from '../prefab.js'
 import {getConfigFromApi} from '../prefab-common/src/api/getConfigFromApi.js'
 import {Environment, getEnvironmentsFromApi} from '../prefab-common/src/api/getEnvironmentsFromApi.js'
 import {configValuesInEnvironments} from '../prefab-common/src/configValuesInEnvironments.js'
@@ -43,7 +44,7 @@ export default class Info extends APICommand {
 
       const json: Record<string, unknown> = {url}
 
-      const client = await this.getApiClient()
+      const client = this.rawApiClient
 
       const [fullConfig, environments, evaluations] = await Promise.all([
         getConfigFromApi({
@@ -82,18 +83,31 @@ export default class Info extends APICommand {
 
   private parseConfig(config: PrefabConfig, environments: Environment[], url: string) {
     const values = configValuesInEnvironments(config, environments, log)
+    const override = overrideFor({currentEnvironmentId: this.currentEnvironment.id, key: config.key})
 
     const contents: string[] = []
     const json: Record<string, unknown> = {}
 
-    for (const value of values) {
+    const sortedValues = values.sort((a, b) =>
+      (a.environment?.name ?? DEFAULT_ENVIRONMENT_NAME).localeCompare(b.environment?.name ?? DEFAULT_ENVIRONMENT_NAME),
+    )
+
+    for (const value of sortedValues) {
+      const isCurrentEnv = value.environment?.id === this.currentEnvironment.id
+
+      const overrideStr = isCurrentEnv && override ? ` [override] ${unwrap(override)}` : ''
+
       if (value.hasRules) {
-        json[value.environment?.name ?? DEFAULT_ENVIRONMENT_NAME] = '[see rules]'
+        json[value.environment?.name ?? DEFAULT_ENVIRONMENT_NAME] = {
+          override: isCurrentEnv && override ? unwrap(override) : undefined,
+          url: url + `?environment=${value.environment?.id}`,
+          value: '[see rules]',
+        }
 
         contents.push(
-          `- ${value.environment?.name ?? DEFAULT_ENVIRONMENT_NAME}: [see rules](${
+          `- ${value.environment?.name ?? DEFAULT_ENVIRONMENT_NAME}:${overrideStr || ' [see rules]'} ${
             url + `?environment=${value.environment?.id}`
-          })`,
+          }`,
         )
       } else {
         let valueStr = `${value.value ?? INHERIT}`
@@ -114,9 +128,13 @@ export default class Info extends APICommand {
           valueStr = `\`${(value.rawValue as Provided).provided.lookup}\` via ENV`
         }
 
-        json[value.environment?.name ?? DEFAULT_ENVIRONMENT_NAME] = value.value
+        json[value.environment?.name ?? DEFAULT_ENVIRONMENT_NAME] = {
+          override: isCurrentEnv && override ? unwrap(override) : undefined,
+          url: url + `?environment=${value.environment?.id}`,
+          value: value.value,
+        }
 
-        contents.push(`- ${value.environment?.name ?? DEFAULT_ENVIRONMENT_NAME}: ${valueStr}`)
+        contents.push(`- ${value.environment?.name ?? DEFAULT_ENVIRONMENT_NAME}: ${valueStr}${overrideStr}`)
       }
     }
 

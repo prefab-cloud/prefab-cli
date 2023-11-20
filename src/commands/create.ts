@@ -1,7 +1,6 @@
 import {Args, Flags} from '@oclif/core'
 
 import {APICommand} from '../index.js'
-import jsonMaybe from '../util/json-maybe.js'
 
 export default class Create extends APICommand {
   static args = {
@@ -26,36 +25,30 @@ export default class Create extends APICommand {
       key,
     }
 
-    const client = await this.getApiClient()
+    const recipeRequest = await this.apiClient.post('/api/v1/config-recipes/feature-flag/boolean', recipePaylod)
 
-    const recipeRequest = await client.post('/api/v1/config-recipes/feature-flag/boolean', recipePaylod)
-
-    if (recipeRequest.status !== 200) {
-      const error = jsonMaybe(await recipeRequest.text())
-
-      this.err(`Failed to create boolean flag recipe: ${recipeRequest.status} | ${error}`, {
+    if (!recipeRequest.ok) {
+      return this.err(`Failed to create boolean flag recipe: ${recipeRequest.status}`, {
         key,
         phase: 'recipe',
-        serverError: error,
+        serverError: recipeRequest.error,
       })
     }
 
-    const payload = (await recipeRequest.json()) as Record<string, unknown>
+    const payload = recipeRequest.json
 
-    const request = await client.post('/api/v1/config/', payload)
+    const request = await this.apiClient.post('/api/v1/config/', payload)
 
-    if (request.status !== 200) {
-      const error = jsonMaybe(await request.text())
-
+    if (!request.ok) {
       const errMsg =
         request.status === 409
           ? `Failed to create boolean flag: ${key} already exists`
-          : `Failed to create boolean flag: ${request.status} | ${JSON.stringify(error)}`
+          : `Failed to create boolean flag: ${request.status} | ${JSON.stringify(request.error)}`
 
-      this.err(errMsg, {key, phase: 'creation', serverError: error})
+      return this.err(errMsg, {key, phase: 'creation', serverError: request.error})
     }
 
-    const response = await request.json()
+    const response = request.json
 
     return this.ok(`Created boolean flag: ${key}`, {key, ...response})
   }

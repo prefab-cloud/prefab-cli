@@ -1,4 +1,4 @@
-import type {RequestResult} from '../result.js'
+import type {JsonObj,RequestResult} from '../result.js'
 
 import {Client} from '../prefab-common/src/api/client.js'
 import jsonMaybe from '../util/json-maybe.js'
@@ -24,13 +24,17 @@ export const unwrapRequest = async (promise: Promise<Response>): Promise<Request
   const request = await promise
 
   if (request.status.toString().startsWith('2')) {
-    const json = await request.json()
+    const json = (await request.json()) as JsonObj
     log('ApiClient', {response: json})
 
     return {json, ok: true, status: request.status}
   }
 
   const error = jsonMaybe(await request.text())
+
+  if (typeof error === 'string') {
+    return {error: {error}, ok: false, status: request.status}
+  }
 
   return {error, ok: false, status: request.status}
 }

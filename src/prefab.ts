@@ -3,13 +3,10 @@ import {Prefab} from '@prefab-cloud/prefab-cloud-node'
 
 import type {ConfigValue, GetValue} from './prefab-common/src/types.js'
 
-import {getProjectEnvFromApiKey} from './prefab-common/src/getProjectEnvFromApiKey.js'
-
 type Flags = {
   ['api-key']?: string
 }
 
-let apiKey: string
 let prefab: Prefab
 
 const DEFAULT_CONTEXT_USER_ID_NAMESPACE = 'prefab-api-key'
@@ -19,8 +16,6 @@ export const initPrefab = async (ctx: Command, flags: Flags) => {
   if (!flags['api-key']) {
     return ctx.error('API key is required', {exit: 401})
   }
-
-  apiKey = flags['api-key']
 
   prefab = new Prefab({
     apiKey: flags['api-key'],
@@ -49,8 +44,8 @@ export const configValueType = (key: string): string | undefined => {
 const getUserId = (): string =>
   prefab.defaultContext()?.get(DEFAULT_CONTEXT_USER_ID_NAMESPACE)?.get(DEFAULT_CONTEXT_USER_ID) as string
 
-const getRowInEnvironment = (key: string, desiredEnvId?: string) => {
-  const envId = desiredEnvId ?? getProjectEnvFromApiKey(apiKey).id
+const getRowInEnvironment = ({desiredEnvId, key}: {desiredEnvId: string; key: string}) => {
+  const envId = desiredEnvId
 
   const config = prefab.raw(key)
 
@@ -61,10 +56,16 @@ const getRowInEnvironment = (key: string, desiredEnvId?: string) => {
   return config.rows.find((row) => row.projectEnvId?.toString() === envId)
 }
 
-export const overrideFor = (key: string): ConfigValue | undefined => {
+export const overrideFor = ({
+  currentEnvironmentId,
+  key,
+}: {
+  currentEnvironmentId: string
+  key: string
+}): ConfigValue | undefined => {
   const userId = getUserId()
 
-  const row = getRowInEnvironment(key)
+  const row = getRowInEnvironment({desiredEnvId: currentEnvironmentId, key})
 
   if (row) {
     for (const value of row.values) {
@@ -80,12 +81,22 @@ export const overrideFor = (key: string): ConfigValue | undefined => {
   }
 }
 
-export const defaultValueFor = (key: string, envId: string): GetValue | undefined => {
-  const row = getRowInEnvironment(key, envId)
+export const defaultValueFor = (envId: string, key: string): GetValue | undefined => {
+  const row = getRowInEnvironment({desiredEnvId: envId, key})
 
   const value = row?.values.at(-1)?.value
 
   if (value) {
-    return Object.values(value)[0]
+    return unwrap(value)
   }
+}
+
+export const unwrap = (value: ConfigValue): GetValue => {
+  const valueToReturn = Object.values(value)[0]
+
+  if (typeof valueToReturn === 'object' && !Array.isArray(valueToReturn)) {
+    return unwrap(valueToReturn)
+  }
+
+  return valueToReturn
 }

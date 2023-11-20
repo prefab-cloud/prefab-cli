@@ -3,7 +3,7 @@ import {HttpResponse, http, passthrough} from 'msw'
 import {setupServer} from 'msw/node'
 
 const keyWithEvaluations = 'my-string-list-key'
-const keyWithNoEvaluations = 'my-test-key'
+const keyWithNoEvaluations = 'jeffreys.test.key'
 const keyDoesNotExist = 'this.does.not.exist'
 
 const rawEvaluationResponse = {
@@ -25,11 +25,67 @@ const rawEvaluationResponse = {
   total: 51_934,
 }
 
+const rawConfigResponse = {
+  changedBy: {apiKeyId: '', email: 'jeffrey.chupp@prefab.cloud', userId: '0'},
+  configType: 'CONFIG',
+  draftid: '508',
+  id: '17005097553891585',
+  key: 'jeffreys.test.key',
+  projectId: '124',
+  rows: [
+    {
+      projectEnvId: '143',
+      values: [
+        {
+          criteria: [
+            {
+              operator: 'PROP_IS_ONE_OF',
+              propertyName: 'prefab-api-key.user-id',
+              valueToMatch: {stringList: {values: ['4']}},
+            },
+          ],
+          value: {string: 'my.override'},
+        },
+      ],
+    },
+    {values: [{value: {string: 'abc'}}]},
+    {
+      projectEnvId: '588',
+      values: [
+        {
+          criteria: [
+            {operator: 'PROP_IS_ONE_OF', propertyName: 'user.key', valueToMatch: {stringList: {values: ['abc']}}},
+          ],
+          value: {string: 'test'},
+        },
+        {value: {string: 'default'}},
+      ],
+    },
+  ],
+  valueType: 'STRING',
+}
+
+const environmentResponse = {
+  envs: [
+    {id: 588, name: 'jeffrey'},
+    {id: 143, name: 'Production'},
+  ],
+  projectId: 124,
+}
+
 const server = setupServer(
   http.get('https://api-staging-prefab-cloud.global.ssl.fastly.net/api/v1/configs/0', () => passthrough()),
 
   http.get(`https://api.staging-prefab.cloud/api/v1/evaluation-stats/${keyWithEvaluations}`, () =>
     HttpResponse.json(rawEvaluationResponse),
+  ),
+
+  http.get('https://api.staging-prefab.cloud/api/v1/project-environments', () =>
+    HttpResponse.json(environmentResponse),
+  ),
+
+  http.get('https://api.staging-prefab.cloud/api/v1/config/key/jeffreys.test.key', () =>
+    HttpResponse.json(rawConfigResponse),
   ),
 
   http.get(`https://api.staging-prefab.cloud/api/v1/evaluation-stats/${keyWithNoEvaluations}`, () =>
@@ -49,9 +105,10 @@ describe('info', () => {
       .it('returns info for a name', (ctx) => {
         expect(ctx.stdout.trim()).to.eql(
           `
-https://app.staging-prefab.cloud/account/projects/124/configs/my-string-list-key
+https://app.staging-prefab.cloud/account/projects/124/configs/${keyWithEvaluations}
 
 - Default: a,b,c
+- jeffrey: [inherit]
 - Production: [inherit]
 
 Evaluations over the last 24 hours:
@@ -74,7 +131,7 @@ Development: 7
       .command(['info', keyWithEvaluations, '--json'])
       .it('returns JSON for a name', (ctx) => {
         expect(JSON.parse(ctx.stdout)).to.deep.equal({
-          'my-string-list-key': {
+          [keyWithEvaluations]: {
             evaluations: {
               end: 1_700_061_992_151,
               environments: [
@@ -93,9 +150,18 @@ Development: 7
               start: 1_699_975_592_151,
               total: 51_934,
             },
-            url: 'https://app.staging-prefab.cloud/account/projects/124/configs/my-string-list-key',
+            url: `https://app.staging-prefab.cloud/account/projects/124/configs/${keyWithEvaluations}`,
             values: {
-              Default: ['a', 'b', 'c'],
+              Default: {
+                url: 'https://app.staging-prefab.cloud/account/projects/124/configs/my-string-list-key?environment=undefined',
+                value: ['a', 'b', 'c'],
+              },
+              Production: {
+                url: 'https://app.staging-prefab.cloud/account/projects/124/configs/my-string-list-key?environment=143',
+              },
+              jeffrey: {
+                url: 'https://app.staging-prefab.cloud/account/projects/124/configs/my-string-list-key?environment=588',
+              },
             },
           },
         })
@@ -105,15 +171,17 @@ Development: 7
   describe('when there are no evaluations in the last 24 hours', () => {
     test
       .stdout()
-      .command(['info', keyWithNoEvaluations])
+      .command(['info', keyWithNoEvaluations, '--verbose'])
       .it('returns a message', (ctx) => {
         expect(ctx.stdout.trim()).to.eql(
           `
-https://app.staging-prefab.cloud/account/projects/124/configs/my-test-key
+https://app.staging-prefab.cloud/account/projects/124/configs/${keyWithNoEvaluations}
 
-- Production: [see rules](https://app.staging-prefab.cloud/account/projects/124/configs/my-test-key?environment=143)
+- Default: abc
+- jeffrey: [see rules] https://app.staging-prefab.cloud/account/projects/124/configs/jeffreys.test.key?environment=588
+- Production: [override] my.override https://app.staging-prefab.cloud/account/projects/124/configs/jeffreys.test.key?environment=143
 
-No evaluations found for my-test-key in the past 24 hours
+No evaluations found for ${keyWithNoEvaluations} in the past 24 hours
 `.trim(),
         )
       })
@@ -128,9 +196,24 @@ No evaluations found for my-test-key in the past 24 hours
               error: `No evaluations found for ${keyWithNoEvaluations} in the past 24 hours`,
             },
 
-            url: 'https://app.staging-prefab.cloud/account/projects/124/configs/my-test-key',
+            url: `https://app.staging-prefab.cloud/account/projects/124/configs/${keyWithNoEvaluations}`,
 
-            values: {Production: '[see rules]'},
+            values: {
+              Default: {
+                url: 'https://app.staging-prefab.cloud/account/projects/124/configs/jeffreys.test.key?environment=undefined',
+                value: 'abc',
+              },
+              Production: {
+                override: 'my.override',
+                url: 'https://app.staging-prefab.cloud/account/projects/124/configs/jeffreys.test.key?environment=143',
+                value: '[see rules]',
+              },
+
+              jeffrey: {
+                url: 'https://app.staging-prefab.cloud/account/projects/124/configs/jeffreys.test.key?environment=588',
+                value: '[see rules]',
+              },
+            },
           },
         })
       })

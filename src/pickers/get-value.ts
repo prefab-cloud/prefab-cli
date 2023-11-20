@@ -29,7 +29,7 @@ const getValue = async ({
     return failure(`No value provided for ${key}`)
   }
 
-  const currentDefault = environment ? defaultValueFor(key, environment.id) : undefined
+  const currentDefault = environment ? defaultValueFor(environment.id, key) : undefined
 
   const config = prefab.raw(key)
 

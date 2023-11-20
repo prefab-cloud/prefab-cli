@@ -40,7 +40,7 @@ export default class ChangeDefault extends APICommand {
     }
 
     const environment = await getEnvironment({
-      client: await this.getApiClient(),
+      client: this.rawApiClient,
       command: this,
       flags,
       message: 'Which environment would you like to change the default for?',

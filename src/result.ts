@@ -52,13 +52,13 @@ export const success = <T>(value: T, message?: string, json?: JsonObj): Success<
 })
 
 export type RequestSuccess = {
-  json: JsonObj | string
+  json: JsonObj
   ok: true
   status: number
 }
 
 export type RequestFailure = {
-  error: JsonObj | string
+  error: JsonObj
   ok: false
   status: number
 }

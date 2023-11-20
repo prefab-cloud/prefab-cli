@@ -55,7 +55,7 @@ export default class Override extends APICommand {
   }
 
   private async removeOverride(key: string): Promise<void> {
-    const override = overrideFor(key)
+    const override = overrideFor({currentEnvironmentId: this.currentEnvironment.id, key})
 
     if (!override) {
       this.log(`No override found for ${key}`)

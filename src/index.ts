@@ -1,6 +1,8 @@
 export {run} from '@oclif/core'
 import {Command, Flags} from '@oclif/core'
 
+import {Client} from './prefab-common/src/api/client.js'
+import {ProjectEnvId, getProjectEnvFromApiKey} from './prefab-common/src/getProjectEnvFromApiKey.js'
 import {Result} from './result.js'
 import rawGetClient, {unwrapRequest} from './util/get-client.js'
 import {log} from './util/log.js'
@@ -70,23 +72,14 @@ export abstract class APICommand extends BaseCommand {
     }),
   }
 
-  getApiClient = async () => {
-    const {flags} = await this.parse()
-
-    return rawGetClient(flags['api-key'])
-  }
+  public currentEnvironment!: ProjectEnvId
+  public rawApiClient!: Client
 
   get apiClient() {
     return {
-      get: async (path: string) => {
-        const client = await this.getApiClient()
-        return unwrapRequest(client.get(path))
-      },
+      get: async (path: string) => unwrapRequest(this.rawApiClient.get(path)),
 
-      post: async (path: string, payload: unknown) => {
-        const client = await this.getApiClient()
-        return unwrapRequest(client.post(path, payload))
-      },
+      post: async (path: string, payload: unknown) => unwrapRequest(this.rawApiClient.post(path, payload)),
     }
   }
 
@@ -100,5 +93,8 @@ export abstract class APICommand extends BaseCommand {
     if (!flags['api-key']) {
       this.error('API key is required', {exit: 401})
     }
+
+    this.rawApiClient = rawGetClient(flags['api-key'])
+    this.currentEnvironment = getProjectEnvFromApiKey(flags['api-key'])
   }
 }

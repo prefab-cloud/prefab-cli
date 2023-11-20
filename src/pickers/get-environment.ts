@@ -1,7 +1,7 @@
 import type {Client} from '../prefab-common/src/api/client.js'
 import type {Environment} from '../prefab-common/src/api/getEnvironmentsFromApi.js'
 
-import {BaseCommand} from '../index.js'
+import {APICommand} from '../index.js'
 import {getEnvironmentsFromApi} from '../prefab-common/src/api/getEnvironmentsFromApi.js'
 import autocomplete from '../util/autocomplete.js'
 import isInteractive from '../util/is-interactive.js'
@@ -15,7 +15,7 @@ const getEnvironment = async ({
   providedEnvironment,
 }: {
   client: Client
-  command: BaseCommand
+  command: APICommand
   flags: Record<string, unknown>
   message: string
   providedEnvironment: string | undefined

@@ -30,7 +30,7 @@ export abstract class BaseCommand extends Command {
     }
 
     if (typeof error === 'string') {
-      this.error(error)
+      return this.error(error)
     }
 
     this.error(this.toErrorJson(error))
@@ -87,6 +87,18 @@ export abstract class APICommand extends BaseCommand {
         const client = await this.getApiClient()
         return unwrapRequest(client.post(path, payload))
       },
+    }
+  }
+
+  public async init(): Promise<void> {
+    await super.init()
+
+    const {flags} = await this.parse()
+
+    // We want to handle the api-key being explicitly blank.
+    // If it is truly absent then the `required: true` will catch it.
+    if (!flags['api-key']) {
+      this.error('API key is required', {exit: 401})
     }
   }
 }

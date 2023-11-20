@@ -17,7 +17,7 @@ const DEFAULT_CONTEXT_USER_ID = 'user-id'
 
 export const initPrefab = async (ctx: Command, flags: Flags) => {
   if (!flags['api-key']) {
-    ctx.error('API key is required', {exit: 401})
+    return ctx.error('API key is required', {exit: 401})
   }
 
   apiKey = flags['api-key']

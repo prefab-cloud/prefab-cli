@@ -25,6 +25,10 @@ export default class Info extends APICommand {
     const {key, prefab} = await getKey({args, command: this, flags, message: 'Which item would you like to see?'})
 
     if (key && prefab) {
+      if (!prefab.keys().includes(key)) {
+        return this.err(`Key ${key} not found`)
+      }
+
       const url = urlFor(prefab, process.env.PREFAB_API_URL, key)
 
       if (url) {

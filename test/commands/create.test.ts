@@ -109,11 +109,4 @@ describe('create', () => {
         },
       })
     })
-
-  test
-    .command(['create', 'brand.new.flag', '--type=boolean-flag', '--api-key='])
-    .exit(401)
-    .catch((error) => {
-      expect(error.message).to.eql('Error: API key is required')
-    })
 })

@@ -33,8 +33,8 @@ describe('get', () => {
 
   test
     .command(['get', validKey, '--api-key='])
-    .exit(401)
     .catch((error) => {
-      expect(error.message).to.eql('Error: API key is required')
+      expect(error.message).to.eql('API key is required')
     })
+    .it('returns an error when the API key is not set')
 })

@@ -46,6 +46,8 @@ describe('info', () => {
     .it('returns info for a name with evaluations', (ctx) => {
       expect(ctx.stdout.trim()).to.eql(
         `
+https://app.staging-prefab.cloud/account/projects/124/configs/my-string-list-key
+
 Evaluations over the last 24 hours:
 
 Production: 34,789
@@ -83,23 +85,24 @@ Development: 7
           ],
           start: 1_699_975_592_151,
           total: 51_934,
+          url: 'https://app.staging-prefab.cloud/account/projects/124/configs/my-string-list-key',
         },
       })
     })
 
   test
+    .stdout()
     .command(['info', 'hatcat'])
-    .catch((error) => {
-      expect(error.message).to.eql('No evaluations found for hatcat in the past 24 hours')
+    .it('returns a message if no evaluations exist in the last 24 hours', (ctx) => {
+      expect(ctx.stdout.trim()).to.eql('No evaluations found for hatcat in the past 24 hours')
     })
-    .it('returns a message if no evaluations exist in the last 24 hours')
 
   test
     .stdout()
     .command(['info', 'hatcat', '--json'])
     .it('returns JSON if no evaluations exist in the last 24 hours', (ctx) => {
       expect(JSON.parse(ctx.stdout)).to.eql({
-        error: 'No evaluations found for hatcat in the past 24 hours',
+        message: 'No evaluations found for hatcat in the past 24 hours',
       })
     })
 

@@ -63,7 +63,7 @@ describe('override', () => {
   test
     .stdout()
     .command(['override', 'my-double-key', '--value=42.1'])
-    .it('overrides a string list config when given a valid key and value', (ctx) => {
+    .it('overrides a double config when given a valid key and value', (ctx) => {
       expect(ctx.stdout).to.contain(`Override set`)
     })
 

@@ -57,8 +57,6 @@ export default class Create extends APICommand {
 
     const response = await request.json()
 
-    this.log(`Created boolean flag: ${key}`)
-
-    return {key, ...response}
+    return this.ok(`Created boolean flag: ${key}`, {key, ...response})
   }
 }

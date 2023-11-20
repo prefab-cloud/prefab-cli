@@ -3,6 +3,7 @@ import {Flags} from '@oclif/core'
 import {APICommand} from '../index.js'
 import getKey from '../pickers/get-key.js'
 import {getEvaluationStats} from '../prefab-common/src/evaluations/stats.js'
+import {urlFor} from '../prefab-common/src/urlFor.js'
 import {valueOfToString} from '../prefab-common/src/valueOf.js'
 import {log} from '../util/log.js'
 import nameArg from '../util/name-arg.js'
@@ -24,6 +25,13 @@ export default class Info extends APICommand {
     const {key, prefab} = await getKey({args, command: this, flags, message: 'Which item would you like to see?'})
 
     if (key && prefab) {
+      const url = urlFor(prefab, process.env.PREFAB_API_URL, key)
+
+      if (url) {
+        this.log(url)
+        this.log('')
+      }
+
       const evaluations = await getEvaluationStats({
         client: await this.getApiClient(),
         key,
@@ -31,7 +39,7 @@ export default class Info extends APICommand {
       })
 
       if (!evaluations) {
-        return this.err(`No evaluations found for ${key} in the past 24 hours`)
+        return this.ok(`No evaluations found for ${key} in the past 24 hours`)
       }
 
       this.log('Evaluations over the last 24 hours:\n')
@@ -63,7 +71,7 @@ export default class Info extends APICommand {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const {key: _, ...json} = evaluations
 
-      return {[key]: json}
+      return {[key]: {...json, url}}
     }
   }
 }

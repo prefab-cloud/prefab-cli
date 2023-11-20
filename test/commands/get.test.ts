@@ -11,6 +11,13 @@ describe('get', () => {
     })
 
   test
+    .stdout()
+    .command(['get', validKey, '--json'])
+    .it('returns JSON for a value for a valid name', (ctx) => {
+      expect(JSON.parse(ctx.stdout)).to.eql({[validKey]: ['a', 'b', 'c']})
+    })
+
+  test
     .command(['get', 'this-does-not-exist'])
     .catch((error) => {
       expect(error.message).to.eql(`this-does-not-exist does not exist`)

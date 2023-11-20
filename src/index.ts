@@ -36,11 +36,22 @@ export abstract class BaseCommand extends Command {
     this.error(this.toErrorJson(error))
   }
 
-  public resultMessage = (result: Result<unknown>): void => {
+  public ok = (message: object | string, json?: Record<string, unknown>) => {
+    if (typeof message === 'string') {
+      this.log(message)
+    } else {
+      this.log(this.toSuccessJson(message))
+    }
+
+    return json ?? {message}
+  }
+
+  public resultMessage = (result: Result<unknown>) => {
     if (result.error) {
       this.err(result.message, result.json)
     } else if (result.message) {
       this.log(result.message)
+      return result.json ?? result.message
     }
   }
 

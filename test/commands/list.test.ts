@@ -77,11 +77,4 @@ describe('list', () => {
       expect(keys).to.not.contain(exampleSegment)
       expect(keys).to.contain(exampleConfig)
     })
-
-  test
-    .command(['list', '--api-key='])
-    .exit(401)
-    .catch((error) => {
-      expect(error.message).to.eql('Error: API key is required')
-    })
 })

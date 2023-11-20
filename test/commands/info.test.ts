@@ -181,7 +181,7 @@ https://app.staging-prefab.cloud/account/projects/124/configs/${keyWithNoEvaluat
 - jeffrey: [see rules] https://app.staging-prefab.cloud/account/projects/124/configs/jeffreys.test.key?environment=588
 - Production: [override] my.override https://app.staging-prefab.cloud/account/projects/124/configs/jeffreys.test.key?environment=143
 
-No evaluations found for ${keyWithNoEvaluations} in the past 24 hours
+No evaluations in the past 24 hours
 `.trim(),
         )
       })
@@ -193,7 +193,7 @@ No evaluations found for ${keyWithNoEvaluations} in the past 24 hours
         expect(JSON.parse(ctx.stdout)).to.eql({
           [keyWithNoEvaluations]: {
             evaluations: {
-              error: `No evaluations found for ${keyWithNoEvaluations} in the past 24 hours`,
+              error: `No evaluations in the past 24 hours`,
             },
 
             url: `https://app.staging-prefab.cloud/account/projects/124/configs/${keyWithNoEvaluations}`,

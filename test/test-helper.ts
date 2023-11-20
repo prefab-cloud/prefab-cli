@@ -85,6 +85,8 @@ export const getCannedResponse = async (
   const cannedResponse = cannedResponsesForUrl.find(([payload]) => deepCompare(payload, body))
 
   if (!cannedResponse) {
+    console.log(JSON.stringify(body, null, 2))
+
     throw new Error('No canned response for payload')
   }
 

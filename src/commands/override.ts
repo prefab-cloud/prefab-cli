@@ -84,7 +84,7 @@ export default class Override extends APICommand {
 
     const request = await this.apiClient.post('/api/v1/config/assign-variant', {
       configKey: key,
-      variant: {[type]: type === 'stringList' ? value.split(',') : value},
+      variant: {[type]: type === 'stringList' ? {values: value.split(',')} : value},
     })
 
     if (request.ok) {

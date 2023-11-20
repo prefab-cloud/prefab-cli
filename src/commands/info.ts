@@ -73,8 +73,9 @@ export default class Info extends APICommand {
       if (evaluations) {
         json.evaluations = this.parseEvaluations(evaluations)
       } else {
-        this.log(`No evaluations found for ${key} in the past 24 hours`)
-        json.evaluations = {error: `No evaluations found for ${key} in the past 24 hours`}
+        const message = `No evaluations in the past 24 hours`
+        this.log(message)
+        json.evaluations = {error: message}
       }
 
       return {[key]: json}

@@ -45,14 +45,14 @@ ARGUMENTS
   NAME  config/feature-flag/etc. name
 
 FLAGS
-  --api-key=<value>      (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
   --environment=<value>  environment to change
-  --[no-]interactive     Force interactive mode
   --value=<value>        new default value
-  --verbose              Verbose output
 
 GLOBAL FLAGS
-  --json  Format output as json.
+  --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
+  --[no-]interactive  Force interactive mode
+  --json              Format output as json.
+  --verbose           Verbose output
 
 DESCRIPTION
   Change the default value for an environment (other rules still apply)
@@ -77,14 +77,14 @@ ARGUMENTS
   NAME  name for your new item (e.g. my.new.flag)
 
 FLAGS
-  --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
-  --[no-]interactive  Force interactive mode
-  --type=<option>     (required)
-                      <options: boolean-flag>
-  --verbose           Verbose output
+  --type=<option>  (required)
+                   <options: boolean-flag>
 
 GLOBAL FLAGS
-  --json  Format output as json.
+  --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
+  --[no-]interactive  Force interactive mode
+  --json              Format output as json.
+  --verbose           Verbose output
 
 DESCRIPTION
   Create a new item in Prefab
@@ -106,13 +106,11 @@ USAGE
 ARGUMENTS
   NAME  config/feature-flag/etc. name
 
-FLAGS
+GLOBAL FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
   --[no-]interactive  Force interactive mode
+  --json              Format output as json.
   --verbose           Verbose output
-
-GLOBAL FLAGS
-  --json  Format output as json.
 
 DESCRIPTION
   Get the value of a config/feature-flag/etc.
@@ -135,13 +133,13 @@ ARGUMENTS
   NAME  config/feature-flag/etc. name
 
 FLAGS
-  --api-key=<value>      (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
   --exclude-evaluations  Exclude evaluation data
-  --[no-]interactive     Force interactive mode
-  --verbose              Verbose output
 
 GLOBAL FLAGS
-  --json  Format output as json.
+  --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
+  --[no-]interactive  Force interactive mode
+  --json              Format output as json.
+  --verbose           Verbose output
 
 DESCRIPTION
   Show details about the provided config/feature-flag/etc.
@@ -162,16 +160,16 @@ USAGE
     [--log-levels] [--segments]
 
 FLAGS
-  --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
-  --configs           include configs
-  --feature-flags     include flags
-  --[no-]interactive  Force interactive mode
-  --log-levels        include log levels
-  --segments          include segments
-  --verbose           Verbose output
+  --configs        include configs
+  --feature-flags  include flags
+  --log-levels     include log levels
+  --segments       include segments
 
 GLOBAL FLAGS
-  --json  Format output as json.
+  --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
+  --[no-]interactive  Force interactive mode
+  --json              Format output as json.
+  --verbose           Verbose output
 
 DESCRIPTION
   Show keys for your config/feature flags/etc.
@@ -199,14 +197,14 @@ ARGUMENTS
   NAME  config/feature-flag/etc. name
 
 FLAGS
-  --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
-  --[no-]interactive  Force interactive mode
-  --remove            remove your override (if present)
-  --value=<value>     value to use for your override
-  --verbose           Verbose output
+  --remove         remove your override (if present)
+  --value=<value>  value to use for your override
 
 GLOBAL FLAGS
-  --json  Format output as json.
+  --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
+  --[no-]interactive  Force interactive mode
+  --json              Format output as json.
+  --verbose           Verbose output
 
 DESCRIPTION
   Override the value of an item for your user/API key combo

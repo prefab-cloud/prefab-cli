@@ -7,24 +7,34 @@ import {Result} from './result.js'
 import rawGetClient, {unwrapRequest} from './util/get-client.js'
 import {log} from './util/log.js'
 
-const commonFlags = {
+const globalFlags = {
+  'api-key': Flags.string({
+    description: 'Prefab API KEY (defaults to ENV var PREFAB_API_KEY)',
+    env: 'PREFAB_API_KEY',
+    helpGroup: 'GLOBAL',
+    required: true,
+  }),
   interactive: Flags.boolean({
     allowNo: true,
     default: true,
     description: 'Force interactive mode',
+    helpGroup: 'GLOBAL',
   }),
   verbose: Flags.boolean({
     default: false,
     description: 'Verbose output',
+    helpGroup: 'GLOBAL',
   }),
 }
 
-export abstract class BaseCommand extends Command {
+export abstract class APICommand extends Command {
   static baseFlags = {
-    ...commonFlags,
+    ...globalFlags,
   }
 
   public static enableJsonFlag = true
+
+  public currentEnvironment!: ProjectEnvId
 
   public err = (error: Error | object | string, json?: Record<string, unknown>): never => {
     if (this.jsonEnabled()) {
@@ -48,6 +58,8 @@ export abstract class BaseCommand extends Command {
     return json ?? {message}
   }
 
+  public rawApiClient!: Client
+
   public resultMessage = (result: Result<unknown>) => {
     if (result.error) {
       this.err(result.message, result.json)
@@ -60,20 +72,6 @@ export abstract class BaseCommand extends Command {
   public verboseLog = (...args: unknown[]): void => {
     log(...args)
   }
-}
-
-export abstract class APICommand extends BaseCommand {
-  static baseFlags = {
-    ...commonFlags,
-    'api-key': Flags.string({
-      description: 'Prefab API KEY (defaults to ENV var PREFAB_API_KEY)',
-      env: 'PREFAB_API_KEY',
-      required: true,
-    }),
-  }
-
-  public currentEnvironment!: ProjectEnvId
-  public rawApiClient!: Client
 
   get apiClient() {
     return {

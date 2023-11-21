@@ -12,8 +12,6 @@ export default class Get extends APICommand {
 
   static description = 'Get the value of a config/feature-flag/etc.'
 
-  public static enableJsonFlag = true
-
   static examples = ['<%= config.bin %> <%= command.id %> my.config.name']
 
   public async run(): Response {
@@ -21,14 +19,16 @@ export default class Get extends APICommand {
 
     const {key, prefab} = await getKey({args, command: this, flags, message: 'Which item would you like to get?'})
 
-    if (key && prefab) {
-      if (!prefab.keys().includes(key)) {
-        this.err(`${key} does not exist`)
-      }
-
-      const value = prefab.get(key)
-
-      return this.ok(this.toSuccessJson(value), {[key]: value})
+    if (!key || !prefab) {
+      return this.err('Key is required')
     }
+
+    if (!prefab.keys().includes(key)) {
+      return this.err(`${key} does not exist`)
+    }
+
+    const value = prefab.get(key)
+
+    return this.ok(this.toSuccessJson(value), {[key]: value})
   }
 }

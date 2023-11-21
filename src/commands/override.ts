@@ -5,6 +5,7 @@ import {configValueType, overrideFor} from '../prefab.js'
 import {JsonObj} from '../result.js'
 import getKey from '../ui/get-key.js'
 import getValue from '../ui/get-value.js'
+import {checkmark} from '../util/color.js'
 import nameArg from '../util/name-arg.js'
 
 export default class Override extends APICommand {
@@ -89,7 +90,7 @@ export default class Override extends APICommand {
     })
 
     if (request.ok) {
-      this.log('Override set')
+      this.log(`${checkmark} Override set`)
 
       return {key, success: true}
     }

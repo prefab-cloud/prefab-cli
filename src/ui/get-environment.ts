@@ -6,7 +6,6 @@ import {getEnvironmentsFromApi} from '../prefab-common/src/api/getEnvironmentsFr
 import {JsonObj} from '../result.js'
 import autocomplete from '../util/autocomplete.js'
 import isInteractive from '../util/is-interactive.js'
-import {log} from '../util/log.js'
 
 const getEnvironment = async ({
   client,
@@ -25,7 +24,7 @@ const getEnvironment = async ({
     command.err("'environment' is required when interactive mode isn't available.")
   }
 
-  const environments = await getEnvironmentsFromApi({client, log})
+  const environments = await getEnvironmentsFromApi({client, log: command.verboseLog})
 
   command.verboseLog({environments})
 

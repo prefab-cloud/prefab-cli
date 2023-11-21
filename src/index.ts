@@ -5,7 +5,6 @@ import {Client} from './prefab-common/src/api/client.js'
 import {ProjectEnvId, getProjectEnvFromApiKey} from './prefab-common/src/getProjectEnvFromApiKey.js'
 import {JsonObj, Result} from './result.js'
 import rawGetClient, {unwrapRequest} from './util/get-client.js'
-import {log} from './util/log.js'
 
 const globalFlags = {
   'api-key': Flags.string({
@@ -18,6 +17,12 @@ const globalFlags = {
     allowNo: true,
     default: true,
     description: 'Force interactive mode',
+    helpGroup: 'GLOBAL',
+  }),
+  'no-color': Flags.boolean({
+    default: false,
+    description: 'Do not colorize output',
+    env: 'NO_COLOR',
     helpGroup: 'GLOBAL',
   }),
   verbose: Flags.boolean({
@@ -35,7 +40,6 @@ export abstract class APICommand extends Command {
   public static enableJsonFlag = true
 
   public currentEnvironment!: ProjectEnvId
-
   public err = (error: Error | object | string, json?: JsonObj): never => {
     if (this.jsonEnabled()) {
       throw json ?? error
@@ -47,6 +51,8 @@ export abstract class APICommand extends Command {
 
     this.error(this.toErrorJson(error))
   }
+
+  public isVerbose!: boolean
 
   public ok = (message: object | string, json?: JsonObj) => {
     if (typeof message === 'string') {
@@ -69,15 +75,21 @@ export abstract class APICommand extends Command {
     }
   }
 
-  public verboseLog = (...args: unknown[]): void => {
-    log(...args)
+  public verboseLog = (category: string | unknown, message?: unknown): void => {
+    if (!this.isVerbose) return
+
+    if (message) {
+      this.logToStderr(`[${category}] ${typeof message === 'string' ? message : JSON.stringify(message)}`)
+    } else {
+      this.logToStderr(typeof category === 'string' ? category : JSON.stringify(category))
+    }
   }
 
   get apiClient() {
     return {
-      get: async (path: string) => unwrapRequest(this.rawApiClient.get(path)),
+      get: async (path: string) => unwrapRequest(this, this.rawApiClient.get(path)),
 
-      post: async (path: string, payload: unknown) => unwrapRequest(this.rawApiClient.post(path, payload)),
+      post: async (path: string, payload: unknown) => unwrapRequest(this, this.rawApiClient.post(path, payload)),
     }
   }
 
@@ -92,7 +104,8 @@ export abstract class APICommand extends Command {
       this.error('API key is required', {exit: 401})
     }
 
-    this.rawApiClient = rawGetClient(flags['api-key'])
+    this.isVerbose = flags.verbose
+    this.rawApiClient = rawGetClient(this, flags['api-key'])
     this.currentEnvironment = getProjectEnvFromApiKey(flags['api-key'])
   }
 }

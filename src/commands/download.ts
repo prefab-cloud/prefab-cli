@@ -7,9 +7,6 @@ import type {JsonObj} from '../result.js'
 import {APICommand} from '../index.js'
 import getEnvironment from '../ui/get-environment.js'
 
-// need an environment or picker
-// api/v1/configs/download?envId=12345
-
 export default class Download extends APICommand {
   static description = 'Download a Datafile for a given environment'
 
@@ -36,14 +33,14 @@ export default class Download extends APICommand {
 
     this.verboseLog({environment})
 
-    const result = await this.apiClient.get(`/api/v1/configs/download?envId=${environment.id}`)
+    const download = await this.apiClient.get(`/api/v1/configs/download?envId=${environment.id}`)
 
-    if (result.ok) {
-      return this.writeFile(result, environment)
+    if (download.ok) {
+      return this.writeFile(download, environment)
     }
 
-    this.verboseLog({result})
-    return this.err(`Failed to download file. Status=${result.status}`, result.error)
+    this.verboseLog({result: download})
+    return this.err(`Failed to download file. Status=${download.status}`, download.error)
   }
 
   private writeFile(result: JsonObj, environment: {id: string; name: string}) {

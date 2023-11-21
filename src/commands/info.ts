@@ -4,7 +4,6 @@ import type {PrefabConfig} from '../prefab-common/src/types.js'
 
 import {DEFAULT_ENVIRONMENT_NAME, INHERIT} from '../constants.js'
 import {APICommand} from '../index.js'
-import getKey from '../pickers/get-key.js'
 import {overrideFor, unwrap} from '../prefab.js'
 import {getConfigFromApi} from '../prefab-common/src/api/getConfigFromApi.js'
 import {Environment, getEnvironmentsFromApi} from '../prefab-common/src/api/getEnvironmentsFromApi.js'
@@ -12,6 +11,8 @@ import {configValuesInEnvironments} from '../prefab-common/src/configValuesInEnv
 import {EvaluationStats, getEvaluationStats} from '../prefab-common/src/evaluations/stats.js'
 import {urlFor} from '../prefab-common/src/urlFor.js'
 import {Provided, valueOf, valueOfToString} from '../prefab-common/src/valueOf.js'
+import {JsonObj} from '../result.js'
+import getKey from '../ui/get-key.js'
 import {log} from '../util/log.js'
 import nameArg from '../util/name-arg.js'
 
@@ -26,7 +27,7 @@ export default class Info extends APICommand {
     'exclude-evaluations': Flags.boolean({default: false, description: 'Exclude evaluation data'}),
   }
 
-  public async run(): Promise<Record<string, unknown> | void> {
+  public async run(): Promise<JsonObj | void> {
     const {args, flags} = await this.parse(Info)
 
     const {key, prefab} = await getKey({args, command: this, flags, message: 'Which item would you like to see?'})
@@ -42,7 +43,7 @@ export default class Info extends APICommand {
       this.log(url)
       this.log('')
 
-      const json: Record<string, unknown> = {url}
+      const json: JsonObj = {url}
 
       const client = this.rawApiClient
 
@@ -87,7 +88,7 @@ export default class Info extends APICommand {
     const override = overrideFor({currentEnvironmentId: this.currentEnvironment.id, key: config.key})
 
     const contents: string[] = []
-    const json: Record<string, unknown> = {}
+    const json: JsonObj = {}
 
     const sortedValues = values.sort((a, b) =>
       (a.environment?.name ?? DEFAULT_ENVIRONMENT_NAME).localeCompare(b.environment?.name ?? DEFAULT_ENVIRONMENT_NAME),

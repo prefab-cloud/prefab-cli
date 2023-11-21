@@ -1,10 +1,11 @@
 import type {GetValue} from '../prefab-common/src/types.js'
 
 import {APICommand} from '../index.js'
-import getKey from '../pickers/get-key.js'
+import {JsonObj} from '../result.js'
+import getKey from '../ui/get-key.js'
 import nameArg from '../util/name-arg.js'
 
-type Response = Promise<Error | Record<string, GetValue> | Record<string, unknown> | undefined | void>
+type Response = Promise<Error | JsonObj | Record<string, GetValue> | undefined | void>
 
 export default class Get extends APICommand {
   static args = {...nameArg}

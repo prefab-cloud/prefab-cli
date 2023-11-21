@@ -1,6 +1,7 @@
 import {Args, Flags} from '@oclif/core'
 
 import {APICommand} from '../index.js'
+import {JsonObj} from '../result.js'
 
 export default class Create extends APICommand {
   static args = {
@@ -15,7 +16,7 @@ export default class Create extends APICommand {
     type: Flags.string({options: ['boolean-flag'], required: true}),
   }
 
-  public async run(): Promise<Record<string, unknown> | void> {
+  public async run(): Promise<JsonObj | void> {
     const {args} = await this.parse(Create)
 
     const key = args.name

@@ -4,11 +4,12 @@ import {Prefab} from '@prefab-cloud/prefab-cloud-node'
 import type {Environment} from '../prefab-common/src/api/getEnvironmentsFromApi.js'
 
 import {APICommand} from '../index.js'
-import getConfirmation, {confirmFlag} from '../pickers/get-confirmation.js'
-import getEnvironment from '../pickers/get-environment.js'
-import getKey from '../pickers/get-key.js'
-import getValue from '../pickers/get-value.js'
 import {configValueType} from '../prefab.js'
+import {JsonObj} from '../result.js'
+import getConfirmation, {confirmFlag} from '../ui/get-confirmation.js'
+import getEnvironment from '../ui/get-environment.js'
+import getKey from '../ui/get-key.js'
+import getValue from '../ui/get-value.js'
 import nameArg from '../util/name-arg.js'
 
 export default class ChangeDefault extends APICommand {
@@ -27,7 +28,7 @@ export default class ChangeDefault extends APICommand {
     ...confirmFlag,
   }
 
-  public async run(): Promise<Record<string, unknown> | void> {
+  public async run(): Promise<JsonObj | void> {
     const {args, flags} = await this.parse(ChangeDefault)
 
     const {key, prefab} = await getKey({

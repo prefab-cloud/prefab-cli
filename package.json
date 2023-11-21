@@ -67,7 +67,7 @@
     "update-submodule": "git submodule update --remote src/prefab-common",
     "version": "oclif readme && git add README.md && cat package.json | jq .version | awk '{print \"// NOTE: This file is generated\\nexport default \"$1}' > src/version.ts && git add src/version.ts"
   },
-  "version": "0.0.7",
+  "version": "0.0.8",
   "bugs": "https://github.com/prefab-cloud/prefab-cli/issues",
   "keywords": [
     "oclif"

@@ -6,7 +6,7 @@ import * as path from 'node:path'
 
 import type {JsonObj} from '../../src/result.js'
 
-const expectedFileName = '.prefab.test.588.config.json'
+const expectedFileName = 'prefab.test.588.config.json'
 
 const savedContent = () => JSON.parse(fs.readFileSync(expectedFileName).toString())
 
@@ -63,7 +63,7 @@ describe('download', () => {
       .stdout()
       .command(['download', '--environment=test'])
       .it('saves the file and returns a success message', (ctx) => {
-        expect(ctx.stdout).to.eql('Successfully downloaded .prefab.test.588.config.json\n')
+        expect(ctx.stdout).to.eql(`Successfully downloaded ${expectedFileName}\n`)
         expect(savedContent()).to.eql(downloadStub)
       })
 

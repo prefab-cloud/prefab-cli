@@ -47,7 +47,7 @@ export default class Download extends APICommand {
   }
 
   private writeFile(result: JsonObj, environment: {id: string; name: string}) {
-    const fileName = `.prefab.${environment.name}.${environment.id}.config.json`
+    const fileName = `prefab.${environment.name}.${environment.id}.config.json`
     const filePath = path.join(process.cwd(), fileName)
 
     fs.writeFileSync(filePath, JSON.stringify(result.json, null, 2))

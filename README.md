@@ -39,12 +39,13 @@ Change the default value for an environment (other rules still apply)
 ```
 USAGE
   $ prefab change-default [NAME] --api-key <value> [--json] [--interactive] [--verbose] [--environment <value>]
-    [--value <value>]
+    [--value <value>] [--confirm]
 
 ARGUMENTS
   NAME  config/feature-flag/etc. name
 
 FLAGS
+  --confirm              confirm without prompt
   --environment=<value>  environment to change
   --value=<value>        new default value
 

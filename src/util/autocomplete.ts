@@ -1,8 +1,8 @@
-// eslint-disable-next-line node/no-extraneous-import
-import chalk from 'chalk'
 // eslint-disable-next-line import/default
 import fuzzy from 'fuzzy'
 import internalAutocomplete from 'inquirer-autocomplete-standalone'
+
+import {green} from '../util/color.js'
 
 const options = {
   post: '\u001B[0m',
@@ -19,7 +19,7 @@ type Args = {
 const autocomplete = async ({message, source}: Args) => {
   try {
     const result = await internalAutocomplete({
-      message: chalk.green(message),
+      message: green(message),
       async source(input: string | undefined) {
         const list = typeof source === 'function' ? source() : source
 

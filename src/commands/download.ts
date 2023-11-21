@@ -6,6 +6,7 @@ import type {JsonObj} from '../result.js'
 
 import {APICommand} from '../index.js'
 import getEnvironment from '../ui/get-environment.js'
+import {checkmark} from '../util/color.js'
 
 export default class Download extends APICommand {
   static description = 'Download a Datafile for a given environment'
@@ -49,7 +50,7 @@ export default class Download extends APICommand {
 
     fs.writeFileSync(filePath, JSON.stringify(result.json, null, 2))
 
-    this.log(`Successfully downloaded ${fileName}`)
+    this.log(`${checkmark} Successfully downloaded ${fileName}`)
     return {filePath, succes: true}
   }
 }

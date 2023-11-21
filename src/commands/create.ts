@@ -2,6 +2,7 @@ import {Args, Flags} from '@oclif/core'
 
 import {APICommand} from '../index.js'
 import {JsonObj} from '../result.js'
+import {checkmark} from '../util/color.js'
 
 export default class Create extends APICommand {
   static args = {
@@ -51,6 +52,6 @@ export default class Create extends APICommand {
 
     const response = request.json
 
-    return this.ok(`Created boolean flag: ${key}`, {key, ...response})
+    return this.ok(`${checkmark} Created boolean flag: ${key}`, {key, ...response})
   }
 }

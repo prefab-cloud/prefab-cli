@@ -63,7 +63,7 @@ describe('download', () => {
       .stdout()
       .command(['download', '--environment=test'])
       .it('saves the file and returns a success message', (ctx) => {
-        expect(ctx.stdout).to.eql(`Successfully downloaded ${expectedFileName}\n`)
+        expect(ctx.stdout).to.eql(`✔ Successfully downloaded ${expectedFileName}\n`)
         expect(savedContent()).to.eql(downloadStub)
       })
 

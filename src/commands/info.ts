@@ -13,7 +13,6 @@ import {urlFor} from '../prefab-common/src/urlFor.js'
 import {Provided, valueOf, valueOfToString} from '../prefab-common/src/valueOf.js'
 import {JsonObj} from '../result.js'
 import getKey from '../ui/get-key.js'
-import {log} from '../util/log.js'
 import nameArg from '../util/name-arg.js'
 
 export default class Info extends APICommand {
@@ -50,17 +49,17 @@ export default class Info extends APICommand {
       const [fullConfig, environments, evaluations] = await Promise.all([
         getConfigFromApi({
           client,
-          errorLog: log,
+          errorLog: this.verboseLog,
           key,
         }),
         getEnvironmentsFromApi({
           client,
-          log,
+          log: this.verboseLog,
         }),
         getEvaluationStats({
           client,
           key,
-          log,
+          log: this.verboseLog,
         }),
       ])
 
@@ -84,7 +83,7 @@ export default class Info extends APICommand {
   }
 
   private parseConfig(config: PrefabConfig, environments: Environment[], url: string) {
-    const values = configValuesInEnvironments(config, environments, log)
+    const values = configValuesInEnvironments(config, environments, this.verboseLog)
     const override = overrideFor({currentEnvironmentId: this.currentEnvironment.id, key: config.key})
 
     const contents: string[] = []

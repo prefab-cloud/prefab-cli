@@ -1,31 +1,31 @@
-import type {JsonObj,RequestResult} from '../result.js'
+import type {JsonObj, RequestResult} from '../result.js'
 
+import {APICommand} from '../index.js'
 import {Client} from '../prefab-common/src/api/client.js'
 import jsonMaybe from '../util/json-maybe.js'
 import version from '../version.js'
-import {log} from './log.js'
 
 let clientInstance: Client | undefined
 
-const getClient = (apiKey: string) => {
+const getClient = (command: APICommand, apiKey: string) => {
   if (clientInstance) return clientInstance
 
   clientInstance = new Client({
     apiKey,
     apiUrl: process.env.PREFAB_API_URL,
     clientIdentifier: `prefab-cli-${version}`,
-    log,
+    log: command.verboseLog,
   })
 
   return clientInstance
 }
 
-export const unwrapRequest = async (promise: Promise<Response>): Promise<RequestResult> => {
+export const unwrapRequest = async (command: APICommand, promise: Promise<Response>): Promise<RequestResult> => {
   const request = await promise
 
   if (request.status.toString().startsWith('2')) {
     const json = (await request.json()) as JsonObj
-    log('ApiClient', {response: json})
+    command.verboseLog('ApiClient', {response: json})
 
     return {json, ok: true, status: request.status}
   }

@@ -10,6 +10,7 @@ import getConfirmation, {confirmFlag} from '../ui/get-confirmation.js'
 import getEnvironment from '../ui/get-environment.js'
 import getKey from '../ui/get-key.js'
 import getValue from '../ui/get-value.js'
+import {checkmark} from '../util/color.js'
 import nameArg from '../util/name-arg.js'
 
 export default class ChangeDefault extends APICommand {
@@ -97,7 +98,7 @@ export default class ChangeDefault extends APICommand {
     const request = await this.apiClient.post('/api/v1/config/set-default/', payload)
 
     if (request.ok) {
-      this.log(`Successfully changed default to \`${value}\`.`)
+      this.log(`${checkmark} Successfully changed default to \`${value}\`.`)
 
       return {environment, key, success: true, value}
     }

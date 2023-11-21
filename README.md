@@ -27,6 +27,7 @@ USAGE
 <!-- commands -->
 * [`prefab change-default [NAME]`](#prefab-change-default-name)
 * [`prefab create NAME`](#prefab-create-name)
+* [`prefab download`](#prefab-download)
 * [`prefab get [NAME]`](#prefab-get-name)
 * [`prefab info [NAME]`](#prefab-info-name)
 * [`prefab list`](#prefab-list)
@@ -95,6 +96,32 @@ EXAMPLES
 ```
 
 _See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.6/src/commands/create.ts)_
+
+## `prefab download`
+
+Download a Datafile for a given environment
+
+```
+USAGE
+  $ prefab download --api-key <value> [--json] [--interactive] [--verbose] [--environment <value>]
+
+FLAGS
+  --environment=<value>  environment to download
+
+GLOBAL FLAGS
+  --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
+  --[no-]interactive  Force interactive mode
+  --json              Format output as json.
+  --verbose           Verbose output
+
+DESCRIPTION
+  Download a Datafile for a given environment
+
+EXAMPLES
+  $ prefab download --environment=test
+```
+
+_See code: [src/commands/download.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.6/src/commands/download.ts)_
 
 ## `prefab get [NAME]`
 

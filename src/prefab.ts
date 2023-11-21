@@ -81,14 +81,10 @@ export const overrideFor = ({
   }
 }
 
-export const defaultValueFor = (envId: string, key: string): GetValue | undefined => {
+export const defaultValueFor = (envId: string, key: string): ConfigValue | undefined => {
   const row = getRowInEnvironment({desiredEnvId: envId, key})
 
-  const value = row?.values.at(-1)?.value
-
-  if (value) {
-    return unwrap(value)
-  }
+  return row?.values.at(-1)?.value
 }
 
 export const unwrap = (value: ConfigValue): GetValue => {

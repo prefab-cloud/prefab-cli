@@ -26,7 +26,7 @@ export default class Download extends APICommand {
       client: this.rawApiClient,
       command: this,
       flags,
-      message: 'Which environment would you like to change the default for?',
+      message: 'Which environment would you like to download?',
       providedEnvironment: flags.environment,
     })
 

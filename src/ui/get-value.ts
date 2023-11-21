@@ -2,7 +2,7 @@ import {ux} from '@oclif/core'
 import {Prefab} from '@prefab-cloud/prefab-cloud-node'
 
 import type {Environment} from '../prefab-common/src/api/getEnvironmentsFromApi.js'
-import type {GetValue, PrefabConfig} from '../prefab-common/src/types.js'
+import type {ConfigValue, PrefabConfig} from '../prefab-common/src/types.js'
 
 import {defaultValueFor} from '../prefab.js'
 import {valueOfToString} from '../prefab-common/src/valueOf.js'
@@ -56,7 +56,7 @@ const promptForValue = async ({
   message,
 }: {
   config: PrefabConfig
-  currentDefault: GetValue | undefined
+  currentDefault: ConfigValue | undefined
   message: string
 }) => {
   const choices = config.allowableValues.map((v) => valueOfToString(v))
@@ -68,7 +68,7 @@ const promptForValue = async ({
   const autoCompleteMessage =
     currentDefault === undefined
       ? `Choose your new default.`
-      : `The current default is \`${currentDefault}\`. Choose your new default.`
+      : `The current default is \`${valueOfToString(currentDefault)}\`. Choose your new default.`
 
   return autocomplete({
     message: autoCompleteMessage,

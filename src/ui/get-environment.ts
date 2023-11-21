@@ -3,6 +3,7 @@ import type {Environment} from '../prefab-common/src/api/getEnvironmentsFromApi.
 
 import {APICommand} from '../index.js'
 import {getEnvironmentsFromApi} from '../prefab-common/src/api/getEnvironmentsFromApi.js'
+import {JsonObj} from '../result.js'
 import autocomplete from '../util/autocomplete.js'
 import isInteractive from '../util/is-interactive.js'
 import {log} from '../util/log.js'
@@ -16,7 +17,7 @@ const getEnvironment = async ({
 }: {
   client: Client
   command: APICommand
-  flags: Record<string, unknown>
+  flags: JsonObj
   message: string
   providedEnvironment: string | undefined
 }): Promise<Environment | undefined> => {
@@ -34,7 +35,11 @@ const getEnvironment = async ({
     )
 
     if (!matchingEnvironment) {
-      command.err(`Environment \`${providedEnvironment}\` not found`)
+      command.err(
+        `Environment \`${providedEnvironment}\` not found. Valid environments: ${environments
+          .map((environment) => environment.name)
+          .join(', ')}`,
+      )
     }
 
     return matchingEnvironment

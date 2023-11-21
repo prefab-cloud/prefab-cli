@@ -1,9 +1,10 @@
 import {Flags} from '@oclif/core'
 
 import {APICommand} from '../index.js'
-import getKey from '../pickers/get-key.js'
-import getValue from '../pickers/get-value.js'
 import {configValueType, overrideFor} from '../prefab.js'
+import {JsonObj} from '../result.js'
+import getKey from '../ui/get-key.js'
+import getValue from '../ui/get-value.js'
 import nameArg from '../util/name-arg.js'
 
 export default class Override extends APICommand {
@@ -23,7 +24,7 @@ export default class Override extends APICommand {
     value: Flags.string({description: 'value to use for your override'}),
   }
 
-  public async run(): Promise<Record<string, unknown> | void> {
+  public async run(): Promise<JsonObj | void> {
     const {args, flags} = await this.parse(Override)
 
     if (flags.remove && flags.value) {
@@ -75,7 +76,7 @@ export default class Override extends APICommand {
     this.err(`Failed to remove override: ${request.status}`, {key, serverError: request.error})
   }
 
-  private async setOverride(key: string, value: string): Promise<Record<string, unknown> | void> {
+  private async setOverride(key: string, value: string): Promise<JsonObj | void> {
     const type = configValueType(key)
 
     if (!type) {

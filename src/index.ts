@@ -3,7 +3,7 @@ import {Command, Flags} from '@oclif/core'
 
 import {Client} from './prefab-common/src/api/client.js'
 import {ProjectEnvId, getProjectEnvFromApiKey} from './prefab-common/src/getProjectEnvFromApiKey.js'
-import {Result} from './result.js'
+import {JsonObj, Result} from './result.js'
 import rawGetClient, {unwrapRequest} from './util/get-client.js'
 import {log} from './util/log.js'
 
@@ -36,7 +36,7 @@ export abstract class APICommand extends Command {
 
   public currentEnvironment!: ProjectEnvId
 
-  public err = (error: Error | object | string, json?: Record<string, unknown>): never => {
+  public err = (error: Error | object | string, json?: JsonObj): never => {
     if (this.jsonEnabled()) {
       throw json ?? error
     }
@@ -48,7 +48,7 @@ export abstract class APICommand extends Command {
     this.error(this.toErrorJson(error))
   }
 
-  public ok = (message: object | string, json?: Record<string, unknown>) => {
+  public ok = (message: object | string, json?: JsonObj) => {
     if (typeof message === 'string') {
       this.log(message)
     } else {

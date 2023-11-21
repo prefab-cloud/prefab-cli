@@ -58,14 +58,21 @@ describe('change-default', () => {
   describe('success', () => {
     test
       .stdout()
-      .command(['change-default', 'feature-flag.simple', '--environment=Development', '--value=true'])
+      .command(['change-default', 'feature-flag.simple', '--environment=Development', '--value=true', '--confirm'])
       .it('can change the default for a boolean flag', (ctx) => {
         expect(ctx.stdout).to.contain('Successfully changed default to `true`.')
       })
 
     test
       .stdout()
-      .command(['change-default', 'feature-flag.simple', '--environment=Development', '--value=true', '--json'])
+      .command([
+        'change-default',
+        'feature-flag.simple',
+        '--environment=Development',
+        '--value=true',
+        '--confirm',
+        '--json',
+      ])
       .it('can change the default for a boolean flag with json output', (ctx) => {
         expect(JSON.parse(ctx.stdout)).to.deep.equal({
           environment: {
@@ -80,7 +87,13 @@ describe('change-default', () => {
 
     test
       .stdout()
-      .command(['change-default', 'jeffreys.test.key', '--environment=Staging', '--value=hello default world'])
+      .command([
+        'change-default',
+        'jeffreys.test.key',
+        '--environment=Staging',
+        '--value=hello default world',
+        '--confirm',
+      ])
       .it('can change the default for a string flag', (ctx) => {
         expect(ctx.stdout).to.contain('Successfully changed default to `hello default world`.')
       })
@@ -91,6 +104,7 @@ describe('change-default', () => {
         'change-default',
         'jeffreys.test.key',
         '--environment=Staging',
+        '--confirm',
         '--value=hello default world',
         '--json',
       ])

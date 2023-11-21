@@ -4,6 +4,7 @@ import {Prefab} from '@prefab-cloud/prefab-cloud-node'
 import type {Environment} from '../prefab-common/src/api/getEnvironmentsFromApi.js'
 
 import {APICommand} from '../index.js'
+import getConfirmation, {confirmFlag} from '../pickers/get-confirmation.js'
 import getEnvironment from '../pickers/get-environment.js'
 import getKey from '../pickers/get-key.js'
 import getValue from '../pickers/get-value.js'
@@ -23,6 +24,7 @@ export default class ChangeDefault extends APICommand {
   static flags = {
     environment: Flags.string({description: 'environment to change'}),
     value: Flags.string({description: 'new default value'}),
+    ...confirmFlag,
   }
 
   public async run(): Promise<Record<string, unknown> | void> {
@@ -56,6 +58,15 @@ export default class ChangeDefault extends APICommand {
     const value = await getValue({desiredValue: flags.value, environment, flags, key, message: 'Default value', prefab})
 
     if (value.ok) {
+      if (
+        !(await getConfirmation({
+          flags,
+          message: `Confirm: change the default for ${key} in ${environment.name} to \`${value.value}\`? yes/no`,
+        }))
+      ) {
+        return
+      }
+
       return this.submitChange(prefab, key, value.value, environment)
     }
 

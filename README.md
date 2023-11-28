@@ -14,7 +14,7 @@ $ npm install -g @prefab-cloud/prefab
 $ prefab COMMAND
 running command...
 $ prefab (--version)
-@prefab-cloud/prefab/0.0.9 darwin-arm64 node-v18.14.2
+@prefab-cloud/prefab/0.0.10 darwin-arm64 node-v18.14.2
 $ prefab --help [COMMAND]
 USAGE
   $ prefab COMMAND
@@ -39,8 +39,8 @@ Change the default value for an environment (other rules still apply)
 
 ```
 USAGE
-  $ prefab change-default [NAME] --api-key <value> [--json] [--interactive] [--verbose] [--environment <value>]
-    [--value <value>] [--confirm]
+  $ prefab change-default [NAME] --api-key <value> [--json] [--interactive] [--no-color] [--verbose] [--environment
+    <value>] [--value <value>] [--confirm]
 
 ARGUMENTS
   NAME  config/feature-flag/etc. name
@@ -54,6 +54,7 @@ GLOBAL FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
   --[no-]interactive  Force interactive mode
   --json              Format output as json.
+  --no-color          Do not colorize output
   --verbose           Verbose output
 
 DESCRIPTION
@@ -65,7 +66,7 @@ EXAMPLES
   $ prefab change-default my.flag.name --value=true --environment=staging
 ```
 
-_See code: [src/commands/change-default.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.9/src/commands/change-default.ts)_
+_See code: [src/commands/change-default.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.10/src/commands/change-default.ts)_
 
 ## `prefab create NAME`
 
@@ -73,7 +74,8 @@ Create a new item in Prefab
 
 ```
 USAGE
-  $ prefab create NAME --api-key <value> --type boolean-flag [--json] [--interactive] [--verbose]
+  $ prefab create NAME --api-key <value> --type boolean-flag [--json] [--interactive] [--no-color]
+    [--verbose]
 
 ARGUMENTS
   NAME  name for your new item (e.g. my.new.flag)
@@ -86,6 +88,7 @@ GLOBAL FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
   --[no-]interactive  Force interactive mode
   --json              Format output as json.
+  --no-color          Do not colorize output
   --verbose           Verbose output
 
 DESCRIPTION
@@ -95,7 +98,7 @@ EXAMPLES
   $ prefab create my.new.flag --type boolean-flag
 ```
 
-_See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.9/src/commands/create.ts)_
+_See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.10/src/commands/create.ts)_
 
 ## `prefab download`
 
@@ -103,7 +106,7 @@ Download a Datafile for a given environment
 
 ```
 USAGE
-  $ prefab download --api-key <value> [--json] [--interactive] [--verbose] [--environment <value>]
+  $ prefab download --api-key <value> [--json] [--interactive] [--no-color] [--verbose] [--environment <value>]
 
 FLAGS
   --environment=<value>  environment to download
@@ -112,6 +115,7 @@ GLOBAL FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
   --[no-]interactive  Force interactive mode
   --json              Format output as json.
+  --no-color          Do not colorize output
   --verbose           Verbose output
 
 DESCRIPTION
@@ -121,7 +125,7 @@ EXAMPLES
   $ prefab download --environment=test
 ```
 
-_See code: [src/commands/download.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.9/src/commands/download.ts)_
+_See code: [src/commands/download.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.10/src/commands/download.ts)_
 
 ## `prefab get [NAME]`
 
@@ -129,7 +133,7 @@ Get the value of a config/feature-flag/etc.
 
 ```
 USAGE
-  $ prefab get [NAME] --api-key <value> [--json] [--interactive] [--verbose]
+  $ prefab get [NAME] --api-key <value> [--json] [--interactive] [--no-color] [--verbose]
 
 ARGUMENTS
   NAME  config/feature-flag/etc. name
@@ -138,6 +142,7 @@ GLOBAL FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
   --[no-]interactive  Force interactive mode
   --json              Format output as json.
+  --no-color          Do not colorize output
   --verbose           Verbose output
 
 DESCRIPTION
@@ -147,7 +152,7 @@ EXAMPLES
   $ prefab get my.config.name
 ```
 
-_See code: [src/commands/get.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.9/src/commands/get.ts)_
+_See code: [src/commands/get.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.10/src/commands/get.ts)_
 
 ## `prefab info [NAME]`
 
@@ -155,7 +160,8 @@ Show details about the provided config/feature-flag/etc.
 
 ```
 USAGE
-  $ prefab info [NAME] --api-key <value> [--json] [--interactive] [--verbose] [--exclude-evaluations]
+  $ prefab info [NAME] --api-key <value> [--json] [--interactive] [--no-color] [--verbose]
+    [--exclude-evaluations]
 
 ARGUMENTS
   NAME  config/feature-flag/etc. name
@@ -167,6 +173,7 @@ GLOBAL FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
   --[no-]interactive  Force interactive mode
   --json              Format output as json.
+  --no-color          Do not colorize output
   --verbose           Verbose output
 
 DESCRIPTION
@@ -176,7 +183,7 @@ EXAMPLES
   $ prefab info my.config.name
 ```
 
-_See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.9/src/commands/info.ts)_
+_See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.10/src/commands/info.ts)_
 
 ## `prefab list`
 
@@ -184,8 +191,8 @@ Show keys for your config/feature flags/etc.
 
 ```
 USAGE
-  $ prefab list --api-key <value> [--json] [--interactive] [--verbose] [--configs] [--feature-flags]
-    [--log-levels] [--segments]
+  $ prefab list --api-key <value> [--json] [--interactive] [--no-color] [--verbose] [--configs]
+    [--feature-flags] [--log-levels] [--segments]
 
 FLAGS
   --configs        include configs
@@ -197,6 +204,7 @@ GLOBAL FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
   --[no-]interactive  Force interactive mode
   --json              Format output as json.
+  --no-color          Do not colorize output
   --verbose           Verbose output
 
 DESCRIPTION
@@ -211,7 +219,7 @@ EXAMPLES
   $ prefab list --feature-flags
 ```
 
-_See code: [src/commands/list.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.9/src/commands/list.ts)_
+_See code: [src/commands/list.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.10/src/commands/list.ts)_
 
 ## `prefab override [NAME]`
 
@@ -219,7 +227,8 @@ Override the value of an item for your user/API key combo
 
 ```
 USAGE
-  $ prefab override [NAME] --api-key <value> [--json] [--interactive] [--verbose] [--remove] [--value <value>]
+  $ prefab override [NAME] --api-key <value> [--json] [--interactive] [--no-color] [--verbose] [--remove]
+    [--value <value>]
 
 ARGUMENTS
   NAME  config/feature-flag/etc. name
@@ -232,6 +241,7 @@ GLOBAL FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
   --[no-]interactive  Force interactive mode
   --json              Format output as json.
+  --no-color          Do not colorize output
   --verbose           Verbose output
 
 DESCRIPTION
@@ -247,5 +257,5 @@ EXAMPLES
   $ prefab override my.double.config --value=3.14159
 ```
 
-_See code: [src/commands/override.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.9/src/commands/override.ts)_
+_See code: [src/commands/override.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.10/src/commands/override.ts)_
 <!-- commandsstop -->

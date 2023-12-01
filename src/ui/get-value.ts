@@ -11,6 +11,7 @@ import autocomplete from '../util/autocomplete.js'
 import validateValue from '../validations/value.js'
 
 const getValue = async ({
+  allowBlank = true,
   desiredValue,
   environment,
   flags,
@@ -18,6 +19,7 @@ const getValue = async ({
   message,
   prefab,
 }: {
+  allowBlank?: boolean
   desiredValue: string | undefined
   environment?: Environment
   flags: {interactive: boolean}
@@ -37,7 +39,7 @@ const getValue = async ({
     return failure(`Could not find config named ${key}`)
   }
 
-  const selectedValue = desiredValue ?? (await promptForValue({config, currentDefault, message}))
+  const selectedValue = desiredValue ?? (await promptForValue({allowBlank, config, currentDefault, message}))
 
   if (selectedValue === undefined) {
     return noop()
@@ -51,10 +53,12 @@ const getValue = async ({
 }
 
 const promptForValue = async ({
+  allowBlank,
   config,
   currentDefault,
   message,
 }: {
+  allowBlank: boolean
   config: PrefabConfig
   currentDefault: ConfigValue | undefined
   message: string
@@ -62,7 +66,11 @@ const promptForValue = async ({
   const choices = config.allowableValues.map((v) => valueOfToString(v))
 
   if (choices.length === 0) {
-    return ux.prompt(message)
+    const options: ux.IPromptOptions = {
+      required: !allowBlank,
+    }
+
+    return ux.prompt(message, options)
   }
 
   const autoCompleteMessage =

@@ -32,15 +32,6 @@ export const initPrefab = async (ctx: Command, flags: Flags) => {
   return prefab
 }
 
-export const configValueType = (key: string): string | undefined => {
-  const config = prefab.raw(key)
-  const value = config?.rows[0]?.values[0]?.value
-
-  if (value) {
-    return Object.keys(value)[0]
-  }
-}
-
 const getUserId = (): string =>
   prefab.defaultContext()?.get(DEFAULT_CONTEXT_USER_ID_NAMESPACE)?.get(DEFAULT_CONTEXT_USER_ID) as string
 

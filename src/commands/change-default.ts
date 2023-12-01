@@ -4,7 +4,7 @@ import {Prefab} from '@prefab-cloud/prefab-cloud-node'
 import type {Environment} from '../prefab-common/src/api/getEnvironmentsFromApi.js'
 
 import {APICommand} from '../index.js'
-import {configValueType} from '../prefab.js'
+import {valueTypeString} from '../prefab-common/src/valueType.js'
 import {JsonObj} from '../result.js'
 import getConfirmation, {confirmFlag} from '../ui/get-confirmation.js'
 import getEnvironment from '../ui/get-environment.js'
@@ -76,16 +76,16 @@ export default class ChangeDefault extends APICommand {
   }
 
   private async submitChange(prefab: Prefab, key: string, value: string, environment: Environment) {
-    const type = configValueType(key)
-
-    if (!type) {
-      return this.err(`no type found for ${key}`)
-    }
-
     const config = prefab.raw(key)
 
     if (!config) {
       return this.err(`no config found for ${key}`)
+    }
+
+    const type = valueTypeString(config.valueType)
+
+    if (!type) {
+      return this.err(`unknown value type for ${key}: ${config.valueType}`)
     }
 
     const payload = {

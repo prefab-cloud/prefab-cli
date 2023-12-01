@@ -10,7 +10,7 @@ import {Environment, getEnvironmentsFromApi} from '../prefab-common/src/api/getE
 import {configValuesInEnvironments} from '../prefab-common/src/configValuesInEnvironments.js'
 import {EvaluationStats, getEvaluationStats} from '../prefab-common/src/evaluations/stats.js'
 import {urlFor} from '../prefab-common/src/urlFor.js'
-import {Provided, valueOf, valueOfToString} from '../prefab-common/src/valueOf.js'
+import {valueOf, valueOfToString} from '../prefab-common/src/valueOf.js'
 import {JsonObj} from '../result.js'
 import getKey from '../ui/get-key.js'
 import nameArg from '../util/name-arg.js'
@@ -123,10 +123,8 @@ export default class Info extends APICommand {
             .join(', ')
         }
 
-        // eslint-disable-next-line no-warning-comments
-        // TODO: remove this check on `provided` is in the proto
-        if ('provided' in (value.rawValue ?? {})) {
-          valueStr = `\`${(value.rawValue as Provided).provided.lookup}\` via ENV`
+        if (value.rawValue?.provided?.source?.toString() === 'ENV_VAR') {
+          valueStr += ` via ENV`
         }
 
         json[value.environment?.name ?? DEFAULT_ENVIRONMENT_NAME] = {

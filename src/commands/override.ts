@@ -1,7 +1,10 @@
 import {Flags} from '@oclif/core'
 
+import type {PrefabConfig} from '../prefab-common/src/types.js'
+
 import {APICommand} from '../index.js'
-import {configValueType, overrideFor} from '../prefab.js'
+import {overrideFor} from '../prefab.js'
+import {valueTypeString} from '../prefab-common/src/valueType.js'
 import {JsonObj} from '../result.js'
 import getKey from '../ui/get-key.js'
 import getValue from '../ui/get-value.js'
@@ -47,10 +50,16 @@ export default class Override extends APICommand {
       return this.removeOverride(key)
     }
 
+    const config = prefab.raw(key)
+
+    if (!config) {
+      return this.err(`Could not find config named ${key}`)
+    }
+
     const value = await getValue({desiredValue: flags.value, flags, key, message: 'Override value', prefab})
 
     if (value.ok) {
-      return this.setOverride(key, value.value)
+      return this.setOverride(config, value.value)
     }
 
     this.resultMessage(value)
@@ -77,8 +86,10 @@ export default class Override extends APICommand {
     this.err(`Failed to remove override: ${request.status}`, {key, serverError: request.error})
   }
 
-  private async setOverride(key: string, value: string): Promise<JsonObj | void> {
-    const type = configValueType(key)
+  private async setOverride(config: PrefabConfig, value: string): Promise<JsonObj | void> {
+    const {key, valueType} = config
+
+    const type = valueTypeString(valueType)
 
     if (!type) {
       return this.err(`Could not find type for config named ${key}`)

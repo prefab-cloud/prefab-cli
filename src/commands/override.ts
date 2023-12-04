@@ -1,6 +1,6 @@
 import {Flags} from '@oclif/core'
 
-import type {PrefabConfig} from '../prefab-common/src/types.js'
+import type {Config} from '../prefab-common/src/types.js'
 
 import {APICommand} from '../index.js'
 import {overrideFor} from '../prefab.js'
@@ -86,7 +86,7 @@ export default class Override extends APICommand {
     this.err(`Failed to remove override: ${request.status}`, {key, serverError: request.error})
   }
 
-  private async setOverride(config: PrefabConfig, value: string): Promise<JsonObj | void> {
+  private async setOverride(config: Config, value: string): Promise<JsonObj | void> {
     const {key, valueType} = config
 
     const type = valueTypeString(valueType)

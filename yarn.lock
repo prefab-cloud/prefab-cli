@@ -771,10 +771,10 @@
   resolved "https://registry.npmjs.org/@pkgjs/parseargs/-/parseargs-0.11.0.tgz"
   integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
 
-"@prefab-cloud/prefab-cloud-node@^0.1.9":
-  version "0.1.9"
-  resolved "https://registry.npmjs.org/@prefab-cloud/prefab-cloud-node/-/prefab-cloud-node-0.1.9.tgz"
-  integrity sha512-iwQYCAodDoZkUx0XSq2KwW2aFs0wn20Xr/TY6FdRUXyDPWGHBO5sFMyCmybN1qiEBgiDSVc+C8BB/yK7qZygnQ==
+"@prefab-cloud/prefab-cloud-node@0.1.10":
+  version "0.1.10"
+  resolved "https://registry.yarnpkg.com/@prefab-cloud/prefab-cloud-node/-/prefab-cloud-node-0.1.10.tgz#166691c539fb8d10d97a489ddb4f407473675f82"
+  integrity sha512-dL3YguTBF05oZxcptVSfY51ENeqTLgTIh+5iPKDVYpE/Vyqc1tXqxcgkuu1CthG+yhjSWFTGfMA1hqWOKEIB0g==
   dependencies:
     "@types/eventsource" "^1.1.11"
     eventsource "^2.0.2"

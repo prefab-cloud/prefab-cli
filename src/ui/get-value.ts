@@ -2,11 +2,11 @@ import {ux} from '@oclif/core'
 import {Prefab} from '@prefab-cloud/prefab-cloud-node'
 
 import type {Environment} from '../prefab-common/src/api/getEnvironmentsFromApi.js'
-import type {ConfigValue, PrefabConfig} from '../prefab-common/src/types.js'
+import type {Config, ConfigValue} from '../prefab-common/src/types.js'
 
 import {defaultValueFor} from '../prefab.js'
 import {valueOfToString} from '../prefab-common/src/valueOf.js'
-import {Result, failure, noop} from '../result.js'
+import {Result, failure, noop, success} from '../result.js'
 import autocomplete from '../util/autocomplete.js'
 import validateValue from '../validations/value.js'
 
@@ -23,12 +23,22 @@ const getValue = async ({
   desiredValue: string | undefined
   environment?: Environment
   flags: {interactive: boolean}
-  key: string
+  key?: string
   message: string
   prefab: Prefab
 }): Promise<Result<string>> => {
   if (desiredValue === undefined && !flags.interactive) {
     return failure(`No value provided for ${key}`)
+  }
+
+  if (!key) {
+    const value = desiredValue ?? (await promptForValue({allowBlank, message}))
+
+    if (value === undefined) {
+      return noop()
+    }
+
+    return success(value)
   }
 
   const currentDefault = environment ? defaultValueFor(environment.id, key) : undefined
@@ -59,13 +69,13 @@ const promptForValue = async ({
   message,
 }: {
   allowBlank: boolean
-  config: PrefabConfig
-  currentDefault: ConfigValue | undefined
+  config?: Config
+  currentDefault?: ConfigValue | undefined
   message: string
 }) => {
-  const choices = config.allowableValues.map((v) => valueOfToString(v))
+  const choices = config?.allowableValues.map((v) => valueOfToString(v))
 
-  if (choices.length === 0) {
+  if (choices === undefined || choices.length === 0) {
     const options: ux.IPromptOptions = {
       required: !allowBlank,
     }

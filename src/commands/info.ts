@@ -1,6 +1,6 @@
 import {Flags} from '@oclif/core'
 
-import type {PrefabConfig} from '../prefab-common/src/types.js'
+import type {Config} from '../prefab-common/src/types.js'
 
 import {DEFAULT_ENVIRONMENT_NAME, INHERIT} from '../constants.js'
 import {APICommand} from '../index.js'
@@ -82,7 +82,7 @@ export default class Info extends APICommand {
     }
   }
 
-  private parseConfig(config: PrefabConfig, environments: Environment[], url: string) {
+  private parseConfig(config: Config, environments: Environment[], url: string) {
     const values = configValuesInEnvironments(config, environments, this.verboseLog)
     const override = overrideFor({currentEnvironmentId: this.currentEnvironment.id, key: config.key})
 

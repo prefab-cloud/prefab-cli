@@ -28,19 +28,19 @@ export default class List extends APICommand {
     const types: ConfigType[] = []
 
     if (flags.configs) {
-      types.push(1)
+      types.push(ConfigType.CONFIG)
     }
 
     if (flags['feature-flags']) {
-      types.push(2)
+      types.push(ConfigType.FEATURE_FLAG)
     }
 
     if (flags['log-levels']) {
-      types.push(3)
+      types.push(ConfigType.LOG_LEVEL)
     }
 
     if (flags.segments) {
-      types.push(4)
+      types.push(ConfigType.SEGMENT)
     }
 
     if (types.length > 0) {

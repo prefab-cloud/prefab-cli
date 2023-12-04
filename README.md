@@ -75,17 +75,17 @@ Create a new item in Prefab
 ```
 USAGE
   $ prefab create NAME --api-key <value> --type boolean-flag|string [--json] [--interactive] [--no-color]
-    [--verbose] [--secret] [--secret-key-name <value>] [--value <value>]
+    [--verbose] [--default <value>] [--secret] [--secret-key-name <value>]
 
 ARGUMENTS
   NAME  name for your new item (e.g. my.new.flag)
 
 FLAGS
+  --default=<value>          default value for your new item
   --secret                   create a secret flag
   --secret-key-name=<value>  [default: prefab.secrets.encryption.key] name of the secret key to use for encryption
   --type=<option>            (required)
                              <options: boolean-flag|string>
-  --value=<value>            default value for your new item
 
 GLOBAL FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
@@ -99,6 +99,12 @@ DESCRIPTION
 
 EXAMPLES
   $ prefab create my.new.flag --type boolean-flag
+
+  $ prefab create my.new.flag --type boolean-flag --default=true
+
+  $ prefab create my.new.string --type string --default="hello world"
+
+  $ prefab create my.new.string --type string --default="hello world" --secret
 ```
 
 _See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.12/src/commands/create.ts)_

@@ -16,6 +16,7 @@ jobs:
       PREFAB_API_KEY: ${{ secrets.PREFAB_API_KEY }}
       PREFAB_CDN_URL: ${{ secrets.PREFAB_CDN_URL }}
       PREFAB_API_URL: ${{ secrets.PREFAB_API_URL }}
+      PREFAB_ENCRYPTION_KEY_DEVELOPMENT: ${{ secrets.PREFAB_ENCRYPTION_KEY_DEVELOPMENT }}
     strategy:
       matrix:
         os: ["ubuntu-latest", "windows-latest"]

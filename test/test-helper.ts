@@ -17,6 +17,14 @@ const deepCompare = (obj1: any, obj2: any): boolean => {
     return true
   }
 
+  if (typeof obj2 === 'function') {
+    return obj2(obj1)
+  }
+
+  if (typeof obj1 === 'function') {
+    return obj1(obj2)
+  }
+
   // If both are the same value/primitive
   if (obj1 === obj2) {
     return true

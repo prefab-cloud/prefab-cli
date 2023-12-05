@@ -10,6 +10,7 @@ import {ConfigType, ConfigValue, ConfigValueType, NewConfig} from '../prefab-com
 import {JsonObj} from '../result.js'
 import getValue from '../ui/get-value.js'
 import {checkmark} from '../util/color.js'
+import secretFlags from '../util/secret-flags.js'
 
 export default class Create extends APICommand {
   static args = {
@@ -23,16 +24,14 @@ export default class Create extends APICommand {
     '<%= config.bin %> <%= command.id %> my.new.flag --type boolean-flag --default=true',
     '<%= config.bin %> <%= command.id %> my.new.string --type string --default="hello world"',
     '<%= config.bin %> <%= command.id %> my.new.string --type string --default="hello world" --secret',
+    '<%= config.bin %> <%= command.id %> my.new.string --type string --env-var=MY_ENV_VAR_NAME',
   ]
 
   static flags = {
     default: Flags.string({description: 'default value for your new item', required: false}),
-    secret: Flags.boolean({default: false, description: 'create a secret flag'}),
-    'secret-key-name': Flags.string({
-      default: 'prefab.secrets.encryption.key',
-      description: 'name of the secret key to use for encryption',
-    }),
+    'env-var': Flags.string({description: 'environment variable to get value from'}),
     type: Flags.string({options: ['boolean-flag', 'string'], required: true}),
+    ...secretFlags('encrypt the value of this item'),
   }
 
   public async run(): Promise<JsonObj | void> {
@@ -46,66 +45,83 @@ export default class Create extends APICommand {
 
     const prefab = await initPrefab(this, flags)
 
-    const valueInput = await getValue({desiredValue: flags.default, flags, message: 'Default value', prefab})
-
-    if (valueInput.ok) {
-      const rawValue = valueInput.value
-      let value: ConfigValue = {string: rawValue}
-
-      if (flags.secret) {
-        const rawSecretKey = prefab.raw(flags['secret-key-name'])
-
-        if (rawSecretKey === undefined) {
-          return this.err(`Failed to create secret flag: ${flags['secret-key-name']} not found`, {
-            key,
-            phase: 'finding-secret',
-          })
-        }
-
-        const secretKey = prefab.get(flags['secret-key-name'])
-
-        if (typeof secretKey !== 'string') {
-          return this.err(`Failed to create secret flag: ${flags['secret-key-name']} is not a string`, {
-            key,
-            phase: 'finding-secret',
-          })
-        }
-
-        value = {
-          confidential: true,
-          decryptWith: 'prefab.secrets.encryption.key',
-          string: encryption.encrypt(rawValue, secretKey),
-        }
-      }
-
-      const newConfig: Omit<NewConfig, 'allowableValues'> = {
-        configType: ConfigType.CONFIG,
-        key: args.name,
-        projectId: this.currentEnvironment.projectId as unknown as Long,
-        rows: [
-          {
-            properties: {},
-            values: [{criteria: [], value}],
-          },
-        ],
-        valueType: ConfigValueType.STRING,
-      }
-
-      const request = await this.apiClient.post('/api/v1/config/', newConfig)
-
-      if (!request.ok) {
-        const errMsg =
-          request.status === 409
-            ? `Failed to create config: ${key} already exists`
-            : `Failed to create config: ${request.status} | ${JSON.stringify(request.error)}`
-
-        return this.err(errMsg, {key, phase: 'creation', serverError: request.error})
-      }
-
-      const response = request.json
-
-      return this.ok(`${checkmark} Created config: ${key}`, {key, ...response})
+    if (flags['env-var'] && flags.default) {
+      return this.err('cannot specify both --env-var and --default')
     }
+
+    let configValue: ConfigValue = {}
+
+    if (flags['env-var']) {
+      configValue = {
+        provided: {
+          lookup: flags['env-var'],
+          source: 1,
+        },
+      }
+    } else {
+      const valueInput = await getValue({desiredValue: flags.default, flags, message: 'Default value', prefab})
+
+      if (valueInput.ok) {
+        const rawValue = valueInput.value
+        configValue = {string: rawValue}
+
+        if (flags.secret) {
+          const rawSecretKey = prefab.raw(flags['secret-key-name'])
+
+          if (rawSecretKey === undefined) {
+            return this.err(`Failed to create secret flag: ${flags['secret-key-name']} not found`, {
+              key,
+              phase: 'finding-secret',
+            })
+          }
+
+          const secretKey = prefab.get(flags['secret-key-name'])
+
+          if (typeof secretKey !== 'string') {
+            return this.err(`Failed to create secret flag: ${flags['secret-key-name']} is not a string`, {
+              key,
+              phase: 'finding-secret',
+            })
+          }
+
+          configValue = {
+            confidential: true,
+            decryptWith: 'prefab.secrets.encryption.key',
+            string: encryption.encrypt(rawValue, secretKey),
+          }
+        }
+      } else {
+        return
+      }
+    }
+
+    const newConfig: Omit<NewConfig, 'allowableValues'> = {
+      configType: ConfigType.CONFIG,
+      key: args.name,
+      projectId: this.currentEnvironment.projectId as unknown as Long,
+      rows: [
+        {
+          properties: {},
+          values: [{criteria: [], value: configValue}],
+        },
+      ],
+      valueType: ConfigValueType.STRING,
+    }
+
+    const request = await this.apiClient.post('/api/v1/config/', newConfig)
+
+    if (!request.ok) {
+      const errMsg =
+        request.status === 409
+          ? `Failed to create config: ${key} already exists`
+          : `Failed to create config: ${request.status} | ${JSON.stringify(request.error)}`
+
+      return this.err(errMsg, {key, phase: 'creation', serverError: request.error})
+    }
+
+    const response = request.json
+
+    return this.ok(`${checkmark} Created config: ${key}`, {key, ...response})
   }
 
   private async createBooleanFlag(args: {name: string}, flags: {default: boolean}): Promise<JsonObj | void> {

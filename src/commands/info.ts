@@ -4,7 +4,7 @@ import type {Config} from '../prefab-common/src/types.js'
 
 import {DEFAULT_ENVIRONMENT_NAME, INHERIT} from '../constants.js'
 import {APICommand} from '../index.js'
-import {overrideFor, unwrap} from '../prefab.js'
+import {overrideFor} from '../prefab.js'
 import {getConfigFromApi} from '../prefab-common/src/api/getConfigFromApi.js'
 import {Environment, getEnvironmentsFromApi} from '../prefab-common/src/api/getEnvironmentsFromApi.js'
 import {configValuesInEnvironments} from '../prefab-common/src/configValuesInEnvironments.js'
@@ -97,11 +97,11 @@ export default class Info extends APICommand {
     for (const value of sortedValues) {
       const isCurrentEnv = value.environment?.id === this.currentEnvironment.id
 
-      const overrideStr = isCurrentEnv && override ? ` [override] ${unwrap(override)}` : ''
+      const overrideStr = isCurrentEnv && override ? ` [override] \`${valueOfToString(override)}\`` : ''
 
       if (value.hasRules) {
         json[value.environment?.name ?? DEFAULT_ENVIRONMENT_NAME] = {
-          override: isCurrentEnv && override ? unwrap(override) : undefined,
+          override: isCurrentEnv && override ? valueOfToString(override) : undefined,
           url: url + `?environment=${value.environment?.id}`,
           value: '[see rules]',
         }
@@ -125,11 +125,15 @@ export default class Info extends APICommand {
         }
 
         if (value.rawValue?.provided?.source?.toString() === 'ENV_VAR') {
+          if (value.rawValue.confidential) {
+            valueStr = `\`${value.rawValue.provided.lookup}\``
+          }
+
           valueStr += ` via ENV`
         }
 
         json[value.environment?.name ?? DEFAULT_ENVIRONMENT_NAME] = {
-          override: isCurrentEnv && override ? unwrap(override) : undefined,
+          override: isCurrentEnv && override ? valueOfToString(override) : undefined,
           url: url + `?environment=${value.environment?.id}`,
           value: value.value,
         }

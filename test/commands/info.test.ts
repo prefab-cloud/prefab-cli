@@ -227,7 +227,7 @@ https://app.staging-prefab.cloud/account/projects/124/configs/${keyWithNoEvaluat
 
 - Default: abc
 - jeffrey: [see rules] https://app.staging-prefab.cloud/account/projects/124/configs/jeffreys.test.key?environment=588
-- Production: [override] my.override https://app.staging-prefab.cloud/account/projects/124/configs/jeffreys.test.key?environment=143
+- Production: [override] \`my.override\` https://app.staging-prefab.cloud/account/projects/124/configs/jeffreys.test.key?environment=143
 
 No evaluations in the past 24 hours
 `.trim(),

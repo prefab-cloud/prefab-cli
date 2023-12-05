@@ -1,7 +1,7 @@
 import {Command} from '@oclif/core'
 import {Prefab} from '@prefab-cloud/prefab-cloud-node'
 
-import type {ConfigValue, GetValue} from './prefab-common/src/types.js'
+import type {ConfigValue} from './prefab-common/src/types.js'
 
 type Flags = {
   ['api-key']?: string
@@ -76,14 +76,4 @@ export const defaultValueFor = (envId: string, key: string): ConfigValue | undef
   const row = getRowInEnvironment({desiredEnvId: envId, key})
 
   return row?.values.at(-1)?.value
-}
-
-export const unwrap = (value: ConfigValue): GetValue => {
-  const valueToReturn = Object.values(value)[0]
-
-  if (typeof valueToReturn === 'object' && !Array.isArray(valueToReturn)) {
-    return unwrap(valueToReturn)
-  }
-
-  return valueToReturn
 }

@@ -115,12 +115,7 @@ const cannedResponses: CannedResponses = {
 
 const server = setupServer(
   http.get('https://api-staging-prefab-cloud.global.ssl.fastly.net/api/v1/configs/0', () => passthrough()),
-
-  http.post('https://api.staging-prefab.cloud/api/v1/config-recipes/feature-flag/boolean', async ({request}) =>
-    getCannedResponse(request, cannedResponses).catch(console.error),
-  ),
-
-  http.post('https://api.staging-prefab.cloud/api/v1/config/', async ({request}) =>
+  http.post('https://api.staging-prefab.cloud/api/v1/*', async ({request}) =>
     getCannedResponse(request, cannedResponses).catch(console.error),
   ),
 )

@@ -1,5 +1,5 @@
 import {expect, test} from '@oclif/test'
-import {HttpResponse, http, passthrough} from 'msw'
+import {http, passthrough} from 'msw'
 import {setupServer} from 'msw/node'
 
 import {CannedResponses, getCannedResponse} from '../test-helper.js'
@@ -39,17 +39,19 @@ const cannedResponses: CannedResponses = {
       400,
     ],
   ],
+  'https://api.staging-prefab.cloud/api/v1/config/remove-variant': [
+    [
+      {configKey: 'jeffreys.test.key', variant: {string: 'my.override'}},
+      {message: '', newId: '17001604601640547'},
+      200,
+    ],
+  ],
 }
 
 const server = setupServer(
   http.get('https://api-staging-prefab-cloud.global.ssl.fastly.net/api/v1/configs/0', () => passthrough()),
-
-  http.post('https://api.staging-prefab.cloud/api/v1/config/assign-variant', async ({request}) =>
+  http.post('https://api.staging-prefab.cloud/api/v1/*', async ({request}) =>
     getCannedResponse(request, cannedResponses).catch(console.error),
-  ),
-
-  http.post('https://api.staging-prefab.cloud/api/v1/config/remove-variant', async () =>
-    HttpResponse.json({message: '', newId: '17001604601640547'}),
   ),
 )
 

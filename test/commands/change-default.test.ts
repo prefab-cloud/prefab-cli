@@ -4,16 +4,13 @@ import {setupServer} from 'msw/node'
 
 import {ANY, CannedResponses, getCannedResponse} from '../test-helper.js'
 
+const createdResponse = {response: {message: '', newId: '17002327855857830'}}
+
 const cannedResponses: CannedResponses = {
   'https://api.staging-prefab.cloud/api/v1/config/set-default/': [
     [
-      {
-        configKey: 'feature-flag.simple',
-        currentVersionId: ANY,
-        environmentId: '5',
-        value: {bool: 'true'},
-      },
-      {response: {message: '', newId: '17002327855857830'}},
+      {configKey: 'feature-flag.simple', currentVersionId: ANY, environmentId: '5', value: {bool: 'true'}},
+      createdResponse,
       200,
     ],
 
@@ -24,8 +21,18 @@ const cannedResponses: CannedResponses = {
         environmentId: '6',
         value: {string: 'hello default world'},
       },
+      createdResponse,
+      200,
+    ],
 
-      {response: {message: '', newId: '17002327855857830'}},
+    [
+      {
+        configKey: 'jeffreys.test.key',
+        currentVersionId: '17005955334851003',
+        environmentId: '6',
+        value: {provided: {lookup: 'GREETING', source: 1}},
+      },
+      createdResponse,
       200,
     ],
   ],
@@ -119,6 +126,28 @@ describe('change-default', () => {
           value: 'hello default world',
         })
       })
+
+    test
+      .stdout()
+      .command(['change-default', 'jeffreys.test.key', '--environment=Staging', '--confirm', '--env-var=GREETING'])
+      .it('can create a string provided by an env var', (ctx) => {
+        expect(ctx.stdout).to.contain(`Successfully changed default to be provided by \`GREETING\``)
+      })
+
+    test
+      .stderr()
+      .command([
+        'change-default',
+        'jeffreys.test.key',
+        '--environment=Staging',
+        '--confirm',
+        '--env-var=GREETING',
+        '--value=hello world',
+      ])
+      .catch((error) => {
+        expect(error.message).to.contain(`cannot specify both --env-var and --value`)
+      })
+      .it('shows an error when provided a value and an env-var')
   })
 
   describe('failure', () => {

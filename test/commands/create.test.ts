@@ -60,6 +60,13 @@ const cannedResponses: CannedResponses = {
       200,
     ],
     [
+      createRequest('greeting.from.env', {
+        rows: [{properties: {}, values: [{criteria: [], value: {provided: {lookup: 'GREETING', source: 1}}}]}],
+      }),
+      successResponse,
+      200,
+    ],
+    [
       createRequest('brand.new.secret', {
         rows: [
           {
@@ -185,6 +192,21 @@ describe('create', () => {
       .it('can create a string', (ctx) => {
         expect(ctx.stdout).to.contain(`Created config: brand.new.string`)
       })
+
+    test
+      .stdout()
+      .command(['create', 'greeting.from.env', '--type=string', '--env-var=GREETING'])
+      .it('can create a string provided by an env var', (ctx) => {
+        expect(ctx.stdout).to.contain(`Created config: greeting.from.env`)
+      })
+
+    test
+      .stderr()
+      .command(['create', 'greeting.from.env', '--type=string', '--env-var=GREETING', '--default=hello.world'])
+      .catch((error) => {
+        expect(error.message).to.contain(`cannot specify both --env-var and --default`)
+      })
+      .it('shows an error when provided a default and an env-var')
   })
 
   describe('secret', () => {

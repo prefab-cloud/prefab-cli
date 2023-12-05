@@ -64,6 +64,7 @@ export default class Info extends APICommand {
       ])
 
       if (fullConfig) {
+        this.verboseLog('Full config:', fullConfig)
         json.values = this.parseConfig(fullConfig, environments, url)
         this.log('')
       } else {

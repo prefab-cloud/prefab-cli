@@ -1,6 +1,7 @@
 import {expect, test} from '@oclif/test'
 
 const validKey = 'my-string-list-key'
+const secretKey = 'a.secret.config'
 
 describe('get', () => {
   test
@@ -15,6 +16,13 @@ describe('get', () => {
     .command(['get', validKey, '--json'])
     .it('returns JSON for a value for a valid name', (ctx) => {
       expect(JSON.parse(ctx.stdout)).to.eql({[validKey]: ['a', 'b', 'c']})
+    })
+
+  test
+    .stdout()
+    .command(['get', secretKey])
+    .it('decrypts a secret', (ctx) => {
+      expect(ctx.stdout).to.eql('hello.world\n')
     })
 
   test

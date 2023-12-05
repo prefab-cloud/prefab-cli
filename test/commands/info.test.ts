@@ -7,6 +7,12 @@ import {CannedResponses, getCannedResponse} from '../test-helper.js'
 const keyWithEvaluations = 'my-string-list-key'
 const keyWithNoEvaluations = 'jeffreys.test.key'
 const keyDoesNotExist = 'this.does.not.exist'
+const secretKey = 'a.secret.config'
+const confidentialKey = 'a.confidential.config'
+
+const noEvaluationsResponse = (key: string) => ({end: 1_700_059_396_635, key, start: 1_699_972_996_635, total: 0})
+
+const rawSecret = `875247386844c18c58a97c--b307b97a8288ac9da3ce0cf2--7ab0c32e044869e355586ed653a435de`
 
 const rawConfigResponseForKeyWithEvaluations = {
   changedBy: {apiKeyId: '', email: 'jeffrey.chupp@prefab.cloud', userId: '0'},
@@ -14,6 +20,28 @@ const rawConfigResponseForKeyWithEvaluations = {
   key: keyWithEvaluations,
   projectId: '124',
   rows: [{values: [{value: {stringList: {values: ['a', 'b', 'c']}}}]}],
+  valueType: 'STRING',
+}
+
+const rawSecretConfigResponse = {
+  changedBy: {apiKeyId: '315', email: '', userId: '4'},
+  configType: 'CONFIG',
+  draftId: '539',
+  id: '17017173800583163',
+  key: secretKey,
+  projectId: '124',
+  rows: [{values: [{value: {decryptWith: 'prefab.secrets.encryption.key', string: rawSecret}}]}],
+  valueType: 'STRING',
+}
+
+const rawConfidentialConfigResponse = {
+  changedBy: {apiKeyId: '315', email: '', userId: '4'},
+  configType: 'CONFIG',
+  draftId: '539',
+  id: '17017173800583163',
+  key: confidentialKey,
+  projectId: '124',
+  rows: [{values: [{value: {confidential: true, string: 'hello world'}}]}],
   valueType: 'STRING',
 }
 
@@ -83,17 +111,25 @@ const environmentResponse = {
 }
 
 const cannedResponses: CannedResponses = {
+  [`https://api.staging-prefab.cloud/api/v1/config/key/${confidentialKey}`]: [[{}, rawConfidentialConfigResponse, 200]],
   [`https://api.staging-prefab.cloud/api/v1/config/key/${keyWithEvaluations}`]: [
     [{}, rawConfigResponseForKeyWithEvaluations, 200],
   ],
   [`https://api.staging-prefab.cloud/api/v1/config/key/${keyWithNoEvaluations}`]: [
     [{}, rawConfigResponseForKeyWithNoEvaluations, 200],
   ],
+  [`https://api.staging-prefab.cloud/api/v1/config/key/${secretKey}`]: [[{}, rawSecretConfigResponse, 200]],
+  [`https://api.staging-prefab.cloud/api/v1/evaluation-stats/${confidentialKey}`]: [
+    [{}, rawConfigResponseForKeyWithNoEvaluations, 200],
+  ],
   [`https://api.staging-prefab.cloud/api/v1/evaluation-stats/${keyWithEvaluations}`]: [
     [{}, rawEvaluationResponse, 200],
   ],
   [`https://api.staging-prefab.cloud/api/v1/evaluation-stats/${keyWithNoEvaluations}`]: [
-    [{}, {end: 1_700_059_396_635, key: keyWithNoEvaluations, start: 1_699_972_996_635, total: 0}, 200],
+    [{}, noEvaluationsResponse(keyWithNoEvaluations), 200],
+  ],
+  [`https://api.staging-prefab.cloud/api/v1/evaluation-stats/${secretKey}`]: [
+    [{}, noEvaluationsResponse(keyWithNoEvaluations), 200],
   ],
   'https://api.staging-prefab.cloud/api/v1/project-environments': [[{}, environmentResponse, 200]],
 }
@@ -228,6 +264,22 @@ No evaluations in the past 24 hours
             },
           },
         })
+      })
+
+    test
+      .stdout()
+      .command(['info', secretKey])
+      .it('decrypts a secret', (ctx) => {
+        expect(ctx.stdout).not.contains(rawSecret)
+        expect(ctx.stdout).contains('Default: [encrypted]')
+      })
+
+    test
+      .stdout()
+      .command(['info', confidentialKey])
+      .it('shows [confidential] for confidential items', (ctx) => {
+        expect(ctx.stdout).not.contains(rawSecret)
+        expect(ctx.stdout).contains('Default: [confidential]')
       })
   })
 

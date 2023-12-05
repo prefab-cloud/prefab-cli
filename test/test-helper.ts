@@ -76,10 +76,14 @@ export const getCannedResponse = async (
   request: StrictRequest<DefaultBodyType>,
   cannedResponses: CannedResponses,
 ): Promise<HttpResponse> => {
-  const body = await request.json()
+  let body: DefaultBodyType = {}
 
-  if (!body || typeof body !== 'object') {
-    throw new Error('Expected http body to be an object')
+  if (request.method === 'POST') {
+    body = await request.json()
+
+    if (!body || typeof body !== 'object') {
+      throw new Error('Expected http body to be an object')
+    }
   }
 
   const cannedResponsesForUrl = cannedResponses[request.url]
@@ -87,7 +91,7 @@ export const getCannedResponse = async (
   if (!cannedResponsesForUrl) {
     console.log(JSON.stringify(body, null, 2))
 
-    throw new Error('No canned responses for url')
+    throw new Error(`No canned responses for url: ${request.url}`)
   }
 
   const cannedResponse = cannedResponsesForUrl.find(([payload]) => deepCompare(payload, body))
@@ -95,7 +99,7 @@ export const getCannedResponse = async (
   if (!cannedResponse) {
     console.log(JSON.stringify(body, null, 2))
 
-    throw new Error('No canned response for payload')
+    throw new Error(`No canned response for payload/url ${JSON.stringify(body, null, 2)} ${request.url}`)
   }
 
   const [, response, status] = cannedResponse

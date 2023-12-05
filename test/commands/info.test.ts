@@ -1,10 +1,21 @@
 import {expect, test} from '@oclif/test'
-import {HttpResponse, http, passthrough} from 'msw'
+import {http, passthrough} from 'msw'
 import {setupServer} from 'msw/node'
+
+import {CannedResponses, getCannedResponse} from '../test-helper.js'
 
 const keyWithEvaluations = 'my-string-list-key'
 const keyWithNoEvaluations = 'jeffreys.test.key'
 const keyDoesNotExist = 'this.does.not.exist'
+
+const rawConfigResponseForKeyWithEvaluations = {
+  changedBy: {apiKeyId: '', email: 'jeffrey.chupp@prefab.cloud', userId: '0'},
+  configType: 'CONFIG',
+  key: keyWithEvaluations,
+  projectId: '124',
+  rows: [{values: [{value: {stringList: {values: ['a', 'b', 'c']}}}]}],
+  valueType: 'STRING',
+}
 
 const rawEvaluationResponse = {
   end: 1_700_061_992_151,
@@ -25,11 +36,9 @@ const rawEvaluationResponse = {
   total: 51_934,
 }
 
-const rawConfigResponse = {
+const rawConfigResponseForKeyWithNoEvaluations = {
   changedBy: {apiKeyId: '', email: 'jeffrey.chupp@prefab.cloud', userId: '0'},
   configType: 'CONFIG',
-  draftid: '508',
-  id: '17005097553891585',
   key: 'jeffreys.test.key',
   projectId: '124',
   rows: [
@@ -73,23 +82,26 @@ const environmentResponse = {
   projectId: 124,
 }
 
+const cannedResponses: CannedResponses = {
+  [`https://api.staging-prefab.cloud/api/v1/config/key/${keyWithEvaluations}`]: [
+    [{}, rawConfigResponseForKeyWithEvaluations, 200],
+  ],
+  [`https://api.staging-prefab.cloud/api/v1/config/key/${keyWithNoEvaluations}`]: [
+    [{}, rawConfigResponseForKeyWithNoEvaluations, 200],
+  ],
+  [`https://api.staging-prefab.cloud/api/v1/evaluation-stats/${keyWithEvaluations}`]: [
+    [{}, rawEvaluationResponse, 200],
+  ],
+  [`https://api.staging-prefab.cloud/api/v1/evaluation-stats/${keyWithNoEvaluations}`]: [
+    [{}, {end: 1_700_059_396_635, key: keyWithNoEvaluations, start: 1_699_972_996_635, total: 0}, 200],
+  ],
+  'https://api.staging-prefab.cloud/api/v1/project-environments': [[{}, environmentResponse, 200]],
+}
+
 const server = setupServer(
   http.get('https://api-staging-prefab-cloud.global.ssl.fastly.net/api/v1/configs/0', () => passthrough()),
-
-  http.get(`https://api.staging-prefab.cloud/api/v1/evaluation-stats/${keyWithEvaluations}`, () =>
-    HttpResponse.json(rawEvaluationResponse),
-  ),
-
-  http.get('https://api.staging-prefab.cloud/api/v1/project-environments', () =>
-    HttpResponse.json(environmentResponse),
-  ),
-
-  http.get('https://api.staging-prefab.cloud/api/v1/config/key/jeffreys.test.key', () =>
-    HttpResponse.json(rawConfigResponse),
-  ),
-
-  http.get(`https://api.staging-prefab.cloud/api/v1/evaluation-stats/${keyWithNoEvaluations}`, () =>
-    HttpResponse.json({end: 1_700_059_396_635, key: keyWithNoEvaluations, start: 1_699_972_996_635, total: 0}),
+  http.get('https://api.staging-prefab.cloud/api/v1/*', async ({request}) =>
+    getCannedResponse(request, cannedResponses).catch(console.error),
   ),
 )
 

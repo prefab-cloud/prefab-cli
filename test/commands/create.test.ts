@@ -2,7 +2,7 @@ import {expect, test} from '@oclif/test'
 import {http, passthrough} from 'msw'
 import {setupServer} from 'msw/node'
 
-import {CannedResponses, getCannedResponse} from '../test-helper.js'
+import {CannedResponses, SECRET_VALUE, getCannedResponse} from '../test-helper.js'
 
 const recipeResponse = (key: string, defaultValue: boolean = false) => ({
   allowableValues: [{bool: true}, {bool: false}],
@@ -60,6 +60,13 @@ const cannedResponses: CannedResponses = {
       200,
     ],
     [
+      createRequest('confidential.new.string', {
+        rows: [{properties: {}, values: [{criteria: [], value: {confidential: true, string: 'hello.world'}}]}],
+      }),
+      successResponse,
+      200,
+    ],
+    [
       createRequest('greeting.from.env', {
         rows: [{properties: {}, values: [{criteria: [], value: {provided: {lookup: 'GREETING', source: 1}}}]}],
       }),
@@ -77,31 +84,7 @@ const cannedResponses: CannedResponses = {
                 value: {
                   confidential: true,
                   decryptWith: 'prefab.secrets.encryption.key',
-                  string(actual: string) {
-                    const parts = actual.split('--')
-
-                    if (parts.length !== 3) {
-                      console.error('Expected 3 parts, got', parts)
-                      return false
-                    }
-
-                    if (parts[0].length !== 22) {
-                      console.error('Expected 22 chars, got', parts[0])
-                      return false
-                    }
-
-                    if (parts[1].length !== 24) {
-                      console.error('Expected 24 chars, got', parts[1])
-                      return false
-                    }
-
-                    if (parts[2].length !== 32) {
-                      console.error('Expected 32 chars, got', parts[2])
-                      return false
-                    }
-
-                    return true
-                  },
+                  string: SECRET_VALUE,
                 },
               },
             ],
@@ -153,7 +136,7 @@ describe('create', () => {
 
     test
       .stdout()
-      .command(['create', 'new.with.different.default', '--type=boolean-flag', '--default=true'])
+      .command(['create', 'new.with.different.default', '--type=boolean-flag', '--value=true'])
       .it('can create a boolean flag with a true default', (ctx) => {
         expect(ctx.stdout).to.contain(`Created boolean flag: new.with.different.default`)
       })
@@ -188,9 +171,16 @@ describe('create', () => {
   describe('type=string', () => {
     test
       .stdout()
-      .command(['create', 'brand.new.string', '--type=string', '--default=hello.world'])
+      .command(['create', 'brand.new.string', '--type=string', '--value=hello.world'])
       .it('can create a string', (ctx) => {
         expect(ctx.stdout).to.contain(`Created config: brand.new.string`)
+      })
+
+    test
+      .stdout()
+      .command(['create', 'confidential.new.string', '--type=string', '--value=hello.world', '--confidential'])
+      .it('can create a string', (ctx) => {
+        expect(ctx.stdout).to.contain(`Created (confidential) config: confidential.new.string`)
       })
 
     test
@@ -202,9 +192,9 @@ describe('create', () => {
 
     test
       .stderr()
-      .command(['create', 'greeting.from.env', '--type=string', '--env-var=GREETING', '--default=hello.world'])
+      .command(['create', 'greeting.from.env', '--type=string', '--env-var=GREETING', '--value=hello.world'])
       .catch((error) => {
-        expect(error.message).to.contain(`cannot specify both --env-var and --default`)
+        expect(error.message).to.contain(`cannot specify both --env-var and --value`)
       })
       .it('shows an error when provided a default and an env-var')
   })
@@ -216,7 +206,7 @@ describe('create', () => {
           'create',
           'brand.new.string',
           '--type=string',
-          '--default=hello.world',
+          '--value=hello.world',
           '--secret',
           '--secret-key-name=missing.secret.key',
         ])
@@ -229,7 +219,7 @@ describe('create', () => {
     describe('type=string', () => {
       test
         .stdout()
-        .command(['create', 'brand.new.secret', '--type=string', '--default=hello.world', '--secret'])
+        .command(['create', 'brand.new.secret', '--type=string', '--value=hello.world', '--secret'])
         .it('can create a string', (ctx) => {
           expect(ctx.stdout).to.contain(`Created config: brand.new.secret`)
         })

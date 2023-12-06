@@ -68,8 +68,10 @@ export abstract class APICommand extends Command {
 
   public resultMessage = (result: Result<unknown>) => {
     if (result.error) {
-      this.err(result.message, result.json)
-    } else if (result.message) {
+      return this.err(result.message, result.json)
+    }
+
+ if (result.message) {
       this.log(result.message)
       return result.json ?? result.message
     }

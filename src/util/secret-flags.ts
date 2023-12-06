@@ -65,6 +65,8 @@ export const makeConfidentialValue = async (
 
   const secretKey = process.env[envVar]
 
+  command.verboseLog(`Using env var ${envVar} to encrypt secret`)
+
   if (typeof secretKey !== 'string') {
     return failure(`Failed to create secret: env var ${envVar} is not present`, {
       phase: 'finding-secret',

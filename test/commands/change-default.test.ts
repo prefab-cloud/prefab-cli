@@ -18,7 +18,6 @@ const cannedResponses: CannedResponses = {
       {
         configKey: 'jeffreys.test.key',
         currentVersionId: ANY,
-        environmentId: '6',
         value: {string: 'hello default world'},
       },
       createdResponse,
@@ -31,17 +30,6 @@ const cannedResponses: CannedResponses = {
         currentVersionId: ANY,
         environmentId: '6',
         value: {provided: {lookup: 'GREETING', source: 1}},
-      },
-      createdResponse,
-      200,
-    ],
-
-    [
-      {
-        configKey: 'jeffreys.test.key',
-        currentVersionId: ANY,
-        environmentId: '6',
-        value: {string: 'hello default world'},
       },
       createdResponse,
       200,
@@ -123,7 +111,7 @@ describe('change-default', () => {
       .command([
         'change-default',
         'jeffreys.test.key',
-        '--environment=Staging',
+        '--environment=[default]',
         '--value=hello default world',
         '--confirm',
       ])
@@ -136,7 +124,7 @@ describe('change-default', () => {
       .command([
         'change-default',
         'jeffreys.test.key',
-        '--environment=Staging',
+        '--environment=[default]',
         '--confirm',
         '--value=hello default world',
         '--json',
@@ -144,8 +132,8 @@ describe('change-default', () => {
       .it('can change the default for a string flag with json output', (ctx) => {
         expect(JSON.parse(ctx.stdout)).to.deep.equal({
           environment: {
-            id: '6',
-            name: 'Staging',
+            id: '',
+            name: '[Default]',
           },
           key: 'jeffreys.test.key',
           success: true,

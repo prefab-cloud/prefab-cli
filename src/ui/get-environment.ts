@@ -7,13 +7,17 @@ import {JsonObj} from '../result.js'
 import autocomplete from '../util/autocomplete.js'
 import isInteractive from '../util/is-interactive.js'
 
+const defaultEnvironmentName = '[Default]'
+
 const getEnvironment = async ({
+  allowDefaultEnvironment = false,
   client,
   command,
   flags,
   message,
   providedEnvironment,
 }: {
+  allowDefaultEnvironment?: boolean
   client: Client
   command: APICommand
   flags: JsonObj
@@ -27,6 +31,13 @@ const getEnvironment = async ({
   const environments = await getEnvironmentsFromApi({client, log: command.verboseLog})
 
   command.verboseLog({environments})
+
+  if (providedEnvironment?.toLowerCase() === defaultEnvironmentName.toLowerCase()) {
+    return {
+      id: '',
+      name: defaultEnvironmentName,
+    }
+  }
 
   if (providedEnvironment) {
     const matchingEnvironment = environments.find(
@@ -44,10 +55,23 @@ const getEnvironment = async ({
     return matchingEnvironment
   }
 
+  const environmentNames = environments.map((environment) => environment.name)
+
+  if (allowDefaultEnvironment) {
+    environmentNames.unshift(defaultEnvironmentName)
+  }
+
   const selectedEnvironment = await autocomplete({
     message,
-    source: () => environments.map((environment) => environment.name),
+    source: environmentNames,
   })
+
+  if (selectedEnvironment === defaultEnvironmentName) {
+    return {
+      id: '',
+      name: defaultEnvironmentName,
+    }
+  }
 
   return environments.find((environment) => environment.name === selectedEnvironment)
 }

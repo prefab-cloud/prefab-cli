@@ -50,7 +50,7 @@ FLAGS
   --confidential             mark the value as confidential
   --confirm                  confirm without prompt
   --env-var=<value>          environment variable to use as default value
-  --environment=<value>      environment to change
+  --environment=<value>      environment to change (specify "[default]" for the default environment)
   --secret                   encrypt the value of this item
   --secret-key-name=<value>  [default: prefab.secrets.encryption.key] name of the secret key to use for
                              encryption/decryption

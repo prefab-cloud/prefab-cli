@@ -145,7 +145,7 @@ export default class ChangeDefault extends APICommand {
     if (envVar === undefined) {
       successMessage = `Successfully changed default to \`${value}\``
       if (secret.selected) {
-        const confidentialValueResult = makeConfidentialValue(prefab, value, secret)
+        const confidentialValueResult = await makeConfidentialValue(this, value, secret, environment.id)
 
         if (!confidentialValueResult.ok) {
           this.resultMessage(confidentialValueResult)

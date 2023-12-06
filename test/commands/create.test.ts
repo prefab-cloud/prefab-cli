@@ -96,6 +96,28 @@ const cannedResponses: CannedResponses = {
     ],
   ],
 
+  'https://api.staging-prefab.cloud/api/v1/config/key/missing.secret.key': [[{}, {}, 404]],
+
+  'https://api.staging-prefab.cloud/api/v1/config/key/prefab.secrets.encryption.key': [
+    [
+      {},
+      {
+        changedBy: {apiKeyId: '', email: 'jeffrey.chupp@prefab.cloud', userId: '0'},
+        configType: 'CONFIG',
+        draftId: '497',
+        id: '17018809595519854',
+        key: 'prefab.secrets.encryption.key',
+        projectId: '100',
+        rows: [
+          {values: [{value: {provided: {lookup: 'FAKE_PROD_SECRET', source: 'ENV_VAR'}}}]},
+          {projectEnvId: '101', values: [{value: {provided: {lookup: 'FAKE_DEFAULT_SECRET', source: 'ENV_VAR'}}}]},
+        ],
+        valueType: 'STRING',
+      },
+      200,
+    ],
+  ],
+
   'https://api.staging-prefab.cloud/api/v1/config-recipes/feature-flag/boolean': [
     [{defaultValue: false, key: 'brand.new.flag'}, recipeResponse('brand.new.flag'), 200],
     [{defaultValue: false, key: 'already.in.use'}, recipeResponse('already.in.use'), 200],
@@ -105,6 +127,11 @@ const cannedResponses: CannedResponses = {
 
 const server = setupServer(
   http.get('https://api-staging-prefab-cloud.global.ssl.fastly.net/api/v1/configs/0', () => passthrough()),
+
+  http.get('https://api.staging-prefab.cloud/api/v1/*', async ({request}) =>
+    getCannedResponse(request, cannedResponses).catch(console.error),
+  ),
+
   http.post('https://api.staging-prefab.cloud/api/v1/*', async ({request}) =>
     getCannedResponse(request, cannedResponses).catch(console.error),
   ),
@@ -211,7 +238,7 @@ describe('create', () => {
           '--secret-key-name=missing.secret.key',
         ])
         .catch((error) => {
-          expect(error.message).to.contain(`Failed to create secret flag: missing.secret.key not found`)
+          expect(error.message).to.contain(`Failed to create secret: missing.secret.key not found`)
         })
         .it('complains about the missing key')
     })

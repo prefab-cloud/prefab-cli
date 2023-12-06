@@ -1,6 +1,8 @@
 import {Flags} from '@oclif/core'
-import {Prefab, encryption} from '@prefab-cloud/prefab-cloud-node'
+import {encryption} from '@prefab-cloud/prefab-cloud-node'
 
+import {APICommand} from '../index.js'
+import {getConfigFromApi} from '../prefab-common/src/api/getConfigFromApi.js'
 import {ConfigValue} from '../prefab-common/src/types.js'
 import {Result, failure, success} from '../result.js'
 
@@ -22,19 +24,49 @@ export const parsedSecretFlags = (flags: {secret: boolean; 'secret-key-name': st
   selected: flags.secret,
 })
 
-export const makeConfidentialValue = (prefab: Prefab, value: string, secret: Secret): Result<ConfigValue> => {
-  const rawSecretKey = prefab.raw(secret.keyName)
+export const makeConfidentialValue = async (
+  command: APICommand,
+  value: string,
+  secret: Secret,
+  environmentId: string,
+): Promise<Result<ConfigValue>> => {
+  const rawConfig = await getConfigFromApi({
+    client: command.rawApiClient,
+    errorLog: command.verboseLog,
+    key: secret.keyName,
+  })
 
-  if (rawSecretKey === undefined) {
-    return failure(`Failed to create secret flag: ${secret.keyName} not found`, {
+  if (!rawConfig) {
+    return failure(`Failed to create secret: ${secret.keyName} not found`, {
       phase: 'finding-secret',
     })
   }
 
-  const secretKey = prefab.get(secret.keyName)
+  if (!rawConfig.rows) {
+    return failure(`Failed to create secret: ${secret.keyName} has no rows`, {
+      phase: 'finding-secret',
+    })
+  }
+
+  const secretKeyRow =
+    rawConfig.rows.find((row) => (row.projectEnvId ?? '') === environmentId) ??
+    rawConfig.rows.find((row) => (row.projectEnvId ?? '') === '')
+
+  const envVar = secretKeyRow?.values[0]?.value?.provided?.lookup
+
+  if (!envVar) {
+    return failure(
+      `Failed to create secret: ${secret.keyName} not found for environmentId ${environmentId} or default env`,
+      {
+        phase: 'finding-secret',
+      },
+    )
+  }
+
+  const secretKey = process.env[envVar]
 
   if (typeof secretKey !== 'string') {
-    return failure(`Failed to create secret flag: ${secret.keyName} is not a string`, {
+    return failure(`Failed to create secret: env var ${envVar} is not present`, {
       phase: 'finding-secret',
     })
   }

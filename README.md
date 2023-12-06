@@ -14,7 +14,7 @@ $ npm install -g @prefab-cloud/prefab
 $ prefab COMMAND
 running command...
 $ prefab (--version)
-@prefab-cloud/prefab/0.0.16 darwin-arm64 node-v18.14.2
+@prefab-cloud/prefab/0.1.0 darwin-arm64 node-v18.14.2
 $ prefab --help [COMMAND]
 USAGE
   $ prefab COMMAND
@@ -76,7 +76,7 @@ EXAMPLES
   $ prefab change-default my.config.name --env-var=MY_ENV_VAR_NAME --environment=production
 ```
 
-_See code: [src/commands/change-default.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.16/src/commands/change-default.ts)_
+_See code: [src/commands/change-default.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.0/src/commands/change-default.ts)_
 
 ## `prefab create NAME`
 
@@ -122,7 +122,7 @@ EXAMPLES
   $ prefab create my.new.string --type string --env-var=MY_ENV_VAR_NAME
 ```
 
-_See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.16/src/commands/create.ts)_
+_See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.0/src/commands/create.ts)_
 
 ## `prefab download`
 
@@ -149,7 +149,7 @@ EXAMPLES
   $ prefab download --environment=test
 ```
 
-_See code: [src/commands/download.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.16/src/commands/download.ts)_
+_See code: [src/commands/download.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.0/src/commands/download.ts)_
 
 ## `prefab get [NAME]`
 
@@ -176,7 +176,7 @@ EXAMPLES
   $ prefab get my.config.name
 ```
 
-_See code: [src/commands/get.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.16/src/commands/get.ts)_
+_See code: [src/commands/get.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.0/src/commands/get.ts)_
 
 ## `prefab info [NAME]`
 
@@ -207,7 +207,7 @@ EXAMPLES
   $ prefab info my.config.name
 ```
 
-_See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.16/src/commands/info.ts)_
+_See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.0/src/commands/info.ts)_
 
 ## `prefab list`
 
@@ -243,7 +243,7 @@ EXAMPLES
   $ prefab list --feature-flags
 ```
 
-_See code: [src/commands/list.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.16/src/commands/list.ts)_
+_See code: [src/commands/list.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.0/src/commands/list.ts)_
 
 ## `prefab override [NAME]`
 
@@ -281,5 +281,5 @@ EXAMPLES
   $ prefab override my.double.config --value=3.14159
 ```
 
-_See code: [src/commands/override.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.16/src/commands/override.ts)_
+_See code: [src/commands/override.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.0/src/commands/override.ts)_
 <!-- commandsstop -->

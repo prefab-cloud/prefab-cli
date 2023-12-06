@@ -32,7 +32,7 @@ export default class ChangeDefault extends APICommand {
   static flags = {
     confidential: Flags.boolean({default: false, description: 'mark the value as confidential'}),
     'env-var': Flags.string({description: 'environment variable to use as default value'}),
-    environment: Flags.string({description: 'environment to change'}),
+    environment: Flags.string({description: 'environment to change (specify "[default]" for the default environment)'}),
     value: Flags.string({description: 'new default value'}),
     ...confirmFlag,
     ...secretFlags('encrypt the value of this item'),
@@ -67,6 +67,7 @@ export default class ChangeDefault extends APICommand {
     }
 
     const environment = await getEnvironment({
+      allowDefaultEnvironment: true,
       client: this.rawApiClient,
       command: this,
       flags,
@@ -172,11 +173,14 @@ export default class ChangeDefault extends APICommand {
       successMessage += ' (confidential)'
     }
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       configKey: key,
       currentVersionId: config.id.toString(),
-      environmentId: environment.id,
       value: configValue,
+    }
+
+    if (environment.id) {
+      payload.environmentId = environment.id
     }
 
     const request = await this.apiClient.post('/api/v1/config/set-default/', payload)

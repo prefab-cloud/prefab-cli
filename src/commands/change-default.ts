@@ -13,6 +13,7 @@ import getKey from '../ui/get-key.js'
 import getValue from '../ui/get-value.js'
 import {checkmark} from '../util/color.js'
 import nameArg from '../util/name-arg.js'
+import secretFlags, {Secret, makeConfidentialValue, parsedSecretFlags} from '../util/secret-flags.js'
 
 type ValueOrEnvVar = {envVar: string; value?: never} | {envVar?: never; value: string}
 
@@ -24,6 +25,7 @@ export default class ChangeDefault extends APICommand {
   static examples = [
     '<%= config.bin %> <%= command.id %> my.flag.name # will prompt for value and env',
     '<%= config.bin %> <%= command.id %> my.flag.name --value=true --environment=staging',
+    '<%= config.bin %> <%= command.id %> my.flag.name --value=true --secret',
     '<%= config.bin %> <%= command.id %> my.config.name --env-var=MY_ENV_VAR_NAME --environment=production',
   ]
 
@@ -33,13 +35,24 @@ export default class ChangeDefault extends APICommand {
     environment: Flags.string({description: 'environment to change'}),
     value: Flags.string({description: 'new default value'}),
     ...confirmFlag,
+    ...secretFlags('encrypt the value of this item'),
   }
 
   public async run(): Promise<JsonObj | void> {
     const {args, flags} = await this.parse(ChangeDefault)
 
+    const secret = parsedSecretFlags(flags)
+
     if (flags['env-var'] && flags.value) {
       return this.err('cannot specify both --env-var and --value')
+    }
+
+    if (flags['env-var'] && secret.selected) {
+      return this.err('cannot specify both --env-var and --secret')
+    }
+
+    if (flags.confidential && secret.selected) {
+      return this.err('cannot specify both --confidential and --secret')
     }
 
     const {key, prefab} = await getKey({
@@ -79,19 +92,20 @@ export default class ChangeDefault extends APICommand {
         return
       }
 
-      return this.submitChange({confidential, envVar: flags['env-var'], environment, key, prefab})
+      return this.submitChange({confidential, envVar: flags['env-var'], environment, key, prefab, secret})
     }
 
     const value = await getValue({desiredValue: flags.value, environment, flags, key, message: 'Default value', prefab})
 
     if (value.ok) {
-      const message = `Confirm: change the default for ${key} in ${environment.name} to \`${value.value}\`? yes/no`
+      const secretMaybe = secret.selected ? ' (encrypted)' : ''
+      const message = `Confirm: change the default for ${key} in ${environment.name} to \`${value.value}\`${secretMaybe}? yes/no`
 
       if (!(await getConfirmation({flags, message}))) {
         return
       }
 
-      return this.submitChange({confidential, environment, key, prefab, value: value.value})
+      return this.submitChange({confidential, environment, key, prefab, secret, value: value.value})
     }
 
     this.resultMessage(value)
@@ -103,12 +117,14 @@ export default class ChangeDefault extends APICommand {
     environment,
     key,
     prefab,
+    secret,
     value,
   }: {
     confidential: boolean
     environment: Environment
     key: string
     prefab: Prefab
+    secret: Secret
   } & ValueOrEnvVar) {
     const config = prefab.raw(key)
 
@@ -125,7 +141,23 @@ export default class ChangeDefault extends APICommand {
     let configValue: ConfigValue = {}
     let successMessage
 
-    if (envVar) {
+    if (envVar === undefined) {
+      successMessage = `Successfully changed default to \`${value}\``
+      if (secret.selected) {
+        const confidentialValueResult = makeConfidentialValue(prefab, value, secret)
+
+        if (!confidentialValueResult.ok) {
+          this.resultMessage(confidentialValueResult)
+          return
+        }
+
+        configValue = confidentialValueResult.value
+
+        successMessage += ' (encrypted)'
+      } else {
+        configValue = {[type]: value}
+      }
+    } else {
       configValue = {
         provided: {
           lookup: envVar,
@@ -133,13 +165,11 @@ export default class ChangeDefault extends APICommand {
         },
       }
       successMessage = `Successfully changed default to be provided by \`${envVar}\``
-    } else {
-      configValue = {[type]: value}
-      successMessage = `Successfully changed default to \`${value}\`.`
     }
 
     if (confidential) {
       configValue.confidential = true
+      successMessage += ' (confidential)'
     }
 
     const payload = {

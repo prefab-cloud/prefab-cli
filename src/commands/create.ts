@@ -2,7 +2,6 @@
 import type Long from 'long'
 
 import {Args, Flags} from '@oclif/core'
-import {encryption} from '@prefab-cloud/prefab-cloud-node'
 
 import {APICommand} from '../index.js'
 import {initPrefab} from '../prefab.js'
@@ -10,7 +9,7 @@ import {ConfigType, ConfigValue, ConfigValueType, NewConfig} from '../prefab-com
 import {JsonObj} from '../result.js'
 import getValue from '../ui/get-value.js'
 import {checkmark} from '../util/color.js'
-import secretFlags from '../util/secret-flags.js'
+import secretFlags, {makeConfidentialValue, parsedSecretFlags} from '../util/secret-flags.js'
 
 export default class Create extends APICommand {
   static args = {
@@ -21,16 +20,17 @@ export default class Create extends APICommand {
 
   static examples = [
     '<%= config.bin %> <%= command.id %> my.new.flag --type boolean-flag',
-    '<%= config.bin %> <%= command.id %> my.new.flag --type boolean-flag --default=true',
-    '<%= config.bin %> <%= command.id %> my.new.string --type string --default="hello world"',
-    '<%= config.bin %> <%= command.id %> my.new.string --type string --default="hello world" --secret',
+    '<%= config.bin %> <%= command.id %> my.new.flag --type boolean-flag --value=true',
+    '<%= config.bin %> <%= command.id %> my.new.string --type string --value="hello world"',
+    '<%= config.bin %> <%= command.id %> my.new.string --type string --value="hello world" --secret',
     '<%= config.bin %> <%= command.id %> my.new.string --type string --env-var=MY_ENV_VAR_NAME',
   ]
 
   static flags = {
-    default: Flags.string({description: 'default value for your new item', required: false}),
+    confidential: Flags.boolean({default: false, description: 'mark the value as confidential'}),
     'env-var': Flags.string({description: 'environment variable to get value from'}),
     type: Flags.string({options: ['boolean-flag', 'string'], required: true}),
+    value: Flags.string({description: 'default value for your new item', required: false}),
     ...secretFlags('encrypt the value of this item'),
   }
 
@@ -38,15 +38,25 @@ export default class Create extends APICommand {
     const {args, flags} = await this.parse(Create)
 
     if (flags.type === 'boolean-flag') {
-      return this.createBooleanFlag(args, {default: flags.default === 'true'})
+      return this.createBooleanFlag(args, {default: flags.value === 'true'})
     }
 
     const key = args.name
 
     const prefab = await initPrefab(this, flags)
 
-    if (flags['env-var'] && flags.default) {
-      return this.err('cannot specify both --env-var and --default')
+    const secret = parsedSecretFlags(flags)
+
+    if (flags['env-var'] && flags.value) {
+      return this.err('cannot specify both --env-var and --value')
+    }
+
+    if (flags['env-var'] && secret.selected) {
+      return this.err('cannot specify both --env-var and --secret')
+    }
+
+    if (flags.confidential && secret.selected) {
+      return this.err('cannot specify both --confidential and --secret')
     }
 
     let configValue: ConfigValue = {}
@@ -59,36 +69,25 @@ export default class Create extends APICommand {
         },
       }
     } else {
-      const valueInput = await getValue({desiredValue: flags.default, flags, message: 'Default value', prefab})
+      const valueInput = await getValue({desiredValue: flags.value, flags, message: 'Default value', prefab})
 
       if (valueInput.ok) {
         const rawValue = valueInput.value
         configValue = {string: rawValue}
 
-        if (flags.secret) {
-          const rawSecretKey = prefab.raw(flags['secret-key-name'])
+        if (flags.confidential) {
+          configValue.confidential = true
+        }
 
-          if (rawSecretKey === undefined) {
-            return this.err(`Failed to create secret flag: ${flags['secret-key-name']} not found`, {
-              key,
-              phase: 'finding-secret',
-            })
+        if (secret.selected) {
+          const confidentialValueResult = makeConfidentialValue(prefab, rawValue, secret)
+
+          if (!confidentialValueResult.ok) {
+            this.resultMessage(confidentialValueResult)
+            return
           }
 
-          const secretKey = prefab.get(flags['secret-key-name'])
-
-          if (typeof secretKey !== 'string') {
-            return this.err(`Failed to create secret flag: ${flags['secret-key-name']} is not a string`, {
-              key,
-              phase: 'finding-secret',
-            })
-          }
-
-          configValue = {
-            confidential: true,
-            decryptWith: 'prefab.secrets.encryption.key',
-            string: encryption.encrypt(rawValue, secretKey),
-          }
+          configValue = confidentialValueResult.value
         }
       } else {
         return
@@ -121,7 +120,9 @@ export default class Create extends APICommand {
 
     const response = request.json
 
-    return this.ok(`${checkmark} Created config: ${key}`, {key, ...response})
+    const confidentialMaybe = flags.confidential ? '(confidential) ' : ''
+
+    return this.ok(`${checkmark} Created ${confidentialMaybe}config: ${key}`, {key, ...response})
   }
 
   private async createBooleanFlag(args: {name: string}, flags: {default: boolean}): Promise<JsonObj | void> {

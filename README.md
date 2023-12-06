@@ -39,16 +39,22 @@ Change the default value for an environment (other rules still apply)
 
 ```
 USAGE
-  $ prefab change-default [NAME] --api-key <value> [--json] [--interactive] [--no-color] [--verbose] [--environment
-    <value>] [--value <value>] [--confirm]
+  $ prefab change-default [NAME] --api-key <value> [--json] [--interactive] [--no-color] [--verbose]
+    [--confidential] [--env-var <value>] [--environment <value>] [--value <value>] [--confirm] [--secret]
+    [--secret-key-name <value>]
 
 ARGUMENTS
   NAME  config/feature-flag/etc. name
 
 FLAGS
-  --confirm              confirm without prompt
-  --environment=<value>  environment to change
-  --value=<value>        new default value
+  --confidential             mark the value as confidential
+  --confirm                  confirm without prompt
+  --env-var=<value>          environment variable to use as default value
+  --environment=<value>      environment to change
+  --secret                   encrypt the value of this item
+  --secret-key-name=<value>  [default: prefab.secrets.encryption.key] name of the secret key to use for
+                             encryption/decryption
+  --value=<value>            new default value
 
 GLOBAL FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
@@ -64,6 +70,10 @@ EXAMPLES
   $ prefab change-default my.flag.name # will prompt for value and env
 
   $ prefab change-default my.flag.name --value=true --environment=staging
+
+  $ prefab change-default my.flag.name --value=true --secret
+
+  $ prefab change-default my.config.name --env-var=MY_ENV_VAR_NAME --environment=production
 ```
 
 _See code: [src/commands/change-default.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.14/src/commands/change-default.ts)_
@@ -75,17 +85,20 @@ Create a new item in Prefab
 ```
 USAGE
   $ prefab create NAME --api-key <value> --type boolean-flag|string [--json] [--interactive] [--no-color]
-    [--verbose] [--default <value>] [--secret] [--secret-key-name <value>]
+    [--verbose] [--confidential] [--env-var <value>] [--value <value>] [--secret] [--secret-key-name <value>]
 
 ARGUMENTS
   NAME  name for your new item (e.g. my.new.flag)
 
 FLAGS
-  --default=<value>          default value for your new item
-  --secret                   create a secret flag
-  --secret-key-name=<value>  [default: prefab.secrets.encryption.key] name of the secret key to use for encryption
+  --confidential             mark the value as confidential
+  --env-var=<value>          environment variable to get value from
+  --secret                   encrypt the value of this item
+  --secret-key-name=<value>  [default: prefab.secrets.encryption.key] name of the secret key to use for
+                             encryption/decryption
   --type=<option>            (required)
                              <options: boolean-flag|string>
+  --value=<value>            default value for your new item
 
 GLOBAL FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
@@ -100,11 +113,13 @@ DESCRIPTION
 EXAMPLES
   $ prefab create my.new.flag --type boolean-flag
 
-  $ prefab create my.new.flag --type boolean-flag --default=true
+  $ prefab create my.new.flag --type boolean-flag --value=true
 
-  $ prefab create my.new.string --type string --default="hello world"
+  $ prefab create my.new.string --type string --value="hello world"
 
-  $ prefab create my.new.string --type string --default="hello world" --secret
+  $ prefab create my.new.string --type string --value="hello world" --secret
+
+  $ prefab create my.new.string --type string --env-var=MY_ENV_VAR_NAME
 ```
 
 _See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.0.14/src/commands/create.ts)_

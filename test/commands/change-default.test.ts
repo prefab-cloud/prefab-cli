@@ -2,7 +2,7 @@ import {expect, test} from '@oclif/test'
 import {HttpResponse, http, passthrough} from 'msw'
 import {setupServer} from 'msw/node'
 
-import {ANY, CannedResponses, getCannedResponse} from '../test-helper.js'
+import {ANY, CannedResponses, SECRET_VALUE, getCannedResponse} from '../test-helper.js'
 
 const createdResponse = {response: {message: '', newId: '17002327855857830'}}
 
@@ -28,9 +28,35 @@ const cannedResponses: CannedResponses = {
     [
       {
         configKey: 'jeffreys.test.key',
-        currentVersionId: '17005955334851003',
+        currentVersionId: ANY,
         environmentId: '6',
         value: {provided: {lookup: 'GREETING', source: 1}},
+      },
+      createdResponse,
+      200,
+    ],
+
+    [
+      {
+        configKey: 'jeffreys.test.key',
+        currentVersionId: ANY,
+        environmentId: '6',
+        value: {string: 'hello default world'},
+      },
+      createdResponse,
+      200,
+    ],
+
+    [
+      {
+        configKey: 'jeffreys.test.key',
+        currentVersionId: ANY,
+        environmentId: '6',
+        value: {
+          confidential: true,
+          decryptWith: 'prefab.secrets.encryption.key',
+          string: SECRET_VALUE,
+        },
       },
       createdResponse,
       200,
@@ -67,7 +93,7 @@ describe('change-default', () => {
       .stdout()
       .command(['change-default', 'feature-flag.simple', '--environment=Development', '--value=true', '--confirm'])
       .it('can change the default for a boolean flag', (ctx) => {
-        expect(ctx.stdout).to.contain('Successfully changed default to `true`.')
+        expect(ctx.stdout).to.contain('Successfully changed default to `true`')
       })
 
     test
@@ -102,7 +128,7 @@ describe('change-default', () => {
         '--confirm',
       ])
       .it('can change the default for a string flag', (ctx) => {
-        expect(ctx.stdout).to.contain('Successfully changed default to `hello default world`.')
+        expect(ctx.stdout).to.contain('Successfully changed default to `hello default world`')
       })
 
     test
@@ -135,19 +161,18 @@ describe('change-default', () => {
       })
 
     test
-      .stderr()
+      .stdout()
       .command([
         'change-default',
         'jeffreys.test.key',
         '--environment=Staging',
         '--confirm',
-        '--env-var=GREETING',
-        '--value=hello world',
+        '--secret',
+        '--value=hello',
       ])
-      .catch((error) => {
-        expect(error.message).to.contain(`cannot specify both --env-var and --value`)
+      .it('can create a secret string', (ctx) => {
+        expect(ctx.stdout).to.contain(`Successfully changed default to \`hello\` (encrypted)`)
       })
-      .it('shows an error when provided a value and an env-var')
   })
 
   describe('failure', () => {
@@ -174,5 +199,20 @@ describe('change-default', () => {
         expect(error.message).to.eql("'environment' is required when interactive mode isn't available.")
       })
       .it("shows an error if no environment is provided when things aren't interactive")
+
+    test
+      .stderr()
+      .command([
+        'change-default',
+        'jeffreys.test.key',
+        '--environment=Staging',
+        '--confirm',
+        '--env-var=GREETING',
+        '--value=hello world',
+      ])
+      .catch((error) => {
+        expect(error.message).to.contain(`cannot specify both --env-var and --value`)
+      })
+      .it('shows an error when provided a value and an env-var')
   })
 })

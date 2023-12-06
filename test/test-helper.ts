@@ -6,6 +6,32 @@ export type CannedResponse = [JsonObj, JsonObj, number]
 export type CannedResponses = Record<string, CannedResponse[]>
 
 export const ANY = Symbol('any')
+export const SECRET_VALUE = (actual: string) => {
+  const parts = actual.split('--')
+
+  if (parts.length !== 3) {
+    console.error('Expected 3 parts, got', parts)
+    return false
+  }
+
+  // parts[0] has variable length
+  if (parts[0].length < 10) {
+    console.error('Expected 10+ chars, got', parts[0])
+    return false
+  }
+
+  if (parts[1].length !== 24) {
+    console.error('Expected 24 chars, got', parts[1])
+    return false
+  }
+
+  if (parts[2].length !== 32) {
+    console.error('Expected 32 chars, got', parts[2])
+    return false
+  }
+
+  return true
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const deepCompare = (obj1: any, obj2: any): boolean => {

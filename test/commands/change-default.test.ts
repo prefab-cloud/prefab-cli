@@ -1,5 +1,5 @@
 import {expect, test} from '@oclif/test'
-import {HttpResponse, http, passthrough} from 'msw'
+import {http, passthrough} from 'msw'
 import {setupServer} from 'msw/node'
 
 import {ANY, CannedResponses, SECRET_VALUE, getCannedResponse} from '../test-helper.js'
@@ -7,6 +7,26 @@ import {ANY, CannedResponses, SECRET_VALUE, getCannedResponse} from '../test-hel
 const createdResponse = {response: {message: '', newId: '17002327855857830'}}
 
 const cannedResponses: CannedResponses = {
+  'https://api.staging-prefab.cloud/api/v1/config/key/prefab.secrets.encryption.key': [
+    [
+      {},
+      {
+        changedBy: {apiKeyId: '', email: 'jeffrey.chupp@prefab.cloud', userId: '0'},
+        configType: 'CONFIG',
+        draftId: '497',
+        id: '17018809595519854',
+        key: 'prefab.secrets.encryption.key',
+        projectId: '100',
+        rows: [
+          {values: [{value: {provided: {lookup: 'FAKE_PROD_SECRET', source: 'ENV_VAR'}}}]},
+          {projectEnvId: '101', values: [{value: {provided: {lookup: 'FAKE_DEFAULT_SECRET', source: 'ENV_VAR'}}}]},
+        ],
+        valueType: 'STRING',
+      },
+      200,
+    ],
+  ],
+
   'https://api.staging-prefab.cloud/api/v1/config/set-default/': [
     [
       {configKey: 'feature-flag.simple', currentVersionId: ANY, environmentId: '5', value: {bool: 'true'}},
@@ -50,23 +70,31 @@ const cannedResponses: CannedResponses = {
       200,
     ],
   ],
+
+  'https://api.staging-prefab.cloud/api/v1/project-environments': [
+    [
+      {},
+      {
+        envs: [
+          {id: 5, name: 'Development'},
+          {id: 590, name: 'Another One Mark 2'},
+          {id: 6, name: 'Staging'},
+        ],
+        projectId: 3,
+      },
+      200,
+    ],
+  ],
 }
 
 const server = setupServer(
   http.get('https://api-staging-prefab-cloud.global.ssl.fastly.net/api/v1/configs/0', () => passthrough()),
 
-  http.get('https://api.staging-prefab.cloud/api/v1/project-environments', () =>
-    HttpResponse.json({
-      envs: [
-        {id: 5, name: 'Development'},
-        {id: 590, name: 'Another One Mark 2'},
-        {id: 6, name: 'Staging'},
-      ],
-      projectId: 3,
-    }),
+  http.get('https://api.staging-prefab.cloud/api/v1/*', async ({request}) =>
+    getCannedResponse(request, cannedResponses).catch(console.error),
   ),
 
-  http.post('https://api.staging-prefab.cloud/api/v1/config/set-default/', async ({request}) =>
+  http.post('https://api.staging-prefab.cloud/api/v1/*', async ({request}) =>
     getCannedResponse(request, cannedResponses).catch(console.error),
   ),
 )

@@ -219,7 +219,7 @@ Development: 7
   describe('when there are no evaluations in the last 24 hours', () => {
     test
       .stdout()
-      .command(['info', keyWithNoEvaluations, '--verbose'])
+      .command(['info', keyWithNoEvaluations])
       .it('returns a message', (ctx) => {
         expect(ctx.stdout.trim()).to.eql(
           `

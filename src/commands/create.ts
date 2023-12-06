@@ -80,7 +80,7 @@ export default class Create extends APICommand {
         }
 
         if (secret.selected) {
-          const confidentialValueResult = makeConfidentialValue(prefab, rawValue, secret)
+          const confidentialValueResult = await makeConfidentialValue(this, rawValue, secret, '')
 
           if (!confidentialValueResult.ok) {
             this.resultMessage(confidentialValueResult)

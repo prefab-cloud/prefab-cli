@@ -7,23 +7,35 @@ type Flags = {
   ['api-key']?: string
 }
 
+type FlagsOrDatafile = Flags | string
+
 let prefab: Prefab
 
 const DEFAULT_CONTEXT_USER_ID_NAMESPACE = 'prefab-api-key'
 const DEFAULT_CONTEXT_USER_ID = 'user-id'
 
-export const initPrefab = async (ctx: Command, flags: Flags) => {
-  if (!flags['api-key']) {
-    return ctx.error('API key is required', {exit: 401})
+export const initPrefab = async (ctx: Command, flagsOrDatafile: FlagsOrDatafile) => {
+  let apiKey = 'NO_API_KEY'
+  let datafile
+
+  if (typeof flagsOrDatafile === 'string') {
+    datafile = flagsOrDatafile
+  } else {
+    if (!flagsOrDatafile['api-key']) {
+      return ctx.error('API key is required', {exit: 401})
+    }
+
+    apiKey = flagsOrDatafile['api-key']
   }
 
   prefab = new Prefab({
-    apiKey: flags['api-key'],
+    apiKey,
     apiUrl: process.env.PREFAB_API_URL,
     cdnUrl: process.env.PREFAB_CDN_URL,
     collectEvaluationSummaries: false,
     collectLoggerCounts: false,
     contextUploadMode: 'none',
+    datafile,
     enableSSE: false,
   })
 

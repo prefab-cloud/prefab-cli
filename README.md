@@ -32,6 +32,7 @@ USAGE
 * [`prefab info [NAME]`](#prefab-info-name)
 * [`prefab list`](#prefab-list)
 * [`prefab override [NAME]`](#prefab-override-name)
+* [`prefab serve DATA-FILE`](#prefab-serve-data-file)
 
 ## `prefab change-default [NAME]`
 
@@ -282,4 +283,33 @@ EXAMPLES
 ```
 
 _See code: [src/commands/override.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.0/src/commands/override.ts)_
+
+## `prefab serve DATA-FILE`
+
+Serve a datafile on a local port
+
+```
+USAGE
+  $ prefab serve DATA-FILE [--json] [--interactive] [--no-color] [--verbose] [--port <value>]
+
+ARGUMENTS
+  DATA-FILE  file to read
+
+FLAGS
+  --port=<value>  [default: 3099] port to serve on
+
+GLOBAL FLAGS
+  --[no-]interactive  Force interactive mode
+  --json              Format output as json.
+  --no-color          Do not colorize output
+  --verbose           Verbose output
+
+DESCRIPTION
+  Serve a datafile on a local port
+
+EXAMPLES
+  $ prefab serve ./prefab.test.588.config.json --port=3099
+```
+
+_See code: [src/commands/serve.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.0/src/commands/serve.ts)_
 <!-- commandsstop -->

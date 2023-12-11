@@ -7,12 +7,6 @@ import {JsonObj, Result} from './result.js'
 import rawGetClient, {unwrapRequest} from './util/get-client.js'
 
 const globalFlags = {
-  'api-key': Flags.string({
-    description: 'Prefab API KEY (defaults to ENV var PREFAB_API_KEY)',
-    env: 'PREFAB_API_KEY',
-    helpGroup: 'GLOBAL',
-    required: true,
-  }),
   interactive: Flags.boolean({
     allowNo: true,
     default: true,
@@ -32,14 +26,13 @@ const globalFlags = {
   }),
 }
 
-export abstract class APICommand extends Command {
+export abstract class BaseCommand extends Command {
   static baseFlags = {
     ...globalFlags,
   }
 
   public static enableJsonFlag = true
 
-  public currentEnvironment!: ProjectEnvId
   public err = (error: Error | object | string, json?: JsonObj): never => {
     if (this.jsonEnabled()) {
       throw json ?? error
@@ -64,14 +57,12 @@ export abstract class APICommand extends Command {
     return json ?? {message}
   }
 
-  public rawApiClient!: Client
-
   public resultMessage = (result: Result<unknown>) => {
     if (result.error) {
       return this.err(result.message, result.json)
     }
 
- if (result.message) {
+    if (result.message) {
       this.log(result.message)
       return result.json ?? result.message
     }
@@ -86,6 +77,30 @@ export abstract class APICommand extends Command {
       this.logToStderr(typeof category === 'string' ? category : JSON.stringify(category))
     }
   }
+
+  public async init(): Promise<void> {
+    await super.init()
+
+    const {flags} = await this.parse()
+
+    this.isVerbose = flags.verbose
+  }
+}
+
+export abstract class APICommand extends BaseCommand {
+  static baseFlags = {
+    ...globalFlags,
+    'api-key': Flags.string({
+      description: 'Prefab API KEY (defaults to ENV var PREFAB_API_KEY)',
+      env: 'PREFAB_API_KEY',
+      helpGroup: 'GLOBAL',
+      required: true,
+    }),
+  }
+
+  public currentEnvironment!: ProjectEnvId
+
+  public rawApiClient!: Client
 
   get apiClient() {
     return {
@@ -106,7 +121,6 @@ export abstract class APICommand extends Command {
       this.error('API key is required', {exit: 401})
     }
 
-    this.isVerbose = flags.verbose
     this.rawApiClient = rawGetClient(this, flags['api-key'])
     this.currentEnvironment = getProjectEnvFromApiKey(flags['api-key'])
   }

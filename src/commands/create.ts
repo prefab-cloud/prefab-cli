@@ -56,7 +56,7 @@ export default class Create extends APICommand {
     }
 
     if (flags.confidential && secret.selected) {
-      return this.err('cannot specify both --confidential and --secret')
+      console.warn("Note: --confidential is implied when using --secret, so you don't need to specify both.")
     }
 
     let configValue: ConfigValue = {}

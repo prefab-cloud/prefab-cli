@@ -13,7 +13,7 @@ import getKey from '../ui/get-key.js'
 import getValue from '../ui/get-value.js'
 import {checkmark} from '../util/color.js'
 import nameArg from '../util/name-arg.js'
-import secretFlags, {Secret, makeConfidentialValue, parsedSecretFlags} from '../util/secret-flags.js'
+import secretFlags, {Secret, isConfigEncrypted, makeConfidentialValue, parsedSecretFlags} from '../util/secret-flags.js'
 
 type ValueOrEnvVar = {envVar: string; value?: never} | {envVar?: never; value: string}
 
@@ -43,6 +43,24 @@ export default class ChangeDefault extends APICommand {
 
     const secret = parsedSecretFlags(flags)
 
+    const {key, prefab} = await getKey({
+      args,
+      command: this,
+      flags,
+      message: 'Which item would you like to change the default for?',
+    })
+
+    if (!key || !prefab) {
+      return
+    }
+
+    const isAnyValueEncrypted = await isConfigEncrypted(this, key)
+
+    if (isAnyValueEncrypted) {
+      this.log('Note: this config already has an encrypted value so we will encrypt your new value for your safety.')
+      secret.selected = true
+    }
+
     if (flags['env-var'] && flags.value) {
       return this.err('cannot specify both --env-var and --value')
     }
@@ -53,17 +71,6 @@ export default class ChangeDefault extends APICommand {
 
     if (flags.confidential && secret.selected) {
       console.warn("Note: --confidential is implied when using --secret, so you don't need to specify both.")
-    }
-
-    const {key, prefab} = await getKey({
-      args,
-      command: this,
-      flags,
-      message: 'Which item would you like to change the default for?',
-    })
-
-    if (!key || !prefab) {
-      return
     }
 
     const environment = await getEnvironment({

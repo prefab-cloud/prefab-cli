@@ -125,7 +125,9 @@ export const getCannedResponse = async (
   if (!cannedResponse) {
     console.log(JSON.stringify(body, null, 2))
 
-    throw new Error(`No canned response for payload/url ${JSON.stringify(body, null, 2)} ${request.url}`)
+    throw new Error(
+      `No canned response for method=${request.method} url=${request.url} payload=${JSON.stringify(body, null, 2)}`,
+    )
   }
 
   const [, response, status] = cannedResponse

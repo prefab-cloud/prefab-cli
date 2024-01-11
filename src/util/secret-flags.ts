@@ -24,6 +24,25 @@ export const parsedSecretFlags = (flags: {secret: boolean; 'secret-key-name': st
   selected: flags.secret,
 })
 
+// Returns true if _any_ value in the config is encrypted
+export const isConfigEncrypted = async (command: APICommand, key: string): Promise<boolean> => {
+  const rawConfig = await getConfigFromApi({
+    client: command.rawApiClient,
+    errorLog: command.verboseLog,
+    key,
+  })
+
+  if (!rawConfig) {
+    return false
+  }
+
+  if (!rawConfig.rows) {
+    return false
+  }
+
+  return rawConfig.rows.some((row) => row.values.some((value) => value.value?.decryptWith))
+}
+
 export const makeConfidentialValue = async (
   command: APICommand,
   value: string,

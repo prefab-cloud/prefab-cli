@@ -7,6 +7,77 @@ import {ANY, CannedResponses, SECRET_VALUE, getCannedResponse} from '../test-hel
 const createdResponse = {response: {message: '', newId: '17002327855857830'}}
 
 const cannedResponses: CannedResponses = {
+  'https://api.staging-prefab.cloud/api/v1/config/key/feature-flag.simple': [
+    [
+      {},
+      {
+        allowableValues: [{bool: true}, {bool: false}],
+        changedBy: {apiKeyId: '315', email: '', userId: '4'},
+        configType: 'FEATURE_FLAG',
+        draftId: '522',
+        id: '17005947285496532',
+        key: 'feature-flag.simple',
+        projectId: '124',
+        rows: [
+          {
+            projectEnvId: '143',
+            values: [
+              {
+                criteria: [
+                  {
+                    operator: 'PROP_IS_ONE_OF',
+                    propertyName: 'prefab-api-key.user-id',
+                    valueToMatch: {stringList: {values: ['4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4']}},
+                  },
+                ],
+                value: {bool: true},
+              },
+              {value: {bool: true}},
+            ],
+          },
+        ],
+        valueType: 'BOOL',
+      },
+      200,
+    ],
+  ],
+
+  'https://api.staging-prefab.cloud/api/v1/config/key/jeffreys.test.key': [
+    [
+      {},
+      {
+        changedBy: {apiKeyId: '', email: 'jeffrey.chupp@prefab.cloud', userId: '0'},
+        configType: 'CONFIG',
+        draftId: '531',
+        id: '17005955334851003',
+        key: 'jeffreys.test.key',
+        projectId: '124',
+        rows: [
+          {projectEnvId: '588', values: [{value: {string: 'default'}}]},
+          {values: [{value: {string: 'abc'}}]},
+          {
+            projectEnvId: '143',
+            values: [
+              {
+                criteria: [
+                  {
+                    operator: 'PROP_IS_ONE_OF',
+                    propertyName: 'prefab-api-key.user-id',
+                    valueToMatch: {stringList: {values: ['4']}},
+                  },
+                ],
+                value: {string: 'my.override'},
+              },
+              {value: {string: 'default'}},
+            ],
+          },
+        ],
+        valueType: 'STRING',
+      },
+      200,
+    ],
+  ],
+
   'https://api.staging-prefab.cloud/api/v1/config/key/prefab.secrets.encryption.key': [
     [
       {},
@@ -20,6 +91,35 @@ const cannedResponses: CannedResponses = {
         rows: [
           {values: [{value: {provided: {lookup: 'FAKE_PROD_SECRET', source: 'ENV_VAR'}}}]},
           {projectEnvId: '101', values: [{value: {provided: {lookup: 'FAKE_DEFAULT_SECRET', source: 'ENV_VAR'}}}]},
+        ],
+        valueType: 'STRING',
+      },
+      200,
+    ],
+  ],
+
+  'https://api.staging-prefab.cloud/api/v1/config/key/robocop-secret': [
+    [
+      {},
+      {
+        changedBy: {apiKeyId: '315', email: '', userId: '4'},
+        configType: 'CONFIG',
+        draftId: '554',
+        id: '17049868822052866',
+        key: 'robocop-secret',
+        projectId: '124',
+        rows: [
+          {
+            values: [
+              {
+                value: {
+                  confidential: true,
+                  decryptWith: 'prefab.secrets.encryption.key',
+                  string: 'ff6351432e--76813f77392fb3dd15f5ca1b--87f6c7691570d277ae1a9a302646f906',
+                },
+              },
+            ],
+          },
         ],
         valueType: 'STRING',
       },
@@ -65,6 +165,17 @@ const cannedResponses: CannedResponses = {
           decryptWith: 'prefab.secrets.encryption.key',
           string: SECRET_VALUE,
         },
+      },
+      createdResponse,
+      200,
+    ],
+
+    [
+      {
+        configKey: 'robocop-secret',
+        currentVersionId: ANY,
+        environmentId: '6',
+        value: {confidential: true, decryptWith: 'prefab.secrets.encryption.key', string: ANY},
       },
       createdResponse,
       200,
@@ -187,6 +298,13 @@ describe('change-default', () => {
         '--value=hello',
       ])
       .it('can create a secret string', (ctx) => {
+        expect(ctx.stdout).to.contain(`Successfully changed default to \`hello\` (encrypted)`)
+      })
+
+    test
+      .stdout()
+      .command(['change-default', 'robocop-secret', '--environment=Staging', '--confirm', '--value=hello'])
+      .it('uses encryption if any existing value for the key is encrypted', (ctx) => {
         expect(ctx.stdout).to.contain(`Successfully changed default to \`hello\` (encrypted)`)
       })
   })

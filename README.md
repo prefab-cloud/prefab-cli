@@ -14,7 +14,7 @@ $ npm install -g @prefab-cloud/prefab
 $ prefab COMMAND
 running command...
 $ prefab (--version)
-@prefab-cloud/prefab/0.1.3 darwin-arm64 node-v20.10.0
+@prefab-cloud/prefab/0.1.4 darwin-arm64 node-v20.10.0
 $ prefab --help [COMMAND]
 USAGE
   $ prefab COMMAND
@@ -77,7 +77,7 @@ EXAMPLES
   $ prefab change-default my.config.name --env-var=MY_ENV_VAR_NAME --environment=production
 ```
 
-_See code: [src/commands/change-default.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.3/src/commands/change-default.ts)_
+_See code: [src/commands/change-default.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.4/src/commands/change-default.ts)_
 
 ## `prefab create NAME`
 
@@ -85,8 +85,9 @@ Create a new item in Prefab
 
 ```
 USAGE
-  $ prefab create NAME --api-key <value> --type boolean-flag|string [--json] [--interactive] [--no-color]
-    [--verbose] [--confidential] [--env-var <value>] [--value <value>] [--secret] [--secret-key-name <value>]
+  $ prefab create NAME --api-key <value> --type boolean-flag|string|double|int|string-list [--json]
+    [--interactive] [--no-color] [--verbose] [--confidential] [--env-var <value>] [--value <value>] [--secret]
+    [--secret-key-name <value>]
 
 ARGUMENTS
   NAME  name for your new item (e.g. my.new.flag)
@@ -98,7 +99,7 @@ FLAGS
   --secret-key-name=<value>  [default: prefab.secrets.encryption.key] name of the secret key to use for
                              encryption/decryption
   --type=<option>            (required)
-                             <options: boolean-flag|string>
+                             <options: boolean-flag|string|double|int|string-list>
   --value=<value>            default value for your new item
 
 GLOBAL FLAGS
@@ -123,7 +124,7 @@ EXAMPLES
   $ prefab create my.new.string --type string --env-var=MY_ENV_VAR_NAME
 ```
 
-_See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.3/src/commands/create.ts)_
+_See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.4/src/commands/create.ts)_
 
 ## `prefab download`
 
@@ -150,7 +151,7 @@ EXAMPLES
   $ prefab download --environment=test
 ```
 
-_See code: [src/commands/download.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.3/src/commands/download.ts)_
+_See code: [src/commands/download.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.4/src/commands/download.ts)_
 
 ## `prefab get [NAME]`
 
@@ -177,7 +178,7 @@ EXAMPLES
   $ prefab get my.config.name
 ```
 
-_See code: [src/commands/get.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.3/src/commands/get.ts)_
+_See code: [src/commands/get.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.4/src/commands/get.ts)_
 
 ## `prefab info [NAME]`
 
@@ -208,7 +209,7 @@ EXAMPLES
   $ prefab info my.config.name
 ```
 
-_See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.3/src/commands/info.ts)_
+_See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.4/src/commands/info.ts)_
 
 ## `prefab list`
 
@@ -244,7 +245,7 @@ EXAMPLES
   $ prefab list --feature-flags
 ```
 
-_See code: [src/commands/list.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.3/src/commands/list.ts)_
+_See code: [src/commands/list.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.4/src/commands/list.ts)_
 
 ## `prefab override [NAME]`
 
@@ -282,7 +283,7 @@ EXAMPLES
   $ prefab override my.double.config --value=3.14159
 ```
 
-_See code: [src/commands/override.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.3/src/commands/override.ts)_
+_See code: [src/commands/override.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.4/src/commands/override.ts)_
 
 ## `prefab serve DATA-FILE`
 
@@ -311,5 +312,5 @@ EXAMPLES
   $ prefab serve ./prefab.test.588.config.json --port=3099
 ```
 
-_See code: [src/commands/serve.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.3/src/commands/serve.ts)_
+_See code: [src/commands/serve.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.4/src/commands/serve.ts)_
 <!-- commandsstop -->

@@ -91,10 +91,6 @@ export default class Create extends APICommand {
         configValue = parsedConfigValue[0]
         valueType = parsedConfigValue[1]
 
-        if (flags.confidential) {
-          configValue.confidential = true
-        }
-
         if (secret.selected) {
           const confidentialValueResult = await makeConfidentialValue(this, rawValue, secret, '')
 
@@ -108,6 +104,10 @@ export default class Create extends APICommand {
       } else {
         return
       }
+    }
+
+    if (flags.confidential) {
+      configValue.confidential = true
     }
 
     const newConfig: Omit<NewConfig, 'allowableValues'> = {

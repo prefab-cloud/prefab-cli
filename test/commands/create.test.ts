@@ -60,6 +60,50 @@ const cannedResponses: CannedResponses = {
       200,
     ],
     [
+      createRequest('brand.new.int', {
+        configType: 1,
+        key: 'brand.new.int',
+        projectId: '124',
+        rows: [{properties: {}, values: [{criteria: [], value: {int: 123}}]}],
+        valueType: 1,
+      }),
+      successResponse,
+      200,
+    ],
+    [
+      createRequest('brand.new.double', {
+        configType: 1,
+        key: 'brand.new.double',
+        projectId: '124',
+        rows: [{properties: {}, values: [{criteria: [], value: {double: 123.99}}]}],
+        valueType: 4,
+      }),
+      successResponse,
+      200,
+    ],
+    [
+      createRequest('brand.new.boolean', {
+        configType: 1,
+        key: 'brand.new.boolean',
+        projectId: '124',
+        rows: [{properties: {}, values: [{criteria: [], value: {bool: false}}]}],
+        valueType: 5,
+      }),
+      successResponse,
+      200,
+    ],
+    [
+      createRequest('brand.new.string-list', {
+        configType: 1,
+        key: 'brand.new.string-list',
+        projectId: '124',
+        rows: [{properties: {}, values: [{criteria: [], value: {stringList: {values: ['a', 'b', 'c', 'd']}}}]}],
+        valueType: 10,
+      }),
+      successResponse,
+      200,
+    ],
+    [
       createRequest('confidential.new.string', {
         rows: [{properties: {}, values: [{criteria: [], value: {confidential: true, string: 'hello.world'}}]}],
       }),
@@ -226,6 +270,42 @@ describe('create', () => {
       .it('shows an error when provided a default and an env-var')
   })
 
+  describe('type=int', () => {
+    test
+      .stdout()
+      .command(['create', 'brand.new.int', '--type=int', '--value=123'])
+      .it('can create an int', (ctx) => {
+        expect(ctx.stdout).to.contain(`Created config: brand.new.int`)
+      })
+  })
+
+  describe('type=double', () => {
+    test
+      .stdout()
+      .command(['create', 'brand.new.double', '--type=double', '--value=123.99'])
+      .it('can create a double', (ctx) => {
+        expect(ctx.stdout).to.contain(`Created config: brand.new.double`)
+      })
+  })
+
+  describe('type=boolean', () => {
+    test
+      .stdout()
+      .command(['create', 'brand.new.boolean', '--type=boolean', '--value=f'])
+      .it('can create a boolean', (ctx) => {
+        expect(ctx.stdout).to.contain(`Created config: brand.new.boolean`)
+      })
+  })
+
+  describe('type=string-list', () => {
+    test
+      .stdout()
+      .command(['create', 'brand.new.string-list', '--type=string-list', '--value=a,b,c,d'])
+      .it('can create a string list', (ctx) => {
+        expect(ctx.stdout).to.contain(`Created config: brand.new.string-list`)
+      })
+  })
+
   describe('secret', () => {
     describe('when no encryption key can be found', () => {
       test
@@ -250,6 +330,16 @@ describe('create', () => {
         .it('can create a string', (ctx) => {
           expect(ctx.stdout).to.contain(`Created config: brand.new.secret`)
         })
+    })
+
+    describe('type=NOT_STRING', () => {
+      test
+        .stderr()
+        .command(['create', 'brand.new.secret', '--type=int', '--value=12', '--secret'])
+        .catch((error) => {
+          expect(error.message).to.contain(`--secret flag only works with string type`)
+        })
+        .it('errors')
     })
   })
 })

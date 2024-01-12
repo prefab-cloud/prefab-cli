@@ -8,6 +8,7 @@ import {initPrefab} from '../prefab.js'
 import {ConfigType, ConfigValue, ConfigValueType, NewConfig} from '../prefab-common/src/types.js'
 import {JsonObj} from '../result.js'
 import getValue from '../ui/get-value.js'
+import {coerceIntoType} from '../util/coerce.js'
 import {checkmark} from '../util/color.js'
 import secretFlags, {makeConfidentialValue, parsedSecretFlags} from '../util/secret-flags.js'
 
@@ -29,7 +30,10 @@ export default class Create extends APICommand {
   static flags = {
     confidential: Flags.boolean({default: false, description: 'mark the value as confidential'}),
     'env-var': Flags.string({description: 'environment variable to get value from'}),
-    type: Flags.string({options: ['boolean-flag', 'string'], required: true}),
+    type: Flags.string({
+      options: ['boolean-flag', 'boolean', 'string', 'double', 'int', 'string-list'],
+      required: true,
+    }),
     value: Flags.string({description: 'default value for your new item', required: false}),
     ...secretFlags('encrypt the value of this item'),
   }
@@ -59,7 +63,12 @@ export default class Create extends APICommand {
       console.warn("Note: --confidential is implied when using --secret, so you don't need to specify both.")
     }
 
+    if (secret.selected && flags.type !== 'string') {
+      return this.err('--secret flag only works with string type')
+    }
+
     let configValue: ConfigValue = {}
+    let valueType: ConfigValueType = ConfigValueType.STRING
 
     if (flags['env-var']) {
       configValue = {
@@ -73,7 +82,14 @@ export default class Create extends APICommand {
 
       if (valueInput.ok) {
         const rawValue = valueInput.value
-        configValue = {string: rawValue}
+        const parsedConfigValue = coerceIntoType(flags.type, rawValue)
+
+        if (!parsedConfigValue) {
+          return this.err(`Failed to coerce value into type: ${flags.type}`, {key, phase: 'coercion'})
+        }
+
+        configValue = parsedConfigValue[0]
+        valueType = parsedConfigValue[1]
 
         if (flags.confidential) {
           configValue.confidential = true
@@ -104,7 +120,7 @@ export default class Create extends APICommand {
           values: [{criteria: [], value: configValue}],
         },
       ],
-      valueType: ConfigValueType.STRING,
+      valueType,
     }
 
     const request = await this.apiClient.post('/api/v1/config/', newConfig)

@@ -118,6 +118,18 @@ const cannedResponses: CannedResponses = {
       200,
     ],
     [
+      createRequest('confidential.greeting.from.env', {
+        rows: [
+          {
+            properties: {},
+            values: [{criteria: [], value: {confidential: true, provided: {lookup: 'GREETING', source: 1}}}],
+          },
+        ],
+      }),
+      successResponse,
+      200,
+    ],
+    [
       createRequest('brand.new.secret', {
         rows: [
           {
@@ -259,6 +271,13 @@ describe('create', () => {
       .command(['create', 'greeting.from.env', '--type=string', '--env-var=GREETING'])
       .it('can create a string provided by an env var', (ctx) => {
         expect(ctx.stdout).to.contain(`Created config: greeting.from.env`)
+      })
+
+    test
+      .stdout()
+      .command(['create', 'confidential.greeting.from.env', '--type=string', '--env-var=GREETING', '--confidential'])
+      .it('can create a confidential string provided by an env var', (ctx) => {
+        expect(ctx.stdout).to.contain(`Created (confidential) config: confidential.greeting.from.env`)
       })
 
     test

@@ -85,7 +85,7 @@ Create a new item in Prefab
 
 ```
 USAGE
-  $ prefab create NAME --api-key <value> --type boolean-flag|string|double|int|string-list [--json]
+  $ prefab create NAME --api-key <value> --type boolean-flag|boolean|string|double|int|string-list [--json]
     [--interactive] [--no-color] [--verbose] [--confidential] [--env-var <value>] [--value <value>] [--secret]
     [--secret-key-name <value>]
 
@@ -99,7 +99,7 @@ FLAGS
   --secret-key-name=<value>  [default: prefab.secrets.encryption.key] name of the secret key to use for
                              encryption/decryption
   --type=<option>            (required)
-                             <options: boolean-flag|string|double|int|string-list>
+                             <options: boolean-flag|boolean|string|double|int|string-list>
   --value=<value>            default value for your new item
 
 GLOBAL FLAGS

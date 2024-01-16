@@ -10,7 +10,7 @@ const validateValue = (prefab: Prefab, key: string, value: string): Result<strin
     return failure(`Could not find config named ${key}`)
   }
 
-  const values = config.allowableValues.map((v) => valueOfToString(v))
+  const values = (config.allowableValues ?? []).map((v) => valueOfToString(v))
 
   if (values.length > 0 && !values.includes(value)) {
     return failure(`'${value}' is not a valid value for ${key}`)

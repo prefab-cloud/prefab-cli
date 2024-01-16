@@ -73,7 +73,7 @@ const promptForValue = async ({
   currentDefault?: ConfigValue | undefined
   message: string
 }) => {
-  const choices = config?.allowableValues.map((v) => valueOfToString(v))
+  const choices = (config?.allowableValues ?? []).map((v) => valueOfToString(v))
 
   if (choices === undefined || choices.length === 0) {
     const options: ux.IPromptOptions = {

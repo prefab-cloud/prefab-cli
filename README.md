@@ -14,7 +14,7 @@ $ npm install -g @prefab-cloud/prefab
 $ prefab COMMAND
 running command...
 $ prefab (--version)
-@prefab-cloud/prefab/0.1.5 darwin-arm64 node-v20.10.0
+@prefab-cloud/prefab/0.1.6 darwin-arm64 node-v20.10.0
 $ prefab --help [COMMAND]
 USAGE
   $ prefab COMMAND
@@ -78,7 +78,7 @@ EXAMPLES
   $ prefab change-default my.config.name --env-var=MY_ENV_VAR_NAME --environment=production
 ```
 
-_See code: [src/commands/change-default.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.5/src/commands/change-default.ts)_
+_See code: [src/commands/change-default.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.6/src/commands/change-default.ts)_
 
 ## `prefab create NAME`
 
@@ -125,7 +125,7 @@ EXAMPLES
   $ prefab create my.new.string --type string --env-var=MY_ENV_VAR_NAME
 ```
 
-_See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.5/src/commands/create.ts)_
+_See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.6/src/commands/create.ts)_
 
 ## `prefab download`
 
@@ -152,7 +152,7 @@ EXAMPLES
   $ prefab download --environment=test
 ```
 
-_See code: [src/commands/download.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.5/src/commands/download.ts)_
+_See code: [src/commands/download.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.6/src/commands/download.ts)_
 
 ## `prefab generate-new-hex-key`
 
@@ -175,7 +175,7 @@ EXAMPLES
   $ prefab generate-new-hex-key
 ```
 
-_See code: [src/commands/generate-new-hex-key.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.5/src/commands/generate-new-hex-key.ts)_
+_See code: [src/commands/generate-new-hex-key.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.6/src/commands/generate-new-hex-key.ts)_
 
 ## `prefab get [NAME]`
 
@@ -202,7 +202,7 @@ EXAMPLES
   $ prefab get my.config.name
 ```
 
-_See code: [src/commands/get.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.5/src/commands/get.ts)_
+_See code: [src/commands/get.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.6/src/commands/get.ts)_
 
 ## `prefab info [NAME]`
 
@@ -233,7 +233,7 @@ EXAMPLES
   $ prefab info my.config.name
 ```
 
-_See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.5/src/commands/info.ts)_
+_See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.6/src/commands/info.ts)_
 
 ## `prefab list`
 
@@ -269,7 +269,7 @@ EXAMPLES
   $ prefab list --feature-flags
 ```
 
-_See code: [src/commands/list.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.5/src/commands/list.ts)_
+_See code: [src/commands/list.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.6/src/commands/list.ts)_
 
 ## `prefab override [NAME]`
 
@@ -307,7 +307,7 @@ EXAMPLES
   $ prefab override my.double.config --value=3.14159
 ```
 
-_See code: [src/commands/override.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.5/src/commands/override.ts)_
+_See code: [src/commands/override.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.6/src/commands/override.ts)_
 
 ## `prefab serve DATA-FILE`
 
@@ -336,5 +336,5 @@ EXAMPLES
   $ prefab serve ./prefab.test.588.config.json --port=3099
 ```
 
-_See code: [src/commands/serve.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.5/src/commands/serve.ts)_
+_See code: [src/commands/serve.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.6/src/commands/serve.ts)_
 <!-- commandsstop -->

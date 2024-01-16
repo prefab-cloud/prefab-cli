@@ -41,7 +41,6 @@ const cannedResponses: CannedResponses = {
       200,
     ],
   ],
-
   'https://api.staging-prefab.cloud/api/v1/config/key/jeffreys.test.key': [
     [
       {},
@@ -126,6 +125,8 @@ const cannedResponses: CannedResponses = {
       200,
     ],
   ],
+
+  'https://api.staging-prefab.cloud/api/v1/config/key/this.does.not.exist': [[{}, {}, 404]],
 
   'https://api.staging-prefab.cloud/api/v1/config/set-default/': [
     [
@@ -328,7 +329,7 @@ describe('change-default', () => {
       .it("shows an error if no key is provided when things aren't interactive")
 
     test
-      .command(['change-default', 'my.key.name', '--no-interactive'])
+      .command(['change-default', 'feature-flag.simple', '--no-interactive'])
       .catch((error) => {
         expect(error.message).to.eql("'environment' is required when interactive mode isn't available.")
       })

@@ -28,6 +28,7 @@ USAGE
 * [`prefab change-default [NAME]`](#prefab-change-default-name)
 * [`prefab create NAME`](#prefab-create-name)
 * [`prefab download`](#prefab-download)
+* [`prefab generate-new-hex-key`](#prefab-generate-new-hex-key)
 * [`prefab get [NAME]`](#prefab-get-name)
 * [`prefab info [NAME]`](#prefab-info-name)
 * [`prefab list`](#prefab-list)
@@ -152,6 +153,29 @@ EXAMPLES
 ```
 
 _See code: [src/commands/download.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.5/src/commands/download.ts)_
+
+## `prefab generate-new-hex-key`
+
+Generate a new hex key suitable for secrets
+
+```
+USAGE
+  $ prefab generate-new-hex-key [--json] [--interactive] [--no-color] [--verbose]
+
+GLOBAL FLAGS
+  --[no-]interactive  Force interactive mode
+  --json              Format output as json.
+  --no-color          Do not colorize output
+  --verbose           Verbose output
+
+DESCRIPTION
+  Generate a new hex key suitable for secrets
+
+EXAMPLES
+  $ prefab generate-new-hex-key
+```
+
+_See code: [src/commands/generate-new-hex-key.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.5/src/commands/generate-new-hex-key.ts)_
 
 ## `prefab get [NAME]`
 

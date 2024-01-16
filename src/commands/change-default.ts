@@ -182,7 +182,7 @@ export default class ChangeDefault extends APICommand {
 
     const payload: Record<string, unknown> = {
       configKey: key,
-      currentVersionId: config.id.toString(),
+      currentVersionId: config.id?.toString(),
       value: configValue,
     }
 

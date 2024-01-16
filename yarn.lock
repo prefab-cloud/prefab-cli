@@ -771,10 +771,10 @@
   resolved "https://registry.npmjs.org/@pkgjs/parseargs/-/parseargs-0.11.0.tgz"
   integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
 
-"@prefab-cloud/prefab-cloud-node@0.1.14":
-  version "0.1.14"
-  resolved "https://registry.yarnpkg.com/@prefab-cloud/prefab-cloud-node/-/prefab-cloud-node-0.1.14.tgz#54663b4d126f6a5d041a2f7115a580b3ca67261e"
-  integrity sha512-rrSY6/MY2QW05pGHxnR9fn53Xspwpg5NkrBxgIcZgNtg6ruwnIIQnbolUBaKnUsJLZjrQZ6aPn9GB3MMxXUF4Q==
+"@prefab-cloud/prefab-cloud-node@0.1.16":
+  version "0.1.16"
+  resolved "https://registry.yarnpkg.com/@prefab-cloud/prefab-cloud-node/-/prefab-cloud-node-0.1.16.tgz#32286f6c8dd501ceb02c541c41cca6e63566cc80"
+  integrity sha512-/eK1obyrRbwIxNOGduY2/n3r9yRSLeJBcaj5NikMFuAfrstJmi5o/HWr6DVGMuYxTM6m3K3J9yTNOecZ5K1xFw==
   dependencies:
     "@types/eventsource" "^1.1.11"
     eventsource "^2.0.2"
@@ -1048,9 +1048,9 @@
     undici-types "~5.26.4"
 
 "@types/node@>=13.7.0":
-  version "20.10.4"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.10.4.tgz#b246fd84d55d5b1b71bf51f964bd514409347198"
-  integrity sha512-D08YG6rr8X90YB56tSIuBaddy/UXAA9RKJoFvrsnogAum/0pmjkgi4+2nx96A330FmioegBWmEYQ+syqCFaveg==
+  version "20.11.4"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.11.4.tgz#c724a5d6723182af758b91b994209336f4439cb7"
+  integrity sha512-6I0fMH8Aoy2lOejL3s4LhyIYX34DPwY8bl5xlNjBvUEk8OHrcuzsFt+Ied4LvJihbtXPM+8zUqdydfIti86v9g==
   dependencies:
     undici-types "~5.26.4"
 

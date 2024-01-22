@@ -232,6 +232,13 @@ describe('create', () => {
       .it('returns an error if the flag exists')
 
     test
+      .command(['create', 'brand.new.flag', '--type=boolean-flag', '--value=cake', '--verbose'])
+      .catch((error) => {
+        expect(error.message).to.contain(`Invalid default value for boolean: cake`)
+      })
+      .it('returns an error if the value is not a boolean')
+
+    test
       .stdout()
       .command(['create', 'already.in.use', '--type=boolean-flag', '--json'])
       .it('returns a JSON error if the flag exists', (ctx) => {
@@ -296,6 +303,13 @@ describe('create', () => {
       .it('can create an int', (ctx) => {
         expect(ctx.stdout).to.contain(`Created config: brand.new.int`)
       })
+
+    test
+      .command(['create', 'brand.new.int', '--type=int', '--value=hat'])
+      .catch((error) => {
+        expect(error.message).to.contain(`Invalid default value for int: hat`)
+      })
+      .it('returns an error if the value is not an int')
   })
 
   describe('type=double', () => {
@@ -305,6 +319,13 @@ describe('create', () => {
       .it('can create a double', (ctx) => {
         expect(ctx.stdout).to.contain(`Created config: brand.new.double`)
       })
+
+    test
+      .command(['create', 'brand.new.double', '--type=double', '--value=hat'])
+      .catch((error) => {
+        expect(error.message).to.contain(`Invalid default value for double: hat`)
+      })
+      .it('returns an error if the value is not a double')
   })
 
   describe('type=boolean', () => {
@@ -314,6 +335,13 @@ describe('create', () => {
       .it('can create a boolean', (ctx) => {
         expect(ctx.stdout).to.contain(`Created config: brand.new.boolean`)
       })
+
+    test
+      .command(['create', 'brand.new.boolean', '--type=boolean', '--value=hat'])
+      .catch((error) => {
+        expect(error.message).to.contain(`Invalid default value for boolean: hat`)
+      })
+      .it('returns an error if the value is not a boolean')
   })
 
   describe('type=string-list', () => {

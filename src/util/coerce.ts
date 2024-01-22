@@ -3,7 +3,8 @@ import type Long from 'long'
 
 import {ConfigValue, ConfigValueType} from '../prefab-common/src/types.js'
 
-export const TRUE_VALUES = new Set(['true', '1', 't', 'yes'])
+export const TRUE_VALUES = new Set(['true', '1', 't'])
+export const BOOLEAN_VALUES = new Set([...TRUE_VALUES, 'false', '0', 'f'])
 
 type ConfigValueWithConfigValueType = [ConfigValue, ConfigValueType]
 
@@ -14,16 +15,28 @@ export const coerceIntoType = (type: string, value: string): ConfigValueWithConf
     }
 
     case 'int': {
+      const int = Number.parseInt(value, 10)
+
+      if (Number.isNaN(int)) {
+        throw new TypeError(`Invalid default value for int: ${value}`)
+      }
+
       // This unknown as Long is annoying but Long doesn't serialize to JSON correctly ATM
-      return [{int: Number.parseInt(value, 10) as unknown as Long}, ConfigValueType.INT]
+      return [{int: int as unknown as Long}, ConfigValueType.INT]
     }
 
     case 'double': {
-      return [{double: Number.parseFloat(value)}, ConfigValueType.DOUBLE]
+      const double = Number.parseFloat(value)
+
+      if (Number.isNaN(double)) {
+        throw new TypeError(`Invalid default value for double: ${value}`)
+      }
+
+      return [{double}, ConfigValueType.DOUBLE]
     }
 
     case 'boolean': {
-      return [{bool: TRUE_VALUES.has(value.toLowerCase())}, ConfigValueType.BOOL]
+      return [{bool: coerceBool(value)}, ConfigValueType.BOOL]
     }
 
     case 'string-list': {
@@ -34,4 +47,12 @@ export const coerceIntoType = (type: string, value: string): ConfigValueWithConf
       return undefined
     }
   }
+}
+
+export const coerceBool = (value: string): boolean => {
+  if (!BOOLEAN_VALUES.has(value.toLowerCase())) {
+    throw new TypeError(`Invalid default value for boolean: ${value}`)
+  }
+
+  return TRUE_VALUES.has(value.toLowerCase())
 }

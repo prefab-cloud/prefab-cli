@@ -8,7 +8,7 @@ import {initPrefab} from '../prefab.js'
 import {ConfigType, ConfigValue, ConfigValueType, NewConfig} from '../prefab-common/src/types.js'
 import {JsonObj} from '../result.js'
 import getValue from '../ui/get-value.js'
-import {coerceIntoType} from '../util/coerce.js'
+import {coerceBool, coerceIntoType} from '../util/coerce.js'
 import {checkmark} from '../util/color.js'
 import secretFlags, {makeConfidentialValue, parsedSecretFlags} from '../util/secret-flags.js'
 
@@ -42,7 +42,7 @@ export default class Create extends APICommand {
     const {args, flags} = await this.parse(Create)
 
     if (flags.type === 'boolean-flag') {
-      return this.createBooleanFlag(args, {default: flags.value === 'true'})
+      return this.createBooleanFlag(args, flags.value)
     }
 
     const key = args.name
@@ -141,11 +141,13 @@ export default class Create extends APICommand {
     return this.ok(`${checkmark} Created ${confidentialMaybe}config: ${key}`, {key, ...response})
   }
 
-  private async createBooleanFlag(args: {name: string}, flags: {default: boolean}): Promise<JsonObj | void> {
+  private async createBooleanFlag(args: {name: string}, rawDefault: string | undefined): Promise<JsonObj | void> {
     const key = args.name
 
+    const defaultValue = coerceBool(rawDefault ?? 'false')
+
     const recipePaylod = {
-      defaultValue: flags.default,
+      defaultValue,
       key,
     }
 

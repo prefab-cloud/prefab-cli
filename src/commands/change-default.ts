@@ -11,6 +11,7 @@ import getConfirmation, {confirmFlag} from '../ui/get-confirmation.js'
 import getEnvironment from '../ui/get-environment.js'
 import getKey from '../ui/get-key.js'
 import getValue from '../ui/get-value.js'
+import {coerceIntoType} from '../util/coerce.js'
 import {checkmark} from '../util/color.js'
 import nameArg from '../util/name-arg.js'
 import secretFlags, {Secret, isConfigEncrypted, makeConfidentialValue, parsedSecretFlags} from '../util/secret-flags.js'
@@ -163,7 +164,13 @@ export default class ChangeDefault extends APICommand {
 
         successMessage += ' (encrypted)'
       } else {
-        configValue = {[type]: value}
+        const coercionResult = coerceIntoType(type, value)
+
+        if (coercionResult === undefined) {
+          return this.err(`Failed to coerce ${value} into type: ${type}`, {key, phase: 'coercion'})
+        }
+
+        configValue = coercionResult[0]
       }
     } else {
       configValue = {

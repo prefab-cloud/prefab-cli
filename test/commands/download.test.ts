@@ -1,54 +1,12 @@
 import {expect, test} from '@oclif/test'
-import {HttpResponse, http} from 'msw'
-import {setupServer} from 'msw/node'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
-import type {JsonObj} from '../../src/result.js'
+import {downloadStub, server} from '../responses/download.js'
 
 const expectedFileName = 'prefab.test.588.config.json'
 
 const savedContent = () => JSON.parse(fs.readFileSync(expectedFileName).toString())
-
-const downloadStub: JsonObj = {
-  configs: [
-    {
-      changedBy: {apiKeyId: '', email: 'jdwyer@prefab.cloud', userId: '0'},
-      configType: 'CONFIG',
-      draftid: '2',
-      id: '16777738077090689',
-      key: 'intprop',
-      projectId: '2',
-      rows: [{values: [{value: {int: '3'}}]}],
-      valueType: 'NOT_SET_VALUE_TYPE',
-    },
-  ],
-}
-
-const environmentResponse = {
-  envs: [
-    {id: 588, name: 'test'},
-    {id: 143, name: 'Production'},
-  ],
-  projectId: 124,
-}
-
-const server = setupServer(
-  http.get('https://api.staging-prefab.cloud/api/v1/project-environments', () =>
-    HttpResponse.json(environmentResponse),
-  ),
-
-  http.get('https://api.staging-prefab.cloud/api/v1/configs/download', ({request}) => {
-    const url = new URL(request.url)
-    const envId = url.searchParams.get('envId')
-
-    if (envId === '588') {
-      return HttpResponse.json(downloadStub)
-    }
-
-    return HttpResponse.json({message: 'something went wrong'}, {status: 500})
-  }),
-)
 
 describe('download', () => {
   before(() => {

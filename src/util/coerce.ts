@@ -3,8 +3,8 @@ import type Long from 'long'
 
 import {ConfigValue, ConfigValueType} from '../prefab-common/src/types.js'
 
-export const TRUE_VALUES = new Set(['true', '1', 't'])
-export const BOOLEAN_VALUES = new Set([...TRUE_VALUES, 'false', '0', 'f'])
+const TRUE_VALUES = new Set(['true', '1', 't'])
+const BOOLEAN_VALUES = new Set([...TRUE_VALUES, 'false', '0', 'f'])
 
 type ConfigValueWithConfigValueType = [ConfigValue, ConfigValueType]
 
@@ -35,10 +35,12 @@ export const coerceIntoType = (type: string, value: string): ConfigValueWithConf
       return [{double}, ConfigValueType.DOUBLE]
     }
 
+    case 'bool':
     case 'boolean': {
       return [{bool: coerceBool(value)}, ConfigValueType.BOOL]
     }
 
+    case 'stringList':
     case 'string-list': {
       return [{stringList: {values: value.split(/\s*,\s*/)}}, ConfigValueType.STRING_LIST]
     }

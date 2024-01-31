@@ -1,11 +1,11 @@
 import {Flags} from '@oclif/core'
-import {Prefab} from '@prefab-cloud/prefab-cloud-node'
+import {ConfigType, Prefab} from '@prefab-cloud/prefab-cloud-node'
 
 import type {Environment} from '../prefab-common/src/api/getEnvironmentsFromApi.js'
 import type {ConfigValue} from '../prefab-common/src/types.js'
 
 import {APICommand} from '../index.js'
-import {valueTypeString} from '../prefab-common/src/valueType.js'
+import {valueTypeStringForConfig} from '../prefab-common/src/valueType.js'
 import {JsonObj} from '../result.js'
 import getConfirmation, {confirmFlag} from '../ui/get-confirmation.js'
 import getEnvironment from '../ui/get-environment.js'
@@ -18,10 +18,10 @@ import secretFlags, {Secret, isConfigEncrypted, makeConfidentialValue, parsedSec
 
 type ValueOrEnvVar = {envVar: string; value?: never} | {envVar?: never; value: string}
 
-export default class ChangeDefault extends APICommand {
+export default class SetDefault extends APICommand {
   static args = {...nameArg}
 
-  static description = 'Change the default value for an environment (other rules still apply)'
+  static description = 'Set/update the default value for an environment (other rules still apply)'
 
   static examples = [
     '<%= config.bin %> <%= command.id %> my.flag.name # will prompt for value and env',
@@ -40,7 +40,7 @@ export default class ChangeDefault extends APICommand {
   }
 
   public async run(): Promise<JsonObj | void> {
-    const {args, flags} = await this.parse(ChangeDefault)
+    const {args, flags} = await this.parse(SetDefault)
 
     const secret = parsedSecretFlags(flags)
 
@@ -74,8 +74,14 @@ export default class ChangeDefault extends APICommand {
       console.warn("Note: --confidential is implied when using --secret, so you don't need to specify both.")
     }
 
+    const config = prefab.raw(key)
+
+    if (!config) {
+      return this.err(`Could not find config named ${key}`)
+    }
+
     const environment = await getEnvironment({
-      allowDefaultEnvironment: true,
+      allowDefaultEnvironment: config.configType !== ConfigType.FEATURE_FLAG,
       client: this.rawApiClient,
       command: this,
       flags,
@@ -141,7 +147,7 @@ export default class ChangeDefault extends APICommand {
       return this.err(`no config found for ${key}`)
     }
 
-    const type = valueTypeString(config.valueType)
+    const type = valueTypeStringForConfig(config)
 
     if (!type) {
       return this.err(`unknown value type for ${key}: ${config.valueType}`)

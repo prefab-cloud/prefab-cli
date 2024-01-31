@@ -1,8 +1,8 @@
 import {expect, test} from '@oclif/test'
 
-import {server} from '../responses/change-default.js'
+import {server} from '../responses/set-default.js'
 
-describe('change-default', () => {
+describe('set-default', () => {
   before(() => server.listen())
   afterEach(() => server.resetHandlers())
   after(() => server.close())
@@ -10,7 +10,7 @@ describe('change-default', () => {
   describe('success', () => {
     test
       .stdout()
-      .command(['change-default', 'feature-flag.simple', '--environment=Development', '--value=true', '--confirm'])
+      .command(['set-default', 'feature-flag.simple', '--environment=Development', '--value=true', '--confirm'])
       .it('can change the default for a boolean flag', (ctx) => {
         expect(ctx.stdout).to.contain('Successfully changed default to `true`')
       })
@@ -18,7 +18,7 @@ describe('change-default', () => {
     test
       .stdout()
       .command([
-        'change-default',
+        'set-default',
         'feature-flag.simple',
         '--environment=Development',
         '--value=true',
@@ -40,7 +40,7 @@ describe('change-default', () => {
     test
       .stdout()
       .command([
-        'change-default',
+        'set-default',
         'jeffreys.test.key',
         '--environment=[default]',
         '--value=hello default world',
@@ -53,7 +53,7 @@ describe('change-default', () => {
     test
       .stdout()
       .command([
-        'change-default',
+        'set-default',
         'jeffreys.test.key',
         '--environment=[default]',
         '--confirm',
@@ -74,28 +74,21 @@ describe('change-default', () => {
 
     test
       .stdout()
-      .command(['change-default', 'jeffreys.test.key', '--environment=Staging', '--confirm', '--env-var=GREETING'])
+      .command(['set-default', 'jeffreys.test.key', '--environment=Staging', '--confirm', '--env-var=GREETING'])
       .it('can create a string provided by an env var', (ctx) => {
         expect(ctx.stdout).to.contain(`Successfully changed default to be provided by \`GREETING\``)
       })
 
     test
       .stdout()
-      .command([
-        'change-default',
-        'jeffreys.test.key',
-        '--environment=Staging',
-        '--confirm',
-        '--secret',
-        '--value=hello',
-      ])
+      .command(['set-default', 'jeffreys.test.key', '--environment=Staging', '--confirm', '--secret', '--value=hello'])
       .it('can create a secret string', (ctx) => {
         expect(ctx.stdout).to.contain(`Successfully changed default to \`hello\` (encrypted)`)
       })
 
     test
       .stdout()
-      .command(['change-default', 'robocop-secret', '--environment=Staging', '--confirm', '--value=hello'])
+      .command(['set-default', 'robocop-secret', '--environment=Staging', '--confirm', '--value=hello'])
       .it('uses encryption if any existing value for the key is encrypted', (ctx) => {
         expect(ctx.stdout).to.contain(`Successfully changed default to \`hello\` (encrypted)`)
       })
@@ -104,7 +97,7 @@ describe('change-default', () => {
   describe('failure', () => {
     test
       .stderr()
-      .command(['change-default', 'this.does.not.exist', '--environment=Staging', '--value=hello default world'])
+      .command(['set-default', 'this.does.not.exist', '--environment=Staging', '--value=hello default world'])
       .catch((error) => {
         expect(error.message).to.contain(`Could not find config named this.does.not.exist`)
       })
@@ -112,7 +105,7 @@ describe('change-default', () => {
 
     test
       .stderr()
-      .command(['change-default', 'feature-flag.simple', '--environment=Development', '--value=cake', '--confirm'])
+      .command(['set-default', 'feature-flag.simple', '--environment=Development', '--value=cake', '--confirm'])
       .catch((error) => {
         expect(error.message).to.contain(`'cake' is not a valid value for feature-flag.simple`)
       })
@@ -120,7 +113,7 @@ describe('change-default', () => {
 
     test
       .stdout()
-      .command(['change-default', 'jeffreys.test.int', '--environment=[default]', '--confirm', '--value=hello'])
+      .command(['set-default', 'jeffreys.test.int', '--environment=[default]', '--confirm', '--value=hello'])
       .catch((error) => {
         expect(error.message).to.contain(`Invalid default value for int: hello`)
       })
@@ -129,14 +122,14 @@ describe('change-default', () => {
 
   describe('parsing errors', () => {
     test
-      .command(['change-default', '--no-interactive'])
+      .command(['set-default', '--no-interactive'])
       .catch((error) => {
         expect(error.message).to.eql("'name' argument is required when interactive mode isn't available.")
       })
       .it("shows an error if no key is provided when things aren't interactive")
 
     test
-      .command(['change-default', 'feature-flag.simple', '--no-interactive'])
+      .command(['set-default', 'feature-flag.simple', '--no-interactive'])
       .catch((error) => {
         expect(error.message).to.eql("'environment' is required when interactive mode isn't available.")
       })
@@ -145,7 +138,7 @@ describe('change-default', () => {
     test
       .stderr()
       .command([
-        'change-default',
+        'set-default',
         'jeffreys.test.key',
         '--environment=Staging',
         '--confirm',

@@ -29,6 +29,7 @@ const createRequest = (key: string, options: Record<string, unknown>) => ({
   configType: 1,
   key,
   projectId: '124',
+  sendToClientSdk: false,
   valueType: 2,
   ...options,
 })

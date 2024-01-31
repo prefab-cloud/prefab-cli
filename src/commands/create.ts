@@ -120,6 +120,7 @@ export default class Create extends APICommand {
           values: [{criteria: [], value: configValue}],
         },
       ],
+      sendToClientSdk: false,
       valueType,
     }
 

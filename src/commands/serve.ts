@@ -5,7 +5,7 @@ import http, {IncomingMessage, ServerResponse} from 'node:http'
 
 import {BaseCommand} from '../index.js'
 import {initPrefab} from '../prefab.js'
-import {valueTypeString} from '../prefab-common/src/valueType.js'
+import {valueTypeStringForConfig} from '../prefab-common/src/valueType.js'
 import {javaScriptClientFormattedContextToContext} from '../util/context.js'
 
 const allowCORSPreflight = (res: ServerResponse) => {
@@ -38,10 +38,14 @@ export default class Serve extends BaseCommand {
       return this.error(`File not found: ${file}`)
     }
 
-    let prefab: Prefab
+    let prefab: Prefab | void
 
     try {
       prefab = await initPrefab(this, file)
+
+      if (!prefab) {
+        throw new Error('Prefab not initialized')
+      }
     } catch (error_) {
       const error = error_ as Error
 
@@ -94,13 +98,10 @@ export default class Serve extends BaseCommand {
         for (const key of prefab.keys()) {
           const raw = prefab.raw(key)
 
-          if (raw) {
-            console.log(raw.key, raw.configType, raw.sendToClientSdk)
-            if (ALWAYS_SEND_CONFIG_TYPES.has(raw.configType) || raw.sendToClientSdk) {
-              const valueType = valueTypeString(raw.valueType) ?? '?'
+          if (raw && (ALWAYS_SEND_CONFIG_TYPES.has(raw.configType) || raw.sendToClientSdk)) {
+            const valueType = valueTypeStringForConfig(raw) ?? '?'
 
-              config[key] = {[valueType]: prefab.get(key, context)}
-            }
+            config[key] = {[valueType]: prefab.get(key, context)}
           }
         }
 

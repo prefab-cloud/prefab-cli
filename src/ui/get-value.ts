@@ -1,4 +1,3 @@
-import {ux} from '@oclif/core'
 import {Prefab} from '@prefab-cloud/prefab-cloud-node'
 
 import type {Environment} from '../prefab-common/src/api/getEnvironmentsFromApi.js'
@@ -9,6 +8,7 @@ import {valueOfToString} from '../prefab-common/src/valueOf.js'
 import {Result, failure, noop, success} from '../result.js'
 import autocomplete from '../util/autocomplete.js'
 import validateValue from '../validations/value.js'
+import getString from './get-string.js'
 
 const getValue = async ({
   allowBlank = true,
@@ -76,11 +76,7 @@ const promptForValue = async ({
   const choices = (config?.allowableValues ?? []).map((v) => valueOfToString(v))
 
   if (choices === undefined || choices.length === 0) {
-    const options: ux.IPromptOptions = {
-      required: !allowBlank,
-    }
-
-    return ux.prompt(message, options)
+    return getString({allowBlank, message})
   }
 
   const autoCompleteMessage =

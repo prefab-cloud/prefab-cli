@@ -1,7 +1,8 @@
-import {Command} from '@oclif/core'
 import {Prefab} from '@prefab-cloud/prefab-cloud-node'
 
 import type {ConfigValue} from './prefab-common/src/types.js'
+
+import {CommandLike} from './ui/get-key.js'
 
 type Flags = {
   ['api-key']?: string
@@ -14,7 +15,7 @@ let prefab: Prefab
 const DEFAULT_CONTEXT_USER_ID_NAMESPACE = 'prefab-api-key'
 const DEFAULT_CONTEXT_USER_ID = 'user-id'
 
-export const initPrefab = async (ctx: Command, flagsOrDatafile: FlagsOrDatafile) => {
+export const initPrefab = async (ctx: CommandLike, flagsOrDatafile: FlagsOrDatafile) => {
   let apiKey = 'NO_API_KEY'
   let datafile
 
@@ -22,7 +23,7 @@ export const initPrefab = async (ctx: Command, flagsOrDatafile: FlagsOrDatafile)
     datafile = flagsOrDatafile
   } else {
     if (!flagsOrDatafile['api-key']) {
-      return ctx.error('API key is required', {exit: 401})
+      throw new Error(`API key is required`)
     }
 
     apiKey = flagsOrDatafile['api-key']

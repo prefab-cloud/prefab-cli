@@ -4,7 +4,7 @@ import type {Config} from '../prefab-common/src/types.js'
 
 import {APICommand} from '../index.js'
 import {overrideFor} from '../prefab.js'
-import {valueTypeString} from '../prefab-common/src/valueType.js'
+import {valueTypeStringForConfig} from '../prefab-common/src/valueType.js'
 import {JsonObj} from '../result.js'
 import getKey from '../ui/get-key.js'
 import getValue from '../ui/get-value.js'
@@ -87,9 +87,9 @@ export default class Override extends APICommand {
   }
 
   private async setOverride(config: Config, value: string): Promise<JsonObj | void> {
-    const {key, valueType} = config
+    const {key} = config
 
-    const type = valueTypeString(valueType)
+    const type = valueTypeStringForConfig(config)
 
     if (!type) {
       return this.err(`Could not find type for config named ${key}`)

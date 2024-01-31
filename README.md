@@ -14,7 +14,7 @@ $ npm install -g @prefab-cloud/prefab
 $ prefab COMMAND
 running command...
 $ prefab (--version)
-@prefab-cloud/prefab/0.1.7 darwin-arm64 node-v20.10.0
+@prefab-cloud/prefab/0.1.7-pre9 darwin-arm64 node-v20.10.0
 $ prefab --help [COMMAND]
 USAGE
   $ prefab COMMAND
@@ -25,60 +25,16 @@ USAGE
 # Commands
 
 <!-- commands -->
-* [`prefab change-default [NAME]`](#prefab-change-default-name)
 * [`prefab create NAME`](#prefab-create-name)
 * [`prefab download`](#prefab-download)
 * [`prefab generate-new-hex-key`](#prefab-generate-new-hex-key)
 * [`prefab get [NAME]`](#prefab-get-name)
 * [`prefab info [NAME]`](#prefab-info-name)
+* [`prefab interactive`](#prefab-interactive)
 * [`prefab list`](#prefab-list)
 * [`prefab override [NAME]`](#prefab-override-name)
 * [`prefab serve DATA-FILE`](#prefab-serve-data-file)
-
-## `prefab change-default [NAME]`
-
-Change the default value for an environment (other rules still apply)
-
-```
-USAGE
-  $ prefab change-default [NAME] --api-key <value> [--json] [--interactive] [--no-color] [--verbose]
-    [--confidential] [--env-var <value>] [--environment <value>] [--value <value>] [--confirm] [--secret]
-    [--secret-key-name <value>]
-
-ARGUMENTS
-  NAME  config/feature-flag/etc. name
-
-FLAGS
-  --confidential             mark the value as confidential
-  --confirm                  confirm without prompt
-  --env-var=<value>          environment variable to use as default value
-  --environment=<value>      environment to change (specify "[default]" for the default environment)
-  --secret                   encrypt the value of this item
-  --secret-key-name=<value>  [default: prefab.secrets.encryption.key] name of the secret key to use for
-                             encryption/decryption
-  --value=<value>            new default value
-
-GLOBAL FLAGS
-  --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
-  --[no-]interactive  Force interactive mode
-  --json              Format output as json.
-  --no-color          Do not colorize output
-  --verbose           Verbose output
-
-DESCRIPTION
-  Change the default value for an environment (other rules still apply)
-
-EXAMPLES
-  $ prefab change-default my.flag.name # will prompt for value and env
-
-  $ prefab change-default my.flag.name --value=true --environment=staging
-
-  $ prefab change-default my.flag.name --value=true --secret
-
-  $ prefab change-default my.config.name --env-var=MY_ENV_VAR_NAME --environment=production
-```
-
-_See code: [src/commands/change-default.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7/src/commands/change-default.ts)_
+* [`prefab set-default [NAME]`](#prefab-set-default-name)
 
 ## `prefab create NAME`
 
@@ -125,7 +81,7 @@ EXAMPLES
   $ prefab create my.new.string --type string --env-var=MY_ENV_VAR_NAME
 ```
 
-_See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7/src/commands/create.ts)_
+_See code: [src/commands/create.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7-pre9/src/commands/create.ts)_
 
 ## `prefab download`
 
@@ -152,7 +108,7 @@ EXAMPLES
   $ prefab download --environment=test
 ```
 
-_See code: [src/commands/download.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7/src/commands/download.ts)_
+_See code: [src/commands/download.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7-pre9/src/commands/download.ts)_
 
 ## `prefab generate-new-hex-key`
 
@@ -175,7 +131,7 @@ EXAMPLES
   $ prefab generate-new-hex-key
 ```
 
-_See code: [src/commands/generate-new-hex-key.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7/src/commands/generate-new-hex-key.ts)_
+_See code: [src/commands/generate-new-hex-key.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7-pre9/src/commands/generate-new-hex-key.ts)_
 
 ## `prefab get [NAME]`
 
@@ -202,7 +158,7 @@ EXAMPLES
   $ prefab get my.config.name
 ```
 
-_See code: [src/commands/get.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7/src/commands/get.ts)_
+_See code: [src/commands/get.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7-pre9/src/commands/get.ts)_
 
 ## `prefab info [NAME]`
 
@@ -233,7 +189,25 @@ EXAMPLES
   $ prefab info my.config.name
 ```
 
-_See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7/src/commands/info.ts)_
+_See code: [src/commands/info.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7-pre9/src/commands/info.ts)_
+
+## `prefab interactive`
+
+```
+USAGE
+  $ prefab interactive [--json] [--] [--no-color] [--verbose]
+
+GLOBAL FLAGS
+  --[no-]interactive  Force interactive mode
+  --json              Format output as json.
+  --no-color          Do not colorize output
+  --verbose           Verbose output
+
+EXAMPLES
+  $ prefab
+```
+
+_See code: [src/commands/interactive.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7-pre9/src/commands/interactive.ts)_
 
 ## `prefab list`
 
@@ -269,7 +243,7 @@ EXAMPLES
   $ prefab list --feature-flags
 ```
 
-_See code: [src/commands/list.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7/src/commands/list.ts)_
+_See code: [src/commands/list.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7-pre9/src/commands/list.ts)_
 
 ## `prefab override [NAME]`
 
@@ -307,7 +281,7 @@ EXAMPLES
   $ prefab override my.double.config --value=3.14159
 ```
 
-_See code: [src/commands/override.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7/src/commands/override.ts)_
+_See code: [src/commands/override.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7-pre9/src/commands/override.ts)_
 
 ## `prefab serve DATA-FILE`
 
@@ -336,5 +310,50 @@ EXAMPLES
   $ prefab serve ./prefab.test.588.config.json --port=3099
 ```
 
-_See code: [src/commands/serve.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7/src/commands/serve.ts)_
+_See code: [src/commands/serve.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7-pre9/src/commands/serve.ts)_
+
+## `prefab set-default [NAME]`
+
+Set/update the default value for an environment (other rules still apply)
+
+```
+USAGE
+  $ prefab set-default [NAME] --api-key <value> [--json] [--interactive] [--no-color] [--verbose]
+    [--confidential] [--env-var <value>] [--environment <value>] [--value <value>] [--confirm] [--secret]
+    [--secret-key-name <value>]
+
+ARGUMENTS
+  NAME  config/feature-flag/etc. name
+
+FLAGS
+  --confidential             mark the value as confidential
+  --confirm                  confirm without prompt
+  --env-var=<value>          environment variable to use as default value
+  --environment=<value>      environment to change (specify "[default]" for the default environment)
+  --secret                   encrypt the value of this item
+  --secret-key-name=<value>  [default: prefab.secrets.encryption.key] name of the secret key to use for
+                             encryption/decryption
+  --value=<value>            new default value
+
+GLOBAL FLAGS
+  --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
+  --[no-]interactive  Force interactive mode
+  --json              Format output as json.
+  --no-color          Do not colorize output
+  --verbose           Verbose output
+
+DESCRIPTION
+  Set/update the default value for an environment (other rules still apply)
+
+EXAMPLES
+  $ prefab set-default my.flag.name # will prompt for value and env
+
+  $ prefab set-default my.flag.name --value=true --environment=staging
+
+  $ prefab set-default my.flag.name --value=true --secret
+
+  $ prefab set-default my.config.name --env-var=MY_ENV_VAR_NAME --environment=production
+```
+
+_See code: [src/commands/set-default.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.1.7-pre9/src/commands/set-default.ts)_
 <!-- commandsstop -->

@@ -1,5 +1,5 @@
 import {Args, Flags} from '@oclif/core'
-import {Prefab} from '@prefab-cloud/prefab-cloud-node'
+import {ConfigType, Prefab} from '@prefab-cloud/prefab-cloud-node'
 import * as fs from 'node:fs'
 import http, {IncomingMessage, ServerResponse} from 'node:http'
 
@@ -13,6 +13,8 @@ const allowCORSPreflight = (res: ServerResponse) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-prefabcloud-client-version, authorization')
 }
+
+const ALWAYS_SEND_CONFIG_TYPES = new Set([ConfigType.FEATURE_FLAG, ConfigType.LOG_LEVEL])
 
 export default class Serve extends BaseCommand {
   static args = {
@@ -93,9 +95,12 @@ export default class Serve extends BaseCommand {
           const raw = prefab.raw(key)
 
           if (raw) {
-            const valueType = valueTypeString(raw.valueType) ?? '?'
+            console.log(raw.key, raw.configType, raw.sendToClientSdk)
+            if (ALWAYS_SEND_CONFIG_TYPES.has(raw.configType) || raw.sendToClientSdk) {
+              const valueType = valueTypeString(raw.valueType) ?? '?'
 
-            config[key] = {[valueType]: prefab.get(key, context)}
+              config[key] = {[valueType]: prefab.get(key, context)}
+            }
           }
         }
 

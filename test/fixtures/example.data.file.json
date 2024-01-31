@@ -8,7 +8,18 @@
       "key": "intprop",
       "projectId": "2",
       "rows": [{"values": [{"value": {"int": "8"}}]}],
-      "valueType": "INT"
+      "valueType": "INT",
+      "sendToClientSdk": true
+    },
+    {
+      "changedBy": {"apiKeyId": "", "email": "test@example.com", "userId": "0"},
+      "configType": "CONFIG",
+      "id": "16777738077090698",
+      "key": "notSenttoClient",
+      "projectId": "2",
+      "rows": [{"values": [{"value": {"int": "2"}}]}],
+      "valueType": "INT",
+      "sendToClientSdk": false
     },
     {
       "id": "17023190805036677",

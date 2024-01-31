@@ -1427,10 +1427,10 @@
   resolved "https://registry.yarnpkg.com/@pkgjs/parseargs/-/parseargs-0.11.0.tgz#a77ea742fab25775145434eb1d2328cf5013ac33"
   integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
 
-"@prefab-cloud/prefab-cloud-node@0.1.16":
-  version "0.1.16"
-  resolved "https://registry.yarnpkg.com/@prefab-cloud/prefab-cloud-node/-/prefab-cloud-node-0.1.16.tgz#32286f6c8dd501ceb02c541c41cca6e63566cc80"
-  integrity sha512-/eK1obyrRbwIxNOGduY2/n3r9yRSLeJBcaj5NikMFuAfrstJmi5o/HWr6DVGMuYxTM6m3K3J9yTNOecZ5K1xFw==
+"@prefab-cloud/prefab-cloud-node@0.1.18-pre2":
+  version "0.1.18-pre2"
+  resolved "https://registry.yarnpkg.com/@prefab-cloud/prefab-cloud-node/-/prefab-cloud-node-0.1.18-pre2.tgz#d1510bd69b97cede467ff3a7212b5325107826e5"
+  integrity sha512-OF5LwfGbcXod2GO/EbovqQ0i65tRYzC/yR2pgjKDuEP10hPYbOgu2Yln3K9Pi/ezY4v1bOZzI2XMmrKsd48pMw==
   dependencies:
     "@types/eventsource" "^1.1.11"
     eventsource "^2.0.2"
@@ -2165,17 +2165,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/node@*":
+"@types/node@*", "@types/node@>=13.7.0":
   version "20.11.13"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-20.11.13.tgz#188263ee2c8d590e181d3f5bfa7e485a932957cb"
   integrity sha512-5G4zQwdiQBSWYTDAH1ctw2eidqdhMJaNsiIDKHFr55ihz5Trl2qqR8fdrT732yPBho5gkNxXm67OxWFBqX9aPg==
-  dependencies:
-    undici-types "~5.26.4"
-
-"@types/node@>=13.7.0":
-  version "20.11.4"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.11.4.tgz#c724a5d6723182af758b91b994209336f4439cb7"
-  integrity sha512-6I0fMH8Aoy2lOejL3s4LhyIYX34DPwY8bl5xlNjBvUEk8OHrcuzsFt+Ied4LvJihbtXPM+8zUqdydfIti86v9g==
   dependencies:
     undici-types "~5.26.4"
 
@@ -6603,9 +6596,9 @@ propagate@^2.0.0:
   integrity sha512-vGrhOavPSTz4QVNuBNdcNXePNdNMaO1xj9yBeH1ScQPjk/rhg9sSlCXPhMkFuaNNW/syTvYqsnbIJxMBfRbbag==
 
 protobufjs@^7.2.3:
-  version "7.2.5"
-  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.2.5.tgz#45d5c57387a6d29a17aab6846dcc283f9b8e7f2d"
-  integrity sha512-gGXRSXvxQ7UiPgfw8gevrfRWcTlSbOFg+p/N+JVJEK5VhueL2miT6qTymqAmjr1Q5WbOCyJbyrk6JfWKwlFn6A==
+  version "7.2.6"
+  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.2.6.tgz#4a0ccd79eb292717aacf07530a07e0ed20278215"
+  integrity sha512-dgJaEDDL6x8ASUZ1YqWciTRrdOuYNzoOf27oHNfdyvKqHr5i0FV7FSLU+aIeFjyFgVxrpTOtQUi0BLLBymZaBw==
   dependencies:
     "@protobufjs/aspromise" "^1.1.2"
     "@protobufjs/base64" "^1.1.2"

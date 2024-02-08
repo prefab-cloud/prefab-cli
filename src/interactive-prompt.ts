@@ -74,6 +74,13 @@ commands.push(
     id: 'create',
     implicitFlags: ['secret'],
   },
+  {
+    command: Create,
+    description: 'Create an ENV Var provided item in Prefab with --env-var',
+    displayCommandName: 'create --env-var',
+    id: 'create',
+    implicitFlags: ['env-var'],
+  },
 )
 
 type AvailableCommand = (typeof commands)[number]
@@ -166,12 +173,9 @@ const getFlags = async (
       if (arg.type === 'boolean') {
         inputs.push(`--${key}`)
       } else {
-        const inputPromise = async () => {
-          const value = await promptForInput(arg, key, commandId, apiKey)
-          inputs.push(`--${key}=${value}`)
-        }
-
-        promiseInputs.push(inputPromise())
+        // eslint-disable-next-line no-await-in-loop
+        const value = await promptForInput(arg, key, commandId, apiKey)
+        inputs.push(`--${key}=${value}`)
       }
     }
   }

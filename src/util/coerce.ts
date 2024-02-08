@@ -8,10 +8,20 @@ const BOOLEAN_VALUES = new Set([...TRUE_VALUES, 'false', '0', 'f'])
 
 type ConfigValueWithConfigValueType = [ConfigValue, ConfigValueType]
 
+export const TYPE_MAPPING: Record<string, ConfigValueType> = {
+  bool: ConfigValueType.BOOL,
+  boolean: ConfigValueType.BOOL,
+  double: ConfigValueType.DOUBLE,
+  int: ConfigValueType.INT,
+  string: ConfigValueType.STRING,
+  'string-list': ConfigValueType.STRING_LIST,
+  stringList: ConfigValueType.STRING_LIST,
+}
+
 export const coerceIntoType = (type: string, value: string): ConfigValueWithConfigValueType | undefined => {
   switch (type) {
     case 'string': {
-      return [{string: value}, ConfigValueType.STRING]
+      return [{string: value}, TYPE_MAPPING[type]]
     }
 
     case 'int': {
@@ -22,7 +32,7 @@ export const coerceIntoType = (type: string, value: string): ConfigValueWithConf
       }
 
       // This unknown as Long is annoying but Long doesn't serialize to JSON correctly ATM
-      return [{int: int as unknown as Long}, ConfigValueType.INT]
+      return [{int: int as unknown as Long}, TYPE_MAPPING[type]]
     }
 
     case 'double': {
@@ -32,17 +42,17 @@ export const coerceIntoType = (type: string, value: string): ConfigValueWithConf
         throw new TypeError(`Invalid default value for double: ${value}`)
       }
 
-      return [{double}, ConfigValueType.DOUBLE]
+      return [{double}, TYPE_MAPPING[type]]
     }
 
     case 'bool':
     case 'boolean': {
-      return [{bool: coerceBool(value)}, ConfigValueType.BOOL]
+      return [{bool: coerceBool(value)}, TYPE_MAPPING[type]]
     }
 
     case 'stringList':
     case 'string-list': {
-      return [{stringList: {values: value.split(/\s*,\s*/)}}, ConfigValueType.STRING_LIST]
+      return [{stringList: {values: value.split(/\s*,\s*/)}}, TYPE_MAPPING[type]]
     }
 
     default: {

@@ -8,7 +8,7 @@ import {initPrefab} from '../prefab.js'
 import {ConfigType, ConfigValue, ConfigValueType, NewConfig} from '../prefab-common/src/types.js'
 import {JsonObj} from '../result.js'
 import getValue from '../ui/get-value.js'
-import {coerceBool, coerceIntoType} from '../util/coerce.js'
+import {TYPE_MAPPING, coerceBool, coerceIntoType} from '../util/coerce.js'
 import {checkmark} from '../util/color.js'
 import secretFlags, {makeConfidentialValue, parsedSecretFlags} from '../util/secret-flags.js'
 
@@ -68,7 +68,7 @@ export default class Create extends APICommand {
     }
 
     let configValue: ConfigValue = {}
-    let valueType: ConfigValueType = ConfigValueType.STRING
+    let valueType: ConfigValueType = TYPE_MAPPING[flags.type]
 
     if (flags['env-var']) {
       configValue = {

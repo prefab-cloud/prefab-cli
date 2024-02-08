@@ -119,6 +119,13 @@ describe('create', () => {
         expect(error.message).to.contain(`Invalid default value for int: hat`)
       })
       .it('returns an error if the value is not an int')
+
+    test
+      .stdout()
+      .command(['create', 'int.from.env', '--type=int', '--env-var=MY_INT'])
+      .it('can create an int provided by an env var', (ctx) => {
+        expect(ctx.stdout).to.contain(`Created config: int.from.env`)
+      })
   })
 
   describe('type=double', () => {

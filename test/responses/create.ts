@@ -111,6 +111,14 @@ const cannedResponses: CannedResponses = {
       200,
     ],
     [
+      createRequest('int.from.env', {
+        rows: [{properties: {}, values: [{criteria: [], value: {provided: {lookup: 'MY_INT', source: 1}}}]}],
+        valueType: 1,
+      }),
+      successResponse,
+      200,
+    ],
+    [
       createRequest('greeting.from.env', {
         rows: [{properties: {}, values: [{criteria: [], value: {provided: {lookup: 'GREETING', source: 1}}}]}],
       }),

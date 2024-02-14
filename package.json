@@ -46,7 +46,6 @@
     "bin": "prefab",
     "dirname": "prefab",
     "commands": "./dist/commands",
-    "default": "interactive",
     "plugins": [],
     "topicSeparator": " ",
     "helpClass": "./dist/help"

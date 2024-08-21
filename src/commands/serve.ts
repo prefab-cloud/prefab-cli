@@ -16,12 +16,24 @@ const allowCORSPreflight = (res: ServerResponse) => {
 
 const ALWAYS_SEND_CONFIG_TYPES = new Set([ConfigType.FEATURE_FLAG, ConfigType.LOG_LEVEL])
 
+const base64ToBytes = (base64: string): Uint8Array => {
+  const binString = Buffer.from(base64, 'base64').toString('binary')
+  return Uint8Array.from(binString, (m) => m.codePointAt(0) as number)
+}
+
 export default class Serve extends BaseCommand {
   static args = {
     'data-file': Args.string({description: 'file to read', required: true}),
   }
 
-  static description = 'Serve a datafile on a local port'
+  static description = `Serve a datafile on a local port
+
+  You can download a datafile using the \`download\` command.
+
+  You'll need to update your JavaScript (or React) client to point to this server.
+
+  e.g. \`endpoints: ["http://localhost:3099"],\`
+`
 
   static examples = ['<%= config.bin %> <%= command.id %> ./prefab.test.588.config.json --port=3099 ']
 
@@ -82,12 +94,14 @@ export default class Serve extends BaseCommand {
         return
       }
 
-      const match = req.url?.match(/^\/configs\/eval-with-context\/(.+)$/)
+      const match = req.url?.match(/^\/?\/configs\/eval-with-context\/(.+)$/)
 
       if (req.method === 'GET' && match) {
-        const encodedContext = match[1]
+        const encodedContext = match[1].split('?')[0]
 
-        const decoded = Buffer.from(decodeURIComponent(encodedContext), 'base64').toString('utf8')
+        console.log(`Received context: ${encodedContext}`)
+        console.log(`Decoded context: ${decodeURIComponent(encodedContext)}`)
+        const decoded = new TextDecoder().decode(base64ToBytes(decodeURIComponent(encodedContext)))
 
         const context = javaScriptClientFormattedContextToContext(JSON.parse(decoded))
 
@@ -101,16 +115,16 @@ export default class Serve extends BaseCommand {
           if (raw && (ALWAYS_SEND_CONFIG_TYPES.has(raw.configType) || raw.sendToClientSdk)) {
             const valueType = valueTypeStringForConfig(raw) ?? '?'
 
-            config[key] = {[valueType]: prefab.get(key, context)}
+            config[key] = {value: {[valueType]: prefab.get(key, context)}}
           }
         }
 
         res.writeHead(200, {'Content-Type': 'application/json'})
-        res.end(JSON.stringify({values: config}))
+        res.end(JSON.stringify({evaluations: config}))
       } else {
         this.verboseLog(`No handler for ${req.method} ${req.url}`)
         res.writeHead(404, {'Content-Type': 'text/plain'})
-        res.end('Not Found')
+        res.end('Not Found. You can only GET /configs/eval-with-context/<context>')
       }
     }
   }

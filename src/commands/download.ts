@@ -9,7 +9,9 @@ import getEnvironment from '../ui/get-environment.js'
 import {checkmark} from '../util/color.js'
 
 export default class Download extends APICommand {
-  static description = 'Download a Datafile for a given environment'
+  static description = `Download a Datafile for a given environment
+
+  You can serve a datafile using the \`serve\` command.`
 
   static examples = ['<%= config.bin %> <%= command.id %> --environment=test']
 

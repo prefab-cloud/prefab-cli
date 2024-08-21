@@ -8,7 +8,9 @@ const doesNotExist = './this-does-not-exist.json'
 const emptyJSONFile = path.resolve('./test/fixtures/empty.json.data.file.json')
 const invalidJSONFile = path.resolve('./test/fixtures/invalid.data.file.json')
 
-const mkContext = (json: JsonObj) => encodeURIComponent(Buffer.from(JSON.stringify(json)).toString('base64'))
+const bytesToBase64 = (bytes: Uint8Array): string => Buffer.from(bytes).toString('base64')
+
+const mkContext = (json: JsonObj) => encodeURIComponent(bytesToBase64(new TextEncoder().encode(JSON.stringify(json))))
 
 describe('serve', () => {
   describe('success', () => {
@@ -33,7 +35,7 @@ describe('serve', () => {
           const response = await request.json()
 
           expect(response).to.deep.equal({
-            values: {'flag.list.environments': {bool: true}, intprop: {int: 8}},
+            evaluations: {'flag.list.environments': {value: {bool: true}}, intprop: {value: {int: 8}}},
           })
         })
     })
@@ -59,12 +61,10 @@ describe('serve', () => {
           const response = await request.json()
 
           expect(response).to.deep.equal({
-            values: {'flag.list.environments': {bool: false}, intprop: {int: 8}},
+            evaluations: {'flag.list.environments': {value: {bool: false}}, intprop: {value: {int: 8}}},
           })
         })
     })
-    // Success with context that doesn't match
-    // Success with context that does match
   })
 
   describe('file issues', () => {

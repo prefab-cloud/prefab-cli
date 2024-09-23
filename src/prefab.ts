@@ -15,7 +15,7 @@ let prefab: Prefab
 const DEFAULT_CONTEXT_USER_ID_NAMESPACE = 'prefab-api-key'
 const DEFAULT_CONTEXT_USER_ID = 'user-id'
 
-export const initPrefab = async (ctx: CommandLike, flagsOrDatafile: FlagsOrDatafile) => {
+export const initPrefab = async (_ctx: CommandLike, flagsOrDatafile: FlagsOrDatafile) => {
   let apiKey = 'NO_API_KEY'
   let datafile
 
@@ -29,16 +29,18 @@ export const initPrefab = async (ctx: CommandLike, flagsOrDatafile: FlagsOrDataf
     apiKey = flagsOrDatafile['api-key']
   }
 
-  prefab = new Prefab({
+  const options: ConstructorParameters<typeof Prefab>[0] = {
     apiKey,
-    apiUrl: process.env.PREFAB_API_URL,
-    cdnUrl: process.env.PREFAB_CDN_URL,
     collectEvaluationSummaries: false,
     collectLoggerCounts: false,
     contextUploadMode: 'none',
     datafile,
     enableSSE: false,
-  })
+  }
+
+  if (process.env.PREFAB_API_URL) options.sources = [process.env.PREFAB_API_URL]
+
+  prefab = new Prefab(options)
 
   await prefab.init()
 

@@ -4,7 +4,7 @@
     "prefab": "./bin/run.js"
   },
   "dependencies": {
-    "@oclif/core": "^3.18.2",
+    "@oclif/core": "^3.27.0",
     "@oclif/plugin-help": "^6",
     "@oclif/plugin-plugins": "^4",
     "@prefab-cloud/prefab-cloud-node": "0.4.2",

@@ -1,4 +1,4 @@
-// eslint-disable-next-line node/no-extraneous-import
+// eslint-disable-next-line n/no-extraneous-import
 import chalk from 'chalk'
 
 export const red = (message: string) => chalk.red(message)

@@ -1,4 +1,4 @@
-// eslint-disable-next-line node/no-extraneous-import
+// eslint-disable-next-line n/no-extraneous-import
 import type Long from 'long'
 
 import {ConfigValue, ConfigValueType} from '../prefab-common/src/types.js'

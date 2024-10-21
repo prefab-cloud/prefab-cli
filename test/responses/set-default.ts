@@ -40,6 +40,7 @@ const cannedResponses: CannedResponses = {
       200,
     ],
   ],
+
   'https://api.staging-prefab.cloud/api/v1/config/key/jeffreys.test.int': [
     [
       {},
@@ -142,11 +143,43 @@ const cannedResponses: CannedResponses = {
     ],
   ],
 
+  'https://api.staging-prefab.cloud/api/v1/config/key/test.json': [
+    [
+      {},
+      {
+        changedBy: {apiKeyId: '', email: 'jeffrey.chupp@prefab.cloud', userId: '0'},
+        configType: 'CONFIG',
+        draftId: '533',
+        id: '17005955334851012',
+        key: 'test.json',
+        projectId: '124',
+        rows: [{values: [{json: {json: '[]'}}]}],
+        valueType: 'INT',
+      },
+      200,
+    ],
+  ],
+
   'https://api.staging-prefab.cloud/api/v1/config/key/this.does.not.exist': [[{}, {}, 404]],
 
   'https://api.staging-prefab.cloud/api/v1/config/set-default/': [
     [
       {configKey: 'feature-flag.simple', currentVersionId: ANY, environmentId: '5', value: {bool: true}},
+      createdResponse,
+      200,
+    ],
+
+    [
+      {
+        configKey: 'test.json',
+        currentVersionId: '17259086775344510',
+        environmentId: '6',
+        value: {
+          json: {
+            json: '{"hello":"world"}',
+          },
+        },
+      },
       createdResponse,
       200,
     ],

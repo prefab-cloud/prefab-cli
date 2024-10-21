@@ -55,6 +55,16 @@ export const coerceIntoType = (type: string, value: string): ConfigValueWithConf
       return [{stringList: {values: value.split(/\s*,\s*/)}}, TYPE_MAPPING[type]]
     }
 
+    case 'json': {
+      try {
+        // ensure the value is valid JSON
+        JSON.parse(value)
+        return [{json: {json: value}}, ConfigValueType.JSON]
+      } catch {
+        throw new TypeError(`Invalid default value for JSON: ${value}`)
+      }
+    }
+
     default: {
       return undefined
     }

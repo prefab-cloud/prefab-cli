@@ -25,13 +25,14 @@ export default class Create extends APICommand {
     '<%= config.bin %> <%= command.id %> my.new.string --type string --value="hello world"',
     '<%= config.bin %> <%= command.id %> my.new.string --type string --value="hello world" --secret',
     '<%= config.bin %> <%= command.id %> my.new.string --type string --env-var=MY_ENV_VAR_NAME',
+    '<%= config.bin %> <%= command.id %> my.new.string --type json --value="{\\"key\\": \\"value\\"}"',
   ]
 
   static flags = {
     confidential: Flags.boolean({default: false, description: 'mark the value as confidential'}),
     'env-var': Flags.string({description: 'environment variable to get value from'}),
     type: Flags.string({
-      options: ['boolean-flag', 'boolean', 'string', 'double', 'int', 'string-list'],
+      options: ['boolean-flag', 'boolean', 'string', 'double', 'int', 'string-list', 'json'],
       required: true,
     }),
     value: Flags.string({description: 'default value for your new item', required: false}),

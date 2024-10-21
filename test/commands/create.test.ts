@@ -169,6 +169,22 @@ describe('create', () => {
       })
   })
 
+  describe('type=json', () => {
+    test
+      .stdout()
+      .command(['create', 'brand.new.json', '--type=json', '--value={"key": "value"}'])
+      .it('can create a JSON object', (ctx) => {
+        expect(ctx.stdout).to.contain(`Created config: brand.new.json`)
+      })
+
+    test
+      .command(['create', 'invalid.new.json', '--type=json', '--value={not:valid}'])
+      .catch((error) => {
+        expect(error.message).to.contain(`Invalid default value for JSON: {not:valid}`)
+      })
+      .it('returns an error if the value is not JSON')
+  })
+
   describe('secret', () => {
     describe('when no encryption key can be found', () => {
       test

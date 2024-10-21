@@ -104,6 +104,17 @@ const cannedResponses: CannedResponses = {
       200,
     ],
     [
+      createRequest('brand.new.json', {
+        configType: 1,
+        key: 'brand.new.json',
+        projectId: '124',
+        rows: [{properties: {}, values: [{criteria: [], value: {json: {json: '{"key": "value"}'}}}]}],
+        valueType: 13,
+      }),
+      successResponse,
+      200,
+    ],
+    [
       createRequest('confidential.new.string', {
         rows: [{properties: {}, values: [{criteria: [], value: {confidential: true, string: 'hello.world'}}]}],
       }),

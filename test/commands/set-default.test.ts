@@ -92,6 +92,13 @@ describe('set-default', () => {
       .it('uses encryption if any existing value for the key is encrypted', (ctx) => {
         expect(ctx.stdout).to.contain(`Successfully changed default to \`hello\` (encrypted)`)
       })
+
+    test
+      .stdout()
+      .command(['set-default', 'test.json', '--environment=Staging', '--confirm', '--value={"hello":"world"}'])
+      .it('can update a json config', (ctx) => {
+        expect(ctx.stdout).to.contain(`Successfully changed default to \`{"hello":"world"}\``)
+      })
   })
 
   describe('failure', () => {

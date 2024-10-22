@@ -38,7 +38,7 @@ export const initPrefab = async (_ctx: CommandLike, flagsOrDatafile: FlagsOrData
     enableSSE: false,
   }
 
-  if (process.env.PREFAB_API_URL) options.sources = [process.env.PREFAB_API_URL]
+  options.sources = process.env.PREFAB_API_URL ? [process.env.PREFAB_API_URL] : ['https://api.prefab.cloud']
 
   prefab = new Prefab(options)
 

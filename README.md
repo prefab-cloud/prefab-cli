@@ -368,3 +368,16 @@ EXAMPLES
 
 _See code: [src/commands/set-default.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.4.4/src/commands/set-default.ts)_
 <!-- commandsstop -->
+
+
+## Local Development
+
+```
+mise install
+git submodule init
+git submodule update
+yarn install
+yarn build
+bin/dev.js
+fish -c "cd ../../prefab-cloud/prefab-cli;bin/dev.js"
+```

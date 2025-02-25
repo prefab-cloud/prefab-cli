@@ -1,10 +1,10 @@
-export { run } from '@oclif/core'
-import { Command, Flags } from '@oclif/core'
+export {run} from '@oclif/core'
+import {Command, Flags} from '@oclif/core'
 
-import { Client } from './prefab-common/src/api/client.js'
-import { ProjectEnvId, getProjectEnvFromApiKey } from './prefab-common/src/getProjectEnvFromApiKey.js'
-import { JsonObj, Result } from './result.js'
-import rawGetClient, { unwrapRequest } from './util/get-client.js'
+import {Client} from './prefab-common/src/api/client.js'
+import {ProjectEnvId, getProjectEnvFromApiKey} from './prefab-common/src/getProjectEnvFromApiKey.js'
+import {JsonObj, Result} from './result.js'
+import rawGetClient, {unwrapRequest} from './util/get-client.js'
 
 const globalFlags = {
   interactive: Flags.boolean({
@@ -54,7 +54,7 @@ export abstract class BaseCommand extends Command {
       this.log(this.toSuccessJson(message))
     }
 
-    return json ?? { message }
+    return json ?? {message}
   }
 
   public resultMessage = (result: Result<unknown>) => {
@@ -81,7 +81,7 @@ export abstract class BaseCommand extends Command {
   public async init(): Promise<void> {
     await super.init()
 
-    const { flags } = await this.parse()
+    const {flags} = await this.parse()
 
     this.isVerbose = flags.verbose
   }
@@ -113,12 +113,12 @@ export abstract class APICommand extends BaseCommand {
   public async init(): Promise<void> {
     await super.init()
 
-    const { flags } = await this.parse()
+    const {flags} = await this.parse()
 
     // We want to handle the api-key being explicitly blank.
     // If it is truly absent then the `required: true` will catch it.
     if (!flags['api-key']) {
-      this.error('API key is required', { exit: 401 })
+      this.error('API key is required', {exit: 401})
     }
 
     this.rawApiClient = rawGetClient(this, flags['api-key'])

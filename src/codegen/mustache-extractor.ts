@@ -9,6 +9,10 @@ interface MustacheNode {
 
 export class MustacheExtractor {
     static extractSchema(template: string): z.ZodObject<Record<string, z.ZodTypeAny>> {
+        if (!template) {
+            return z.object({});
+        }
+
         const nodes = this.parseMustacheTemplate(template);
         return this.generateZodSchema(nodes);
     }

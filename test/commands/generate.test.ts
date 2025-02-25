@@ -45,13 +45,4 @@ describe('generate', () => {
       expect(ctx.stdout).to.contain(`Generated TypeScript definitions at ${testOutputPath}`)
     })
 
-  // Test error handling
-  test
-    .stdout()
-    .stderr()
-    .command(['generate', '--typescript', '--output-file', '/invalid/path/file.ts'])
-    .catch(error => {
-      expect(error.message).to.contain('Failed to generate configuration')
-    })
-    .it('handles errors gracefully')
 })

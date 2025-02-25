@@ -19,6 +19,7 @@
     "@oclif/test": "^3",
     "@types/chai": "^4",
     "@types/mocha": "^10",
+    "@types/mustache": "^4.2.5",
     "@types/node": "^18",
     "chai": "^4",
     "eslint": "^8",

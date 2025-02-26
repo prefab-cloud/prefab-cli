@@ -98,6 +98,44 @@ export class ZodGenerator {
         return 'z.any()';
     }
 
+    // Helper method to get a config by its key
+    private getConfigByKey(key: string): Config | undefined {
+        return this.configFile.configs.find(config => config.key === key);
+    }
+
+    // Helper method to get a ZOD schema by its key
+    private getZodSchemaByKey(key: string): string {
+        const schemaConfig = this.getConfigByKey(key);
+
+        if (!schemaConfig) {
+            throw new Error(`No config found with key: ${key}`);
+        }
+
+        if (!schemaConfig.rows || schemaConfig.rows.length === 0) {
+            throw new Error(`Config ${key} has no rows`);
+        }
+
+        const firstRow = schemaConfig.rows[0];
+        if (!firstRow.values || firstRow.values.length === 0) {
+            throw new Error(`Config ${key} first row has no values`);
+        }
+
+        const firstValue = firstRow.values[0];
+
+        // Check if this is a ZOD schema
+        if (firstValue.value.schema?.schemaType !== 'ZOD') {
+            throw new Error(`Config ${key} is not a ZOD schema, it's: ${firstValue.value.schema?.schemaType}`);
+        }
+
+        // Return the schema
+        const zodSchema = firstValue.value.schema?.schema;
+        if (!zodSchema) {
+            throw new Error(`Config ${key} has no schema content`);
+        }
+
+        return zodSchema;
+    }
+
     private getZodTypeForValueType(config: Config): string {
         switch (config.valueType) {
             case 'STRING': {
@@ -125,6 +163,14 @@ export class ZodGenerator {
             }
 
             case 'JSON': {
+                console.log(config);
+                if (config.schemaKey) {
+                    const schema = this.getZodSchemaByKey(config.schemaKey);
+                    if (schema) {
+                        return schema;
+                    }
+                }
+
                 return "z.union([z.array(z.any()), z.record(z.any())])";
             }
 

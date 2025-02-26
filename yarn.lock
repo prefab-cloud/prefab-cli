@@ -1361,10 +1361,10 @@
     "@pnpm/network.ca-file" "^1.0.1"
     config-chain "^1.1.11"
 
-"@prefab-cloud/prefab-cloud-node@^0.4.2":
-  version "0.4.2"
-  resolved "https://registry.yarnpkg.com/@prefab-cloud/prefab-cloud-node/-/prefab-cloud-node-0.4.2.tgz#3b5f36e9909dad526337d0570caeeed9f3d90d7b"
-  integrity sha512-DT9uVRKbyBhWAJdO5tEQ1haF34rwXOQ3zJCU4wgFwmfOQH9GCT5yYhrff9XpF9WnyEB+jZV5y7zzFX4NbJ0VEQ==
+"@prefab-cloud/prefab-cloud-node@^0.4.5":
+  version "0.4.5"
+  resolved "https://registry.yarnpkg.com/@prefab-cloud/prefab-cloud-node/-/prefab-cloud-node-0.4.5.tgz#c5a56ccb09e7947e6a81c24e2edb6fc2347260db"
+  integrity sha512-/fSUGq0FE4lJegKNhiwnfX7YWETdaEvmK1spsf5kOBM7T6oq2oDdddc3LJrajcKBNs4PqJzXju4dlGHkQ0GpGw==
   dependencies:
     "@types/eventsource" "^1.1.11"
     eventsource "^2.0.2"

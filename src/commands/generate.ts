@@ -41,7 +41,7 @@ export default class Generate extends APICommand {
             const generatedCode = generator.generate()
 
             if (flags.typescript) {
-                // Ensure the directory exists
+                // Ensure the directory exists                
                 const dir = path.dirname(flags['output-file'])
                 await fs.promises.mkdir(dir, { recursive: true })
 
@@ -52,7 +52,7 @@ export default class Generate extends APICommand {
                 this.log('use --typescript to generate TypeScript definitions')
             }
         } catch (error) {
-            this.error('Failed to generate configuration: ' + error)
+            this.error(error as Error)
         }
 
         return { success: true }

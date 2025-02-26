@@ -17,10 +17,14 @@ export class ZodGenerator {
         console.log('Generating Zod schemas for configs...');
 
         // Collect configs into schema lines
-        const schemaLines = this.configFile.configs.map(config => ({
-            key: config.key,
-            zodType: this.getZodTypeForValueType(config)
-        }));
+        const schemaLines = this.configFile.configs
+            .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
+            .map(config => ({
+                key: config.key,
+                zodType: this.getZodTypeForValueType(config)
+            }));
+
+
 
         // Load and render template
         const templatePath = path.join(__dirname, 'templates', 'typescript.mustache');

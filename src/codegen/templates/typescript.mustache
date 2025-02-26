@@ -1,0 +1,20 @@
+import { z } from "zod";
+import { Prefab } from "@prefab-cloud/prefab-cloud-node";
+//import { MustacheStringType } from "./prefab-shared.js";
+
+export const prefabSchema = z.object({
+{{#schemaLines}}
+  "{{key}}": {{{zodType}}},
+{{/schemaLines}}
+});
+
+export type PrefabConfig = z.infer<typeof prefabSchema>;
+
+export class PrefabTypesafe {
+    constructor(private prefab: Prefab) { }
+
+    get<K extends keyof PrefabConfig>(key: K): PrefabConfig[K] {
+        const value = this.prefab.get(key);
+        return prefabSchema.shape[key].parse(value) as PrefabConfig[K];
+    }
+}

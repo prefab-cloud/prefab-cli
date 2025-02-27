@@ -30,7 +30,7 @@ export class PrefabTypesafe {
   }
 
   {{#accessorMethods}}
-  {{methodName}}({{params}}): {{{returnType}}} {
+  {{methodName}}({{{params}}}): {{{returnType}}} {
     {{#paramsArg}}
     return this.get('{{key}}').compile({{paramsArg}});
     {{/paramsArg}}

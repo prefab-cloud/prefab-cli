@@ -8,6 +8,7 @@ import { z } from 'zod';
 import type { Config, ConfigFile } from './types.js';
 
 import { MustacheExtractor } from './mustache-extractor.js';
+import { ZodUtils } from './zod-utils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -17,22 +18,14 @@ export class ZodGenerator {
     generate(): string {
         console.log('Generating Zod schemas for configs...');
 
-        // Collect configs into schema lines
-        const schemaLines = this.configFile.configs
-            .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
-            .map(config => ({
-                key: config.key,
-                zodType: this.getZodTypeForValueType(config)
-            }));
-
         // Generate accessor methods info
         const accessorMethods = this.configFile.configs
             .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
             .map(config => {
                 const methodInfo = {
                     key: config.key,
-                    methodName: this.keyToMethodName(config.key),
-                    returnType: this.valueTypeToReturnType(config)
+                    methodName: ZodUtils.keyToMethodName(config.key),
+                    returnType: ZodUtils.valueTypeToReturnType(config)
                 };
 
                 // For string values that might be Mustache templates
@@ -45,7 +38,7 @@ export class ZodGenerator {
 
                         if (hasParams) {
                             // Generate parameters for the method signature
-                            const paramsType = this.generateParamsType(schemaShape);
+                            const paramsType = ZodUtils.generateParamsType(schemaShape);
                             return {
                                 ...methodInfo,
                                 params: `params: ${paramsType}`,
@@ -59,7 +52,6 @@ export class ZodGenerator {
                             params: '',
                             paramsArg: '{}'
                         };
-
                     }
                 }
 
@@ -70,11 +62,20 @@ export class ZodGenerator {
                     paramsArg: undefined
                 };
             });
+
+        // Collect configs into schema lines
+        const schemaLines = this.configFile.configs
+            .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
+            .map(config => ({
+                key: config.key,
+                zodType: this.getZodTypeForValueType(config)
+            }));
+
         // Collect schema configs to export
         const schemaConfigs = this.configFile.configs
             .filter(config => config.configType === 'SCHEMA')
             .map(config => ({
-                schemaName: this.keyToSchemaName(config.key),
+                schemaName: ZodUtils.keyToSchemaName(config.key),
                 zodSchema: this.getZodSchemaByKey(config.key)
             }));
 
@@ -84,13 +85,12 @@ export class ZodGenerator {
         const output = Mustache.render(template, {
             accessorMethods,
             schemaConfigs,
-            schemaLines
+            schemaLines,
         });
 
         console.log('\nGenerated Schema:\n');
         return output;
     }
-
 
     getAllTemplateStrings(config: Config): string[] {
         return config.rows.flatMap(row =>
@@ -123,64 +123,6 @@ export class ZodGenerator {
             })
         );
     }
-
-    // For objects found in mustache templates, convert the zod to a string
-    zodToString(schema: z.ZodType): string {
-        if (schema instanceof z.ZodObject) {
-            const shape = schema._def.shape();
-            const props = Object.entries(shape)
-                .map(([key, value]) => `        ${key}: ${this.zodToString(value as z.ZodType)}`)
-                .join(',\n');
-            return `z.object({\n${props}\n    })`;
-        }
-
-        if (schema instanceof z.ZodArray) {
-            return `z.array(${this.zodToString(schema._def.type)})`;
-        }
-
-        if (schema instanceof z.ZodString) {
-            return 'z.string()';
-        }
-
-        if (schema instanceof z.ZodOptional) {
-            const { innerType } = schema._def;
-            return `${this.zodToString(innerType)}.optional()`;
-        }
-
-        if (schema instanceof z.ZodBoolean) {
-            return 'z.boolean()';
-        }
-
-        console.warn('Unknown zod type:', schema);
-        return 'z.any()';
-    }
-
-
-    // Generate TypeScript type for parameters
-    private generateParamsType(schemaShape: Record<string, z.ZodTypeAny>): string {
-        const properties = Object.entries(schemaShape)
-            .map(([key, type]) => {
-                let typeString = 'any';
-
-                if (type instanceof z.ZodString) {
-                    typeString = 'string';
-                } else if (type instanceof z.ZodNumber) {
-                    typeString = 'number';
-                } else if (type instanceof z.ZodBoolean) {
-                    typeString = 'boolean';
-                } else if (type instanceof z.ZodArray) {
-                    typeString = 'any[]';
-                } else if (type instanceof z.ZodObject) {
-                    typeString = 'Record<string, any>';
-                }
-
-                return `${key}: ${typeString}`;
-            })
-            .join('; ');
-
-        return `{ ${properties} }`;
-    }
-
 
     // Helper method to get a config by its key
     private getConfigByKey(key: string): Config | undefined {
@@ -231,7 +173,7 @@ export class ZodGenerator {
                     return 'MustacheString()';
                 }
 
-                return `MustacheString(${this.zodToString(schema)})`;
+                return `MustacheString(${ZodUtils.zodToString(schema)})`;
             }
 
             case 'BOOL': {
@@ -267,84 +209,6 @@ export class ZodGenerator {
 
             default: {
                 return 'z.any()';
-            }
-        }
-    }
-
-    // Convert config key to a valid method name using libraries
-    private keyToMethodName(key: string): string {
-        // Split by periods to get parts
-        const parts = key.split('.');
-
-        return parts.map((part, index) => {
-            // Convert to camelCase or pascalCase based on position
-            const transformed = index === 0
-                ? camelCase(part)
-                : pascalCase(part);
-
-            // Ensure it's a valid identifier
-            return this.makeSafeIdentifier(transformed);
-        }).join('_');
-    }
-
-    // Add a method to convert a config key to a schema variable name
-    private keyToSchemaName(key: string): string {
-        // Convert 'my.config.key' to 'myConfigKeySchema'
-        return this.keyToMethodName(key) + 'Schema';
-    }
-
-    private makeSafeIdentifier(identifier: string): string {
-        // Ensure it starts with a letter or underscore
-        let result = identifier;
-        if (/^[^A-Z_a-z]/.test(result)) {
-            result = '_' + result;
-        }
-
-        // Replace invalid characters with underscores
-        result = result.replaceAll(/[^\w$]/g, '_');
-
-        return result;
-    }
-
-
-    // Map config value types to TypeScript return types
-    private valueTypeToReturnType(config: Config): string {
-        switch (config.valueType) {
-            case 'BOOL': {
-                return 'boolean';
-            }
-
-            case 'STRING': {
-                return 'string';
-            }
-
-            case 'INT': {
-                return 'number';
-            }
-
-            case 'DURATION': {
-                return 'string';
-            }
-
-            case 'STRING_LIST': {
-                return 'string[]';
-            }
-
-            case 'JSON': {
-                if (config.schemaKey) {
-                    // Instead of converting to TypeScript, reference the schema with z.infer
-                    return `z.infer<typeof ${this.keyToSchemaName(config.schemaKey)}>`;
-                }
-
-                return 'any[] | Record<string, any>';
-            }
-
-            case 'LOG_LEVEL': {
-                return '"TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR"';
-            }
-
-            default: {
-                return 'any';
             }
         }
     }

@@ -23,6 +23,12 @@ export class PrefabTypesafe {
 
     return parsed;
   }
+
+  {{#accessorMethods}}
+  {{methodName}}(): {{returnType}} {
+    return this.get('{{key}}');
+  }
+  {{/accessorMethods}}
 }
 
 export function MustacheString<T extends z.ZodTypeAny = z.ZodObject<Record<string, never>>>(schema?: T) {

@@ -24,16 +24,30 @@ export class ZodGenerator {
                 zodType: this.getZodTypeForValueType(config)
             }));
 
-
+        // Generate accessor methods info
+        const accessorMethods = this.configFile.configs
+            .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
+            .filter(config => this.canGenerateSimpleAccessor(config))
+            .map(config => ({
+                key: config.key,
+                methodName: this.keyToMethodName(config.key),
+                params: '',
+                returnType: this.valueTypeToReturnType(config.valueType)
+            }));
 
         // Load and render template
         const templatePath = path.join(__dirname, 'templates', 'typescript.mustache');
         const template = fs.readFileSync(templatePath, 'utf8');
-        const output = Mustache.render(template, { schemaLines });
+        const output = Mustache.render(template, {
+            accessorMethods,
+            schemaLines
+        });
 
         console.log('\nGenerated Schema:\n');
         return output;
     }
+
+
 
     getAllTemplateStrings(config: Config): string[] {
         return config.rows.flatMap(row =>
@@ -67,6 +81,7 @@ export class ZodGenerator {
         );
     }
 
+
     // For objects found in mustache templates, convert the zod to a string
     zodToString(schema: z.ZodType): string {
         if (schema instanceof z.ZodObject) {
@@ -98,10 +113,29 @@ export class ZodGenerator {
         return 'z.any()';
     }
 
+    // Check if we can generate a simple accessor (skip complex mustache templates for now)
+    private canGenerateSimpleAccessor(config: Config): boolean {
+        // Skip complex Mustache templates that need arguments
+        if (config.valueType === 'STRING') {
+            const templateStrings = this.getAllTemplateStrings(config);
+            if (templateStrings.length > 0) {
+                const schema = MustacheExtractor.extractSchema(templateStrings[0]);
+                // If schema has properties, it needs arguments
+                if (Object.keys(schema._def.shape()).length > 0) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+
     // Helper method to get a config by its key
     private getConfigByKey(key: string): Config | undefined {
         return this.configFile.configs.find(config => config.key === key);
     }
+
 
     // Helper method to get a ZOD schema by its key
     private getZodSchemaByKey(key: string): string {
@@ -183,4 +217,72 @@ export class ZodGenerator {
             }
         }
     }
+
+    // Convert config key to a valid method name
+    private keyToMethodName(key: string): string {
+        // Replace spaces with underscores first
+        key = key.replaceAll(' ', '_');
+
+        // Replace periods with underscores
+        const parts = key.split('.');
+
+        return parts.map((part, index) => {
+            // First, handle the camelCase for hyphens
+            if (index === 0) {
+                // For the first part, convert "multi-word" to "multiWord"
+                part = part.replace(/-(\w)/g, (_, char) => char.toUpperCase());
+            } else {
+                // For subsequent parts, capitalize after hyphens
+                part = part.replace(/-(\w)/g, (_, char) => char.toUpperCase());
+            }
+
+            // Now replace remaining special characters with underscores
+            part = part.replace(/[^\dA-Za-z]/g, '_');
+
+            // Remove duplicate underscores
+            part = part.replace(/_+/g, '_');
+
+            // Ensure the first character is a valid identifier (not a number)
+            if (/^\d/.test(part)) {
+                part = '_' + part;
+            }
+
+            return part;
+        }).join('_');
+    }
+
+    // Map config value types to TypeScript return types
+    private valueTypeToReturnType(valueType: string): string {
+        switch (valueType) {
+            case 'BOOL': {
+                return 'boolean';
+            }
+
+            case 'STRING': {
+                return 'string';
+            }
+
+            case 'INT': {
+                return 'number';
+            }
+
+            case 'DURATION': {
+                return 'string';
+            }
+
+            case 'JSON': {
+                return 'any';
+            }
+
+            case 'LOG_LEVEL': {
+                return '"TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR"';
+            }
+
+            default: {
+                return 'any';
+            }
+        }
+    }
+
+
 }

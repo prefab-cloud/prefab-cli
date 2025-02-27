@@ -2,6 +2,11 @@ import { z } from "zod";
 import { Prefab } from "@prefab-cloud/prefab-cloud-node";
 import Mustache from 'mustache';
 
+// Export all schemas as named constants
+{{#schemaConfigs}}
+export const {{schemaName}} = {{{zodSchema}}};
+{{/schemaConfigs}}
+
 export const prefabSchema = z.object({
 {{#schemaLines}}
   "{{key}}": {{{zodType}}},
@@ -17,13 +22,23 @@ export class PrefabTypesafe {
     const value = this.prefab.get(key);
     const parsed = prefabSchema.shape[key].parse(value) as PrefabConfig[K];
 
-    // If this is a MustacheTemplate, create a new instance with this prefab bound
-    if (parsed instanceof MustacheTemplate) {
+    if (isMustacheTemplate(parsed)) {
       return parsed.withPrefab(this) as PrefabConfig[K];
     }
 
     return parsed;
   }
+
+  {{#accessorMethods}}
+  {{methodName}}({{{params}}}): {{{returnType}}} {
+    {{#paramsArg}}
+    return this.get('{{key}}').compile({{paramsArg}});
+    {{/paramsArg}}
+    {{^paramsArg}}
+    return this.get('{{key}}');
+    {{/paramsArg}}
+  }
+  {{/accessorMethods}}
 }
 
 export function MustacheString<T extends z.ZodTypeAny = z.ZodObject<Record<string, never>>>(schema?: T) {
@@ -81,4 +96,8 @@ export class MustacheTemplate<T> {
 
     return Mustache.render(this.template, data);
   }
+}
+// Helper function outside the class
+function isMustacheTemplate<T>(value: unknown): value is MustacheTemplate<T> {
+  return value instanceof MustacheTemplate;
 }

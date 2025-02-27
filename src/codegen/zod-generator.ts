@@ -1,3 +1,4 @@
+import { camelCase, pascalCase } from 'change-case';
 import Mustache from 'mustache';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -7,6 +8,7 @@ import { z } from 'zod';
 import type { Config, ConfigFile } from './types.js';
 
 import { MustacheExtractor } from './mustache-extractor.js';
+import { ZodUtils } from './zod-utils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -16,16 +18,75 @@ export class ZodGenerator {
     generate(): string {
         console.log('Generating Zod schemas for configs...');
 
+        // Generate accessor methods info
+        const accessorMethods = this.configFile.configs
+            .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
+            .map(config => {
+                const methodInfo = {
+                    key: config.key,
+                    methodName: ZodUtils.keyToMethodName(config.key),
+                    returnType: ZodUtils.valueTypeToReturnType(config)
+                };
+
+                // For string values that might be Mustache templates
+                if (config.valueType === 'STRING') {
+                    const templateStrings = this.getAllTemplateStrings(config);
+                    if (templateStrings.length > 0) {
+                        const schema = MustacheExtractor.extractSchema(templateStrings[0]);
+                        const schemaShape = schema._def.shape();
+                        const hasParams = Object.keys(schemaShape).length > 0;
+
+                        if (hasParams) {
+                            // Generate parameters for the method signature
+                            const paramsType = ZodUtils.generateParamsType(schemaShape);
+                            return {
+                                ...methodInfo,
+                                params: `params: ${paramsType}`,
+                                paramsArg: 'params'
+                            };
+                        }
+
+                        // No parameters needed for this template
+                        return {
+                            ...methodInfo,
+                            params: '',
+                            paramsArg: '{}'
+                        };
+                    }
+                }
+
+                // For non-Mustache values, no parameters needed
+                return {
+                    ...methodInfo,
+                    params: '',
+                    paramsArg: undefined
+                };
+            });
+
         // Collect configs into schema lines
-        const schemaLines = this.configFile.configs.map(config => ({
-            key: config.key,
-            zodType: this.getZodTypeForValueType(config)
-        }));
+        const schemaLines = this.configFile.configs
+            .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
+            .map(config => ({
+                key: config.key,
+                zodType: this.getZodTypeForValueType(config)
+            }));
+
+        // Collect schema configs to export
+        const schemaConfigs = this.configFile.configs
+            .filter(config => config.configType === 'SCHEMA')
+            .map(config => ({
+                schemaName: ZodUtils.keyToSchemaName(config.key),
+                zodSchema: this.getZodSchemaByKey(config.key)
+            }));
 
         // Load and render template
         const templatePath = path.join(__dirname, 'templates', 'typescript.mustache');
         const template = fs.readFileSync(templatePath, 'utf8');
-        const output = Mustache.render(template, { schemaLines });
+        const output = Mustache.render(template, {
+            accessorMethods,
+            schemaConfigs,
+            schemaLines,
+        });
 
         console.log('\nGenerated Schema:\n');
         return output;
@@ -63,35 +124,42 @@ export class ZodGenerator {
         );
     }
 
-    // For objects found in mustache templates, convert the zod to a string
-    zodToString(schema: z.ZodType): string {
-        if (schema instanceof z.ZodObject) {
-            const shape = schema._def.shape();
-            const props = Object.entries(shape)
-                .map(([key, value]) => `        ${key}: ${this.zodToString(value as z.ZodType)}`)
-                .join(',\n');
-            return `z.object({\n${props}\n    })`;
+    // Helper method to get a config by its key
+    private getConfigByKey(key: string): Config | undefined {
+        return this.configFile.configs.find(config => config.key === key);
+    }
+
+    // Helper method to get a ZOD schema by its key
+    private getZodSchemaByKey(key: string): string {
+        const schemaConfig = this.getConfigByKey(key);
+
+        if (!schemaConfig) {
+            throw new Error(`No config found with key: ${key}`);
         }
 
-        if (schema instanceof z.ZodArray) {
-            return `z.array(${this.zodToString(schema._def.type)})`;
+        if (!schemaConfig.rows || schemaConfig.rows.length === 0) {
+            throw new Error(`Config ${key} has no rows`);
         }
 
-        if (schema instanceof z.ZodString) {
-            return 'z.string()';
+        const firstRow = schemaConfig.rows[0];
+        if (!firstRow.values || firstRow.values.length === 0) {
+            throw new Error(`Config ${key} first row has no values`);
         }
 
-        if (schema instanceof z.ZodOptional) {
-            const { innerType } = schema._def;
-            return `${this.zodToString(innerType)}.optional()`;
+        const firstValue = firstRow.values[0];
+
+        // Check if this is a ZOD schema
+        if (firstValue.value.schema?.schemaType !== 'ZOD') {
+            throw new Error(`Config ${key} is not a ZOD schema, it's: ${firstValue.value.schema?.schemaType}`);
         }
 
-        if (schema instanceof z.ZodBoolean) {
-            return 'z.boolean()';
+        // Return the schema
+        const zodSchema = firstValue.value.schema?.schema;
+        if (!zodSchema) {
+            throw new Error(`Config ${key} has no schema content`);
         }
 
-        console.warn('Unknown zod type:', schema);
-        return 'z.any()';
+        return zodSchema;
     }
 
     private getZodTypeForValueType(config: Config): string {
@@ -105,7 +173,7 @@ export class ZodGenerator {
                     return 'MustacheString()';
                 }
 
-                return `MustacheString(${this.zodToString(schema)})`;
+                return `MustacheString(${ZodUtils.zodToString(schema)})`;
             }
 
             case 'BOOL': {
@@ -116,11 +184,22 @@ export class ZodGenerator {
                 return 'z.number()';
             }
 
+            case 'STRING_LIST': {
+                return 'z.array(z.string())';
+            }
+
             case 'DURATION': {
                 return 'z.string().duration()';
             }
 
             case 'JSON': {
+                if (config.schemaKey) {
+                    const schema = this.getZodSchemaByKey(config.schemaKey);
+                    if (schema) {
+                        return schema;
+                    }
+                }
+
                 return "z.union([z.array(z.any()), z.record(z.any())])";
             }
 

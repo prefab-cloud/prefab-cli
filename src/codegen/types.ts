@@ -6,6 +6,10 @@ export interface ConfigValue {
             json: string;
         };
         logLevel?: string;
+        schema?: {
+            schema: string;
+            schemaType: string;
+        };
         string?: string;
     };
 }
@@ -18,6 +22,7 @@ export interface Config {
     configType: string;
     key: string;
     rows: ConfigRow[];
+    schemaKey: string;
     valueType: string;
 }
 

@@ -17,8 +17,7 @@ export class PrefabTypesafe {
     const value = this.prefab.get(key);
     const parsed = prefabSchema.shape[key].parse(value) as PrefabConfig[K];
 
-    // If this is a MustacheTemplate, create a new instance with this prefab bound
-    if (parsed instanceof MustacheTemplate) {
+    if (isMustacheTemplate(parsed)) {
       return parsed.withPrefab(this) as PrefabConfig[K];
     }
 
@@ -81,4 +80,8 @@ export class MustacheTemplate<T> {
 
     return Mustache.render(this.template, data);
   }
+}
+// Helper function outside the class
+function isMustacheTemplate<T>(value: unknown): value is MustacheTemplate<T> {
+  return value instanceof MustacheTemplate;
 }

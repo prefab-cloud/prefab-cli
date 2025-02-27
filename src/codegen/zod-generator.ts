@@ -25,7 +25,7 @@ export class ZodGenerator {
                 const methodInfo = {
                     key: config.key,
                     methodName: ZodUtils.keyToMethodName(config.key),
-                    returnType: ZodUtils.valueTypeToReturnType(config)
+                    returnType: ZodUtils.prefabValueTypeToTypescriptReturnType(config)
                 };
 
                 // For string values that might be Mustache templates
@@ -92,6 +92,8 @@ export class ZodGenerator {
         return output;
     }
 
+    // For all values and recursively for all strings in json,
+    // return every template string. eg ["hello {{name}}", "goodbye {{person}}"]
     getAllTemplateStrings(config: Config): string[] {
         return config.rows.flatMap(row =>
             row.values.flatMap(valueObj => {

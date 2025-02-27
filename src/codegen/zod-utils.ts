@@ -1,45 +1,13 @@
 import { camelCase, pascalCase } from 'change-case';
 import { z } from 'zod';
+
 import type { Config } from './types.js';
 
-export class ZodUtils {
-    /**
-     * Convert a Zod schema to its string representation
-     */
-    static zodToString(schema: z.ZodType): string {
-        if (schema instanceof z.ZodObject) {
-            const shape = schema._def.shape();
-            const props = Object.entries(shape)
-                .map(([key, value]) => `        ${key}: ${this.zodToString(value as z.ZodType)}`)
-                .join(',\n');
-            return `z.object({\n${props}\n    })`;
-        }
-
-        if (schema instanceof z.ZodArray) {
-            return `z.array(${this.zodToString(schema._def.type)})`;
-        }
-
-        if (schema instanceof z.ZodString) {
-            return 'z.string()';
-        }
-
-        if (schema instanceof z.ZodOptional) {
-            const { innerType } = schema._def;
-            return `${this.zodToString(innerType)}.optional()`;
-        }
-
-        if (schema instanceof z.ZodBoolean) {
-            return 'z.boolean()';
-        }
-
-        console.warn('Unknown zod type:', schema);
-        return 'z.any()';
-    }
-
+export const ZodUtils = {
     /**
      * Generate TypeScript parameter type from Zod schema shape
      */
-    static generateParamsType(schemaShape: Record<string, z.ZodTypeAny>): string {
+    generateParamsType(schemaShape: Record<string, z.ZodTypeAny>): string {
         const properties = Object.entries(schemaShape)
             .map(([key, type]) => {
                 const typeString = this.zodTypeToTsType(type);
@@ -48,12 +16,12 @@ export class ZodUtils {
             .join('; ');
 
         return `{ ${properties} }`;
-    }
+    },
 
     /**
      * Convert config key to a valid method name
      */
-    static keyToMethodName(key: string): string {
+    keyToMethodName(key: string): string {
         // Split by periods to get parts
         const parts = key.split('.');
 
@@ -66,20 +34,20 @@ export class ZodUtils {
             // Ensure it's a valid identifier
             return this.makeSafeIdentifier(transformed);
         }).join('_');
-    }
+    },
 
     /**
      * Convert a config key to a schema variable name
      */
-    static keyToSchemaName(key: string): string {
+    keyToSchemaName(key: string): string {
         // Convert 'my.config.key' to 'myConfigKeySchema'
         return this.keyToMethodName(key) + 'Schema';
-    }
+    },
 
     /**
      * Ensure a string is a safe JavaScript identifier
      */
-    static makeSafeIdentifier(identifier: string): string {
+    makeSafeIdentifier(identifier: string): string {
         // Ensure it starts with a letter or underscore
         let result = identifier;
         if (/^[^A-Z_a-z]/.test(result)) {
@@ -90,12 +58,12 @@ export class ZodUtils {
         result = result.replaceAll(/[^\w$]/g, '_');
 
         return result;
-    }
+    },
 
     /**
      * Map config value types to TypeScript return types
      */
-    static valueTypeToReturnType(config: Config): string {
+    prefabValueTypeToTypescriptReturnType(config: Config): string {
         switch (config.valueType) {
             case 'BOOL': {
                 return 'boolean';
@@ -134,12 +102,45 @@ export class ZodUtils {
                 return 'any';
             }
         }
-    }
+    },
+
+    /**
+     * Convert a Zod schema to its string representation
+     */
+    zodToString(schema: z.ZodType): string {
+        if (schema instanceof z.ZodObject) {
+            const shape = schema._def.shape();
+            const props = Object.entries(shape)
+                .map(([key, value]) => `        ${key}: ${this.zodToString(value as z.ZodType)}`)
+                .join(',\n');
+            return `z.object({\n${props}\n    })`;
+        }
+
+        if (schema instanceof z.ZodArray) {
+            return `z.array(${this.zodToString(schema._def.type)})`;
+        }
+
+        if (schema instanceof z.ZodString) {
+            return 'z.string()';
+        }
+
+        if (schema instanceof z.ZodOptional) {
+            const { innerType } = schema._def;
+            return `${this.zodToString(innerType)}.optional()`;
+        }
+
+        if (schema instanceof z.ZodBoolean) {
+            return 'z.boolean()';
+        }
+
+        console.warn('Unknown zod type:', schema);
+        return 'z.any()';
+    },
 
     /**
      * Convert Zod types to TypeScript type strings
      */
-    static zodTypeToTsType(zodType: z.ZodTypeAny): string {
+    zodTypeToTsType(zodType: z.ZodTypeAny): string {
         if (zodType instanceof z.ZodString) {
             return 'string';
         }
@@ -183,5 +184,5 @@ export class ZodUtils {
 
         // Default fallback
         return 'any';
-    }
-} 
+    },
+}; 

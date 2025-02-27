@@ -166,9 +166,9 @@ describe('ZodUtils', () => {
             const stringConfig: Pick<Config, 'valueType'> = { valueType: 'STRING' };
             const intConfig: Pick<Config, 'valueType'> = { valueType: 'INT' };
 
-            expect(ZodUtils.valueTypeToReturnType(boolConfig as Config)).to.equal('boolean');
-            expect(ZodUtils.valueTypeToReturnType(stringConfig as Config)).to.equal('string');
-            expect(ZodUtils.valueTypeToReturnType(intConfig as Config)).to.equal('number');
+            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(boolConfig as Config)).to.equal('boolean');
+            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(stringConfig as Config)).to.equal('string');
+            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(intConfig as Config)).to.equal('number');
         });
 
         it('should map complex config value types to TypeScript types', () => {
@@ -176,9 +176,9 @@ describe('ZodUtils', () => {
             const stringListConfig: Pick<Config, 'valueType'> = { valueType: 'STRING_LIST' };
             const logLevelConfig: Pick<Config, 'valueType'> = { valueType: 'LOG_LEVEL' };
 
-            expect(ZodUtils.valueTypeToReturnType(durationConfig as Config)).to.equal('string');
-            expect(ZodUtils.valueTypeToReturnType(stringListConfig as Config)).to.equal('string[]');
-            expect(ZodUtils.valueTypeToReturnType(logLevelConfig as Config)).to.equal('"TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR"');
+            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(durationConfig as Config)).to.equal('string');
+            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(stringListConfig as Config)).to.equal('string[]');
+            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(logLevelConfig as Config)).to.equal('"TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR"');
         });
 
         it('should handle JSON config with schema reference', () => {
@@ -187,19 +187,19 @@ describe('ZodUtils', () => {
                 valueType: 'JSON'
             };
 
-            expect(ZodUtils.valueTypeToReturnType(jsonConfig as Config)).to.equal('z.infer<typeof user_SchemaSchema>');
+            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(jsonConfig as Config)).to.equal('z.infer<typeof user_SchemaSchema>');
         });
 
         it('should handle JSON config without schema reference', () => {
             const jsonConfig: Pick<Config, 'valueType'> = { valueType: 'JSON' };
-            expect(ZodUtils.valueTypeToReturnType(jsonConfig as Config)).to.equal('any[] | Record<string, any>');
+            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(jsonConfig as Config)).to.equal('any[] | Record<string, any>');
         });
 
         it('should handle unknown config value types', () => {
             // Define a union type including the custom valueType
             type TestValueType = 'UNKNOWN' | Config['valueType'];
             const unknownConfig = { valueType: 'UNKNOWN' as TestValueType };
-            expect(ZodUtils.valueTypeToReturnType(unknownConfig as Config)).to.equal('any');
+            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(unknownConfig as Config)).to.equal('any');
         });
     });
 }); 

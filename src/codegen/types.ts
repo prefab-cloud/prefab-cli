@@ -22,7 +22,7 @@ export interface Config {
     configType: string;
     key: string;
     rows: ConfigRow[];
-    schemaKey: string;
+    schemaKey?: string;
     valueType: string;
 }
 

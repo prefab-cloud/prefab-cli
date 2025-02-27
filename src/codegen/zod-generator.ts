@@ -1,3 +1,4 @@
+import { camelCase, pascalCase } from 'change-case';
 import Mustache from 'mustache';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,12 +28,54 @@ export class ZodGenerator {
         // Generate accessor methods info
         const accessorMethods = this.configFile.configs
             .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
-            .filter(config => this.canGenerateSimpleAccessor(config))
+            .map(config => {
+                const methodInfo = {
+                    key: config.key,
+                    methodName: this.keyToMethodName(config.key),
+                    returnType: this.valueTypeToReturnType(config)
+                };
+
+                // For string values that might be Mustache templates
+                if (config.valueType === 'STRING') {
+                    const templateStrings = this.getAllTemplateStrings(config);
+                    if (templateStrings.length > 0) {
+                        const schema = MustacheExtractor.extractSchema(templateStrings[0]);
+                        const schemaShape = schema._def.shape();
+                        const hasParams = Object.keys(schemaShape).length > 0;
+
+                        if (hasParams) {
+                            // Generate parameters for the method signature
+                            const paramsType = this.generateParamsType(schemaShape);
+                            return {
+                                ...methodInfo,
+                                params: `params: ${paramsType}`,
+                                paramsArg: 'params'
+                            };
+                        }
+
+                        // No parameters needed for this template
+                        return {
+                            ...methodInfo,
+                            params: '',
+                            paramsArg: '{}'
+                        };
+
+                    }
+                }
+
+                // For non-Mustache values, no parameters needed
+                return {
+                    ...methodInfo,
+                    params: '',
+                    paramsArg: undefined
+                };
+            });
+        // Collect schema configs to export
+        const schemaConfigs = this.configFile.configs
+            .filter(config => config.configType === 'SCHEMA')
             .map(config => ({
-                key: config.key,
-                methodName: this.keyToMethodName(config.key),
-                params: '',
-                returnType: this.valueTypeToReturnType(config.valueType)
+                schemaName: this.keyToSchemaName(config.key),
+                zodSchema: this.getZodSchemaByKey(config.key)
             }));
 
         // Load and render template
@@ -40,13 +83,13 @@ export class ZodGenerator {
         const template = fs.readFileSync(templatePath, 'utf8');
         const output = Mustache.render(template, {
             accessorMethods,
+            schemaConfigs,
             schemaLines
         });
 
         console.log('\nGenerated Schema:\n');
         return output;
     }
-
 
 
     getAllTemplateStrings(config: Config): string[] {
@@ -81,7 +124,6 @@ export class ZodGenerator {
         );
     }
 
-
     // For objects found in mustache templates, convert the zod to a string
     zodToString(schema: z.ZodType): string {
         if (schema instanceof z.ZodObject) {
@@ -113,21 +155,30 @@ export class ZodGenerator {
         return 'z.any()';
     }
 
-    // Check if we can generate a simple accessor (skip complex mustache templates for now)
-    private canGenerateSimpleAccessor(config: Config): boolean {
-        // Skip complex Mustache templates that need arguments
-        if (config.valueType === 'STRING') {
-            const templateStrings = this.getAllTemplateStrings(config);
-            if (templateStrings.length > 0) {
-                const schema = MustacheExtractor.extractSchema(templateStrings[0]);
-                // If schema has properties, it needs arguments
-                if (Object.keys(schema._def.shape()).length > 0) {
-                    return false;
-                }
-            }
-        }
 
-        return true;
+    // Generate TypeScript type for parameters
+    private generateParamsType(schemaShape: Record<string, z.ZodTypeAny>): string {
+        const properties = Object.entries(schemaShape)
+            .map(([key, type]) => {
+                let typeString = 'any';
+
+                if (type instanceof z.ZodString) {
+                    typeString = 'string';
+                } else if (type instanceof z.ZodNumber) {
+                    typeString = 'number';
+                } else if (type instanceof z.ZodBoolean) {
+                    typeString = 'boolean';
+                } else if (type instanceof z.ZodArray) {
+                    typeString = 'any[]';
+                } else if (type instanceof z.ZodObject) {
+                    typeString = 'Record<string, any>';
+                }
+
+                return `${key}: ${typeString}`;
+            })
+            .join('; ');
+
+        return `{ ${properties} }`;
     }
 
 
@@ -135,7 +186,6 @@ export class ZodGenerator {
     private getConfigByKey(key: string): Config | undefined {
         return this.configFile.configs.find(config => config.key === key);
     }
-
 
     // Helper method to get a ZOD schema by its key
     private getZodSchemaByKey(key: string): string {
@@ -192,12 +242,15 @@ export class ZodGenerator {
                 return 'z.number()';
             }
 
+            case 'STRING_LIST': {
+                return 'z.array(z.string())';
+            }
+
             case 'DURATION': {
                 return 'z.string().duration()';
             }
 
             case 'JSON': {
-                console.log(config);
                 if (config.schemaKey) {
                     const schema = this.getZodSchemaByKey(config.schemaKey);
                     if (schema) {
@@ -218,42 +271,45 @@ export class ZodGenerator {
         }
     }
 
-    // Convert config key to a valid method name
+    // Convert config key to a valid method name using libraries
     private keyToMethodName(key: string): string {
-        // Replace spaces with underscores first
-        key = key.replaceAll(' ', '_');
-
-        // Replace periods with underscores
+        // Split by periods to get parts
         const parts = key.split('.');
 
         return parts.map((part, index) => {
-            // First, handle the camelCase for hyphens
-            if (index === 0) {
-                // For the first part, convert "multi-word" to "multiWord"
-                part = part.replace(/-(\w)/g, (_, char) => char.toUpperCase());
-            } else {
-                // For subsequent parts, capitalize after hyphens
-                part = part.replace(/-(\w)/g, (_, char) => char.toUpperCase());
-            }
+            // Convert to camelCase or pascalCase based on position
+            const transformed = index === 0
+                ? camelCase(part)
+                : pascalCase(part);
 
-            // Now replace remaining special characters with underscores
-            part = part.replace(/[^\dA-Za-z]/g, '_');
-
-            // Remove duplicate underscores
-            part = part.replace(/_+/g, '_');
-
-            // Ensure the first character is a valid identifier (not a number)
-            if (/^\d/.test(part)) {
-                part = '_' + part;
-            }
-
-            return part;
+            // Ensure it's a valid identifier
+            return this.makeSafeIdentifier(transformed);
         }).join('_');
     }
 
+    // Add a method to convert a config key to a schema variable name
+    private keyToSchemaName(key: string): string {
+        // Convert 'my.config.key' to 'myConfigKeySchema'
+        return this.keyToMethodName(key) + 'Schema';
+    }
+
+    private makeSafeIdentifier(identifier: string): string {
+        // Ensure it starts with a letter or underscore
+        let result = identifier;
+        if (/^[^A-Z_a-z]/.test(result)) {
+            result = '_' + result;
+        }
+
+        // Replace invalid characters with underscores
+        result = result.replaceAll(/[^\w$]/g, '_');
+
+        return result;
+    }
+
+
     // Map config value types to TypeScript return types
-    private valueTypeToReturnType(valueType: string): string {
-        switch (valueType) {
+    private valueTypeToReturnType(config: Config): string {
+        switch (config.valueType) {
             case 'BOOL': {
                 return 'boolean';
             }
@@ -270,8 +326,17 @@ export class ZodGenerator {
                 return 'string';
             }
 
+            case 'STRING_LIST': {
+                return 'string[]';
+            }
+
             case 'JSON': {
-                return 'any';
+                if (config.schemaKey) {
+                    // Instead of converting to TypeScript, reference the schema with z.infer
+                    return `z.infer<typeof ${this.keyToSchemaName(config.schemaKey)}>`;
+                }
+
+                return 'any[] | Record<string, any>';
             }
 
             case 'LOG_LEVEL': {
@@ -283,6 +348,4 @@ export class ZodGenerator {
             }
         }
     }
-
-
 }

@@ -2,6 +2,11 @@ import { z } from "zod";
 import { Prefab } from "@prefab-cloud/prefab-cloud-node";
 import Mustache from 'mustache';
 
+// Export all schemas as named constants
+{{#schemaConfigs}}
+export const {{schemaName}} = {{{zodSchema}}};
+{{/schemaConfigs}}
+
 export const prefabSchema = z.object({
 {{#schemaLines}}
   "{{key}}": {{{zodType}}},
@@ -25,8 +30,13 @@ export class PrefabTypesafe {
   }
 
   {{#accessorMethods}}
-  {{methodName}}(): {{returnType}} {
+  {{methodName}}({{params}}): {{{returnType}}} {
+    {{#paramsArg}}
+    return this.get('{{key}}').compile({{paramsArg}});
+    {{/paramsArg}}
+    {{^paramsArg}}
     return this.get('{{key}}');
+    {{/paramsArg}}
   }
   {{/accessorMethods}}
 }

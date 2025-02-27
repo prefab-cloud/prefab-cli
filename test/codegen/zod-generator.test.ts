@@ -10,28 +10,27 @@ describe('ZodGenerator', () => {
         const keyToMethodName = (key: string) => (generator as any).keyToMethodName(key);
 
         it('should convert simple keys', () => {
-            expect(keyToMethodName('flag.tidelift')).to.equal('flag_tidelift');
-            expect(keyToMethodName('simple.config')).to.equal('simple_config');
+            expect(keyToMethodName('flag.tidelift')).to.equal('flag_Tidelift');
+            expect(keyToMethodName('simple.config')).to.equal('simple_Config');
         });
 
         it('should handle hyphens', () => {
-            expect(keyToMethodName('flag.tide-lift')).to.equal('flag_tideLift');
-            expect(keyToMethodName('multi-word.key-name')).to.equal('multiWord_keyName');
+            expect(keyToMethodName('flag.tide-lift')).to.equal('flag_TideLift');
+            expect(keyToMethodName('multi-word.key-name')).to.equal('multiWord_KeyName');
         });
 
         it('should properly camelCase parts after the first one', () => {
-            expect(keyToMethodName('first.second')).to.equal('first_second');
-            expect(keyToMethodName('module.feature.enabled')).to.equal('module_feature_enabled');
+            expect(keyToMethodName('first.second')).to.equal('first_Second');
+            expect(keyToMethodName('module.feature.enabled')).to.equal('module_Feature_Enabled');
         });
 
         it('should deal with spaces', () => {
-            expect(keyToMethodName('first second')).to.equal('first_second');
-            expect(keyToMethodName('module feature.is-enabled')).to.equal('module_feature_isEnabled');
+            expect(keyToMethodName('first second')).to.equal('firstSecond');
+            expect(keyToMethodName('module feature.is-enabled')).to.equal('moduleFeature_IsEnabled');
         });
 
-
         it('should handle complex keys with special characters', () => {
-            expect(keyToMethodName('234nas6234^&#$__///WHY_OH_WHY')).to.equal('_34nas6234_______WHY_OH_WHY');
+            expect(keyToMethodName('234nas6234^&#$__///WHY_OH_WHY')).to.equal('_234nas6234WhyOhWhy');
         });
     });
 }); 

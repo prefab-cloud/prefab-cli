@@ -1,9 +1,7 @@
-import { camelCase, pascalCase } from 'change-case';
 import Mustache from 'mustache';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { z } from 'zod';
 
 import type { Config, ConfigFile } from './types.js';
 

@@ -108,29 +108,68 @@ export const ZodUtils = {
      * Convert a Zod schema to its string representation
      */
     zodToString(schema: z.ZodType): string {
-        if (schema instanceof z.ZodObject) {
-            const shape = schema._def.shape();
-            const props = Object.entries(shape)
-                .map(([key, value]) => `        ${key}: ${this.zodToString(value as z.ZodType)}`)
-                .join(',\n');
-            return `z.object({\n${props}\n    })`;
-        }
+        // Use type assertion to access internal properties
+        const def = schema._def as any;
 
-        if (schema instanceof z.ZodArray) {
-            return `z.array(${this.zodToString(schema._def.type)})`;
-        }
-
-        if (schema instanceof z.ZodString) {
+        // Check for primitive types
+        if (def.typeName === 'ZodString') {
             return 'z.string()';
         }
 
-        if (schema instanceof z.ZodOptional) {
-            const { innerType } = schema._def;
-            return `${this.zodToString(innerType)}.optional()`;
+        if (def.typeName === 'ZodNumber') {
+            return 'z.number()';
         }
 
-        if (schema instanceof z.ZodBoolean) {
+        if (def.typeName === 'ZodBoolean') {
             return 'z.boolean()';
+        }
+
+        if (def.typeName === 'ZodNull') {
+            return 'z.null()';
+        }
+
+        if (def.typeName === 'ZodArray') {
+            const innerType = this.zodToString(def.type);
+            return `z.array(${innerType})`;
+        }
+
+        // Handle ZodOptional
+        if (def.typeName === 'ZodOptional') {
+            const innerType = this.zodToString(def.innerType);
+            return `${innerType}.optional()`;
+        }
+
+        // Handle ZodUnion
+        if (def.typeName === 'ZodUnion') {
+            const options = def.options.map((option: z.ZodType) => this.zodToString(option));
+            return `z.union([${options.join(', ')}])`;
+        }
+
+        // Handle ZodFunction
+        if (def.typeName === 'ZodFunction') {
+            // Handle the arguments
+            const argsSchema = def.args;
+            const returnsSchema = def.returns;
+
+            return `z.function().args(${this.zodToString(argsSchema)}).returns(${this.zodToString(returnsSchema)})`;
+        }
+
+        // Handle ZodTuple (used for function args)
+        if (def.typeName === 'ZodTuple') {
+            if (def.items && def.items.length === 1) {
+                return this.zodToString(def.items[0]);
+            }
+            return this.zodToString(def.items[0]); // Just take the first item for simplicity
+        }
+
+        // Handle ZodObject
+        if (def.typeName === 'ZodObject') {
+            const shape = def.shape();
+            const props = Object.entries(shape).map(([key, value]) =>
+                `${key}: ${this.zodToString(value as z.ZodTypeAny)}`
+            ).join(', ');
+
+            return `z.object({${props}})`;
         }
 
         console.warn('Unknown zod type:', schema);

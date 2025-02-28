@@ -37,6 +37,11 @@ describe('ZodUtils', () => {
             const schema = z.string().optional();
             expect(ZodUtils.zodToString(schema)).to.equal('z.string().optional()');
         });
+
+        it('should convert a union to string representation', () => {
+            const schema = z.union([z.string(), z.number()]);
+            expect(ZodUtils.zodToString(schema)).to.equal('z.union([z.string(), z.number()])');
+        });
     });
 
     describe('generateParamsType', () => {

@@ -1,7 +1,7 @@
 export interface ConfigValue {
     value: {
         bool?: boolean;
-        int?: string;
+        int?: number;
         json?: {
             json: string;
         };
@@ -18,12 +18,13 @@ export interface ConfigRow {
     values: ConfigValue[];
 }
 
+
 export interface Config {
-    configType: string;
+    configType: 'CONFIG' | 'FEATURE_FLAG' | 'SCHEMA';
     key: string;
     rows: ConfigRow[];
     schemaKey?: string;
-    valueType: string;
+    valueType: 'BOOL' | 'DURATION' | 'INT' | 'JSON' | 'LOG_LEVEL' | 'STRING' | 'STRING_LIST';
 }
 
 export interface ConfigFile {

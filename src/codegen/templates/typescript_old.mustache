@@ -21,7 +21,7 @@ const {{paramsSchemaName}} = {{{paramsSchema}}};
 
 export const prefabSchema = z.object({
 {{#schemaLines}}
-  "{{key}}": {{zodType}},
+  "{{key}}": {{schemaName}},
 {{/schemaLines}}
 });
 
@@ -37,12 +37,8 @@ export class PrefabTypesafe {
 
   {{#accessorMethods}}
   {{methodName}}({{#params}}{{params}}{{/params}}): {{{returnType}}} {
-
-    const raw = this.get('{{key}}');
-    return {{{returnValue}}};
-    
-
     {{#jsonTemplate}}
+    const json = this.get('{{key}}');
     
     // Transform template strings into functions
     return {{{implementation}}};

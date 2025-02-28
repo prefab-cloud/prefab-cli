@@ -159,6 +159,7 @@ export const ZodUtils = {
             if (def.items && def.items.length === 1) {
                 return this.zodToString(def.items[0]);
             }
+
             return this.zodToString(def.items[0]); // Just take the first item for simplicity
         }
 
@@ -223,5 +224,67 @@ export const ZodUtils = {
 
         // Default fallback
         return 'any';
+    },
+
+    // Convert a Zod type to its TypeScript equivalent
+    zodTypeToTypescript(zodType: z.ZodTypeAny): string {
+        if (!zodType || !zodType._def) return 'any';
+
+        switch (zodType._def.typeName) {
+            case 'ZodString': {
+                return 'string';
+            }
+
+            case 'ZodNumber': {
+                return 'number';
+            }
+
+            case 'ZodBoolean': {
+                return 'boolean';
+            }
+
+            case 'ZodNull': {
+                return 'null';
+            }
+
+            case 'ZodUndefined': {
+                return 'undefined';
+            }
+
+            case 'ZodArray': {
+                const innerType = this.zodTypeToTypescript(zodType._def.type);
+                return `${innerType}[]`;
+            }
+
+            case 'ZodObject': {
+                const shape = zodType._def.shape();
+                const props = [];
+                for (const key in shape) {
+                    const propType = this.zodTypeToTypescript(shape[key]);
+                    props.push(`${key}: ${propType}`);
+                }
+
+                return `{ ${props.join('; ')} }`;
+            }
+
+            case 'ZodEnum': {
+                const options = zodType._def.values;
+                return options.map((o: string) => `'${o}'`).join(' | ');
+            }
+
+            case 'ZodUnion': {
+                const unionTypes = zodType._def.options.map((t: z.ZodTypeAny) => this.zodTypeToTypescript(t));
+                return unionTypes.join(' | ');
+            }
+
+            case 'ZodFunction': {
+                const returnType = this.zodTypeToTypescript(zodType._def.returns);
+                return `() => ${returnType}`;
+            }
+
+            default: {
+                return 'any';
+            }
+        }
     },
 }; 

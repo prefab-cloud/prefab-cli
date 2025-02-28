@@ -1,8 +1,10 @@
 import { expect } from '@oclif/test'
+import { z } from 'zod';
 
 import type { Config, ConfigFile } from '../../src/codegen/types.js';
 
 import { SchemaInferrer } from '../../src/codegen/schema-inferrer.js';
+import { ZodUtils } from '../../src/codegen/zod-utils.js';
 
 describe('SchemaInferrer', () => {
     describe('infer', () => {
@@ -20,7 +22,8 @@ describe('SchemaInferrer', () => {
             };
 
             const result = schemaInferrer.infer(config, configFile);
-            expect(result).to.equal('z.number()');
+            expect(result).to.be.instanceOf(z.ZodNumber);
+            expect(ZodUtils.zodToString(result)).to.equal('z.number()');
         });
 
         it('should infer from a simple string', () => {
@@ -36,7 +39,8 @@ describe('SchemaInferrer', () => {
             };
 
             const result = schemaInferrer.infer(config, configFile);
-            expect(result).to.equal('z.string()');
+            expect(result).to.be.instanceOf(z.ZodString);
+            expect(ZodUtils.zodToString(result)).to.equal('z.string()');
         });
 
         it('should infer from a template string', () => {
@@ -52,7 +56,8 @@ describe('SchemaInferrer', () => {
             };
 
             const result = schemaInferrer.infer(config, configFile);
-            expect(result).to.equal('z.function().args(z.object({name: z.string()})).returns(z.string())');
+            expect(result._def.typeName).to.equal('ZodFunction');
+            expect(ZodUtils.zodToString(result)).to.equal('z.function().args(z.object({name: z.string()})).returns(z.string())');
         });
 
         it('should infer from a json', () => {
@@ -68,7 +73,8 @@ describe('SchemaInferrer', () => {
             };
 
             const result = schemaInferrer.infer(config, configFile);
-            expect(result).to.equal('z.object({name: z.string(), age: z.number()})');
+            expect(result._def.typeName).to.equal('ZodObject');
+            expect(ZodUtils.zodToString(result)).to.equal('z.object({name: z.string(), age: z.number()})');
         });
 
         it('should infer from a json with placeholders', () => {
@@ -84,7 +90,8 @@ describe('SchemaInferrer', () => {
             };
 
             const result = schemaInferrer.infer(config, configFile);
-            expect(result).to.equal('z.object({name: z.function().args(z.object({name: z.string()})).returns(z.string()), age: z.number()})');
+            expect(result._def.typeName).to.equal('ZodObject');
+            expect(ZodUtils.zodToString(result)).to.equal('z.object({name: z.function().args(z.object({name: z.string()})).returns(z.string()), age: z.number()})');
         });
 
         it('torture test', () => {
@@ -100,7 +107,8 @@ describe('SchemaInferrer', () => {
             };
 
             const result = schemaInferrer.infer(config, configFile);
-            expect(result).to.equal('z.object({systemMessage: z.function().args(z.object({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()), nested: z.object({stuff: z.array(z.object({name: z.string()}))})})');
+            expect(result._def.typeName).to.equal('ZodObject');
+            expect(ZodUtils.zodToString(result)).to.equal('z.object({systemMessage: z.function().args(z.object({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()), nested: z.object({stuff: z.array(z.object({name: z.string()}))})})');
         });
 
         it('should merge from a multiple string', () => {
@@ -117,7 +125,8 @@ describe('SchemaInferrer', () => {
             };
 
             const result = schemaInferrer.infer(config, configFile);
-            expect(result).to.equal('z.function().args(z.object({name: z.string().optional(), baz: z.string().optional()})).returns(z.string())');
+            expect(result._def.typeName).to.equal('ZodFunction');
+            expect(ZodUtils.zodToString(result)).to.equal('z.function().args(z.object({name: z.string().optional(), baz: z.string().optional()})).returns(z.string())');
         });
 
         it('should merge from a multiple JSON', () => {
@@ -134,7 +143,8 @@ describe('SchemaInferrer', () => {
             };
 
             const result = schemaInferrer.infer(config, configFile);
-            expect(result).to.equal('z.object({name: z.string(), age: z.number().optional(), conflict: z.union([z.string(), z.number()]), otherNum: z.number().optional()})');
+            expect(result._def.typeName).to.equal('ZodObject');
+            expect(ZodUtils.zodToString(result)).to.equal('z.object({name: z.string(), age: z.number().optional(), conflict: z.union([z.string(), z.number()]), otherNum: z.number().optional()})');
         });
 
         it('multi-row merge with placeholder test', () => {
@@ -153,7 +163,8 @@ describe('SchemaInferrer', () => {
             };
 
             const result = schemaInferrer.infer(config, configFile);
-            expect(result).to.equal('z.object({systemMessage: z.union([z.function().args(z.object({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()), z.function().args(z.object({placeholder: z.string()})).returns(z.string())]), nested: z.object({stuff: z.array(z.object({name: z.string()})).optional(), otherStuff: z.function().args(z.object({placeholder2: z.string()})).returns(z.string()).optional()})})');
+            expect(result._def.typeName).to.equal('ZodObject');
+            expect(ZodUtils.zodToString(result)).to.equal('z.object({systemMessage: z.union([z.function().args(z.object({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()), z.function().args(z.object({placeholder: z.string()})).returns(z.string())]), nested: z.object({stuff: z.array(z.object({name: z.string()})).optional(), otherStuff: z.function().args(z.object({placeholder2: z.string()})).returns(z.string()).optional()})})');
         });
     });
 });

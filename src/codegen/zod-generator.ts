@@ -2,214 +2,252 @@ import Mustache from 'mustache';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as z from 'zod';
 
-import type { Config, ConfigFile } from './types.js';
+import type { ConfigFile } from './types.js';
 
-import { MustacheExtractor } from './mustache-extractor.js';
+import { SchemaInferrer } from './schema-inferrer.js';
 import { ZodUtils } from './zod-utils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export class ZodGenerator {
-    constructor(private configFile: ConfigFile) { }
+    private schemaInferrer: SchemaInferrer;
+
+    constructor(private configFile: ConfigFile) {
+        // Initialize SchemaInferrer
+        this.schemaInferrer = new SchemaInferrer();
+    }
 
     generate(): string {
         console.log('Generating Zod schemas for configs...');
-
-        // Generate accessor methods info
-        const accessorMethods = this.configFile.configs
+        const schemaLines = this.configFile.configs
             .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
             .map(config => {
-                const methodInfo = {
-                    key: config.key,
-                    methodName: ZodUtils.keyToMethodName(config.key),
-                    returnType: ZodUtils.prefabValueTypeToTypescriptReturnType(config)
-                };
+                const schemaObj = this.schemaInferrer.infer(config, this.configFile);
+                const zodType = ZodUtils.zodToString(schemaObj);
 
-                // For string values that might be Mustache templates
-                if (config.valueType === 'STRING') {
-                    const templateStrings = this.getAllTemplateStrings(config);
-                    if (templateStrings.length > 0) {
-                        const schema = MustacheExtractor.extractSchema(templateStrings[0]);
-                        const schemaShape = schema._def.shape();
-                        const hasParams = Object.keys(schemaShape).length > 0;
-
-                        if (hasParams) {
-                            // Generate parameters for the method signature
-                            const paramsType = ZodUtils.generateParamsType(schemaShape);
-                            return {
-                                ...methodInfo,
-                                params: `params: ${paramsType}`,
-                                paramsArg: 'params'
-                            };
-                        }
-
-                        // No parameters needed for this template
-                        return {
-                            ...methodInfo,
-                            params: '',
-                            paramsArg: '{}'
-                        };
-                    }
-                }
-
-                // For non-Mustache values, no parameters needed
                 return {
-                    ...methodInfo,
-                    params: '',
-                    paramsArg: undefined
+                    key: config.key,
+                    schemaName: ZodUtils.keyToMethodName(config.key) + 'Schema',
+                    zodType
                 };
             });
 
-        // Collect configs into schema lines
-        const schemaLines = this.configFile.configs
+        // Generate schema declarations for all configs
+        const accessorMethods = this.configFile.configs
             .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
-            .map(config => ({
-                key: config.key,
-                zodType: this.getZodTypeForValueType(config)
-            }));
+            .map(config => {
+                const schemaObj = this.schemaInferrer.infer(config, this.configFile);
+                // const zodType = ZodUtils.zodToString(schemaObj);
 
-        // Collect schema configs to export
-        const schemaConfigs = this.configFile.configs
-            .filter(config => config.configType === 'SCHEMA')
-            .map(config => ({
-                schemaName: ZodUtils.keyToSchemaName(config.key),
-                zodSchema: this.getZodSchemaByKey(config.key)
-            }));
+                let returnValue = "raw";
 
-        // Load and render template
+                if (config.valueType === 'JSON') {
+                    returnValue = "raw";
+                }
+
+                return {
+                    key: config.key,
+                    methodName: ZodUtils.keyToMethodName(config.key),
+                    returnType: ZodUtils.zodTypeToTypescript(schemaObj),
+                    returnValue
+                };
+            });
+        console.log(accessorMethods)
         const templatePath = path.join(__dirname, 'templates', 'typescript.mustache');
         const template = fs.readFileSync(templatePath, 'utf8');
         const output = Mustache.render(template, {
             accessorMethods,
-            schemaConfigs,
             schemaLines,
         });
 
-        console.log('\nGenerated Schema:\n');
         return output;
     }
 
-    // For all values and recursively for all strings in json,
-    // return every template string. eg ["hello {{name}}", "goodbye {{person}}"]
-    getAllTemplateStrings(config: Config): string[] {
-        return config.rows.flatMap(row =>
-            row.values.flatMap(valueObj => {
-                if (valueObj.value.string) {
-                    return [valueObj.value.string];
-                }
+    // generate2(): string {
+    //     console.log('Generating Zod schemas for configs...');
 
-                // Handle JSON values that might contain templates
-                if (valueObj.value.json?.json) {
-                    try {
-                        const jsonObj = JSON.parse(valueObj.value.json.json);
-                        // Recursively find all string values in the JSON object
-                        const jsonStrings: string[] = [];
-                        JSON.stringify(jsonObj, (_, value) => {
-                            if (typeof value === 'string') {
-                                jsonStrings.push(value);
-                            }
+    //     // Generate schema declarations for all configs
+    //     const schemaLines = this.configFile.configs
+    //         .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
+    //         .map(config => {
+    //             const schemaObj = this.schemaInferrer.infer(config, this.configFile);
+    //             let zodType = ZodUtils.zodToString(schemaObj);
+    //             zodType = this.escapeMustacheTags(zodType);
 
-                            return value;
-                        });
-                        return jsonStrings;
-                    } catch (error) {
-                        console.warn(`Failed to parse JSON for ${config.key}:`, error);
-                        return [];
-                    }
-                }
+    //             return {
+    //                 key: config.key,
+    //                 schemaName: ZodUtils.keyToMethodName(config.key) + 'Schema',
+    //                 zodType
+    //             };
+    //         });
 
-                return [];
-            })
-        );
-    }
+    //     // Generate accessor methods
+    //     const accessorMethods = this.configFile.configs
+    //         .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
+    //         .map(config => {
+    //             console.log('Processing config:', config.key);
+    //             const methodName = ZodUtils.keyToMethodName(config.key);
 
-    // Helper method to get a config by its key
-    private getConfigByKey(key: string): Config | undefined {
-        return this.configFile.configs.find(config => config.key === key);
-    }
+    //             // Get the schema for this config
+    //             const schemaObj = this.schemaInferrer.infer(config, this.configFile);
 
-    // Helper method to get a ZOD schema by its key
-    private getZodSchemaByKey(key: string): string {
-        const schemaConfig = this.getConfigByKey(key);
+    //             // Check if this is a JSON object with template strings
+    //             if (config.valueType === 'JSON' && this.hasTemplateStrings(schemaObj)) {
+    //                 // Generate method for JSON with template strings
+    //                 return this.generateJsonTemplateMethod(config.key, methodName, schemaObj);
+    //             }
 
-        if (!schemaConfig) {
-            throw new Error(`No config found with key: ${key}`);
-        }
+    //             // Check if this is a string with template
+    //             if (config.valueType === 'STRING' && this.isTemplateString(schemaObj)) {
+    //                 // Generate method for string template
+    //                 return this.generateStringTemplateMethod(config.key, methodName, schemaObj);
+    //             }
+    //             // Regular value (no templates)
 
-        if (!schemaConfig.rows || schemaConfig.rows.length === 0) {
-            throw new Error(`Config ${key} has no rows`);
-        }
+    //             const returnType = ZodUtils.prefabValueTypeToTypescriptReturnType(config);
+    //             return {
+    //                 key: config.key,
+    //                 methodName,
+    //                 returnType,
+    //                 simpleValue: true
+    //             };
 
-        const firstRow = schemaConfig.rows[0];
-        if (!firstRow.values || firstRow.values.length === 0) {
-            throw new Error(`Config ${key} first row has no values`);
-        }
+    //         });
 
-        const firstValue = firstRow.values[0];
+    //     // Load and render template
+    //     const templatePath = path.join(__dirname, 'templates', 'typescript_old.mustache');
+    //     const template = fs.readFileSync(templatePath, 'utf8');
+    //     const output = Mustache.render(template, {
+    //         accessorMethods,
+    //         schemaLines,
+    //     });
 
-        // Check if this is a ZOD schema
-        if (firstValue.value.schema?.schemaType !== 'ZOD') {
-            throw new Error(`Config ${key} is not a ZOD schema, it's: ${firstValue.value.schema?.schemaType}`);
-        }
+    //     return output;
+    // }
 
-        // Return the schema
-        const zodSchema = firstValue.value.schema?.schema;
-        if (!zodSchema) {
-            throw new Error(`Config ${key} has no schema content`);
-        }
+    // // Helper method to escape Mustache tags in schema strings
+    // private escapeMustacheTags(input: string): string {
+    //     return input.replaceAll('{{', '{{ "{" }}{{ "{" }}')
+    //         .replaceAll('}}', '{{ "}" }}{{ "}" }}');
+    // }
 
-        return zodSchema;
-    }
+    // // Generate the implementation code for a JSON object with template strings
+    // private generateJsonImplementation(schema: z.ZodObject<any>): string {
+    //     const { shape } = schema;
+    //     const implParts = [];
 
-    private getZodTypeForValueType(config: Config): string {
-        switch (config.valueType) {
-            case 'STRING': {
-                const templateStrings = this.getAllTemplateStrings(config);
-                const schema = MustacheExtractor.extractSchema(templateStrings[0]);
+    //     for (const key in shape) {
+    //         if (Object.hasOwn(shape, key)) {
+    //             const propType = shape[key];
 
-                // If the schema is empty (no properties), just return basic MustacheString
-                if (Object.keys(schema._def.shape()).length === 0) {
-                    return 'MustacheString()';
-                }
+    //             // Check if this property is a function (template string)
+    //             if (propType._def?.typeName === 'ZodFunction') {
+    //                 // Extract parameter type from the function args
+    //                 const argsShape = propType._def.args.shape || {};
+    //                 const paramProps = [];
 
-                return `MustacheString(${ZodUtils.zodToString(schema)})`;
-            }
+    //                 for (const paramKey in argsShape) {
+    //                     if (Object.hasOwn(argsShape, paramKey)) {
+    //                         const paramType = ZodUtils.zodTypeToTypescript(argsShape[paramKey]);
+    //                         paramProps.push(`${paramKey}: ${paramType}`);
+    //                     }
+    //                 }
 
-            case 'BOOL': {
-                return 'z.boolean()';
-            }
+    //                 // Create function implementation for this template string property
+    //                 implParts.push(`    ${key}: (params: { ${paramProps.join('; ')} }) => 
+    //   Mustache.render(json.${key}, params)`);
+    //             } else {
+    //                 // Regular property, just use the value directly
+    //                 implParts.push(`    ${key}: json.${key}`);
+    //             }
+    //         }
+    //     }
 
-            case 'INT': {
-                return 'z.number()';
-            }
+    //     return `{\n${implParts.join(',\n')}\n  }`;
+    // }
 
-            case 'STRING_LIST': {
-                return 'z.array(z.string())';
-            }
+    // // Generate a TypeScript return type for a JSON object with template strings
+    // private generateJsonReturnType(schema: z.ZodObject<any>): string {
+    //     const { shape } = schema;
+    //     const returnTypeParts = [];
 
-            case 'DURATION': {
-                return 'z.string().duration()';
-            }
+    //     for (const key in shape) {
+    //         if (Object.hasOwn(shape, key)) {
+    //             const propType = shape[key];
 
-            case 'JSON': {
-                if (config.schemaKey) {
-                    const schema = this.getZodSchemaByKey(config.schemaKey);
-                    if (schema) {
-                        return schema;
-                    }
-                }
+    //             // Check if this property is a function (template string)
+    //             if (propType._def?.typeName === 'ZodFunction') {
+    //                 // Extract parameter type from the function args
+    //                 const argsShape = propType._def.args.shape || {};
+    //                 const paramProps = [];
 
-                return "z.union([z.array(z.any()), z.record(z.any())])";
-            }
+    //                 for (const paramKey in argsShape) {
+    //                     if (Object.hasOwn(argsShape, paramKey)) {
+    //                         const paramType = ZodUtils.zodTypeToTypescript(argsShape[paramKey]);
+    //                         paramProps.push(`${paramKey}: ${paramType}`);
+    //                     }
+    //                 }
 
-            case 'LOG_LEVEL': {
-                return 'z.enum(["TRACE", "DEBUG", "INFO", "WARN", "ERROR"])';
-            }
+    //                 // Create function type for this template string property
+    //                 returnTypeParts.push(`${key}: (params: { ${paramProps.join('; ')} }) => string`);
+    //             } else {
+    //                 // Regular property, use its TypeScript type
+    //                 const propTypeStr = ZodUtils.zodTypeToTypescript(propType);
+    //                 returnTypeParts.push(`${key}: ${propTypeStr}`);
+    //             }
+    //         }
+    //     }
 
-            default: {
-                return 'z.any()';
-            }
-        }
-    }
+    //     return `{\n    ${returnTypeParts.join(';\n    ')};\n  }`;
+    // }
+
+    // // Generate method for a JSON object with template strings
+    // private generateJsonTemplateMethod(key: string, methodName: string, schema: z.ZodObject<any>): any {
+    //     // Generate the return type
+    //     const returnType = this.generateJsonReturnType(schema);
+
+    //     // Generate the implementation
+    //     const implementation = this.generateJsonImplementation(schema);
+
+    //     return {
+    //         implementation,
+    //         jsonTemplate: true,
+    //         key,
+    //         methodName,
+    //         returnType
+    //     };
+    // }
+
+    // // Generate method for a string template
+    // private generateStringTemplateMethod(key: string, methodName: string, schema: z.ZodTypeAny): any {
+    //     // Get the parameters from function args
+    //     const argsShape = schema._def.args.shape || {};
+    //     const paramsType = ZodUtils.generateParamsType(argsShape);
+
+    //     return {
+    //         key,
+    //         methodName,
+    //         params: `params: ${paramsType}`,
+    //         returnType: 'string',
+    //         stringTemplate: true
+    //     };
+    // }
+
+    // // Check if a schema has any template strings
+    // private hasTemplateStrings(schema: z.ZodTypeAny): boolean {
+    //     if (schema._def?.typeName !== 'ZodObject') return false;
+
+    //     // Check each property of the object
+    //     const { shape } = (schema as z.ZodObject<any>);
+    //     return Object.values(shape).some(propType =>
+    //         propType._def?.typeName === 'ZodFunction'
+    //     );
+    // }
+
+    // // Check if a schema is a template string
+    // private isTemplateString(schema: z.ZodTypeAny): boolean {
+    //     return schema._def?.typeName === 'ZodFunction';
+    // }
 }

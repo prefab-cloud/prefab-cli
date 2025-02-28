@@ -1,4 +1,4 @@
-import type { ZodObject, ZodTypeAny } from 'zod';
+import type { ZodObject, ZodRawShape, ZodTypeAny } from 'zod';
 
 import { z } from 'zod';
 
@@ -8,7 +8,6 @@ import { MustacheExtractor } from './mustache-extractor.js';
 import { ZodUtils } from './zod-utils.js';
 
 export class SchemaInferrer {
-
     private jsonToInferredZod = (data: unknown): ZodTypeAny => {
         if (Array.isArray(data)) {
             // If it's an array, infer the type of its first element (assuming homogenous arrays)
@@ -60,7 +59,7 @@ export class SchemaInferrer {
         return z.any(); // Fallback for unknown types
     };
 
-    private mergeSchemas = (schemaA: ZodObject<any>, schemaB: ZodObject<any>): ZodObject<any> => {
+    private mergeSchemas = (schemaA: ZodObject<ZodRawShape>, schemaB: ZodObject<ZodRawShape>): ZodObject<ZodRawShape> => {
         const shapeA = schemaA.shape;
         const shapeB = schemaB.shape;
 
@@ -96,7 +95,10 @@ export class SchemaInferrer {
                             mergedShape[key] = z.union([typeA, typeB]);
                         } else {
                             // If the argument structures are similar, merge them
-                            const mergedArgs = this.mergeSchemas(argsA as ZodObject<any>, argsB as ZodObject<any>);
+                            const mergedArgs = this.mergeSchemas(
+                                argsA as ZodObject<ZodRawShape>,
+                                argsB as ZodObject<ZodRawShape>
+                            );
                             mergedShape[key] = z.function().args(mergedArgs).returns(z.string());
                         }
                     } catch (error) {
@@ -120,25 +122,6 @@ export class SchemaInferrer {
         return z.object(mergedShape);
     };
 
-    // Helper method to determine if function argument shapes are significantly different
-    private areArgumentShapesDifferent(argsA: Record<string, ZodTypeAny>, argsB: Record<string, ZodTypeAny>): boolean {
-        // Check for structural differences that would make merging inappropriate
-        const keysA = Object.keys(argsA);
-        const keysB = Object.keys(argsB);
-
-        // If one has section helpers and the other has simple placeholders, they're different
-        const hasSectionA = keysA.some(key => argsA[key] && argsA[key]._def && argsA[key]._def.typeName === 'ZodArray');
-        const hasSectionB = keysB.some(key => argsB[key] && argsB[key]._def && argsB[key]._def.typeName === 'ZodArray');
-
-        if (hasSectionA !== hasSectionB) {
-            return true;
-        }
-
-        // If they have no keys in common, they're different
-        return !keysA.some(key => keysB.includes(key));
-    }
-
-    constructor(private getZodSchemaByKey?: (key: string) => string) { }
 
     // return every template string. eg ["hello {{name}}", "goodbye {{person}}"]
     getAllTemplateStrings(config: Config): string[] {
@@ -176,68 +159,65 @@ export class SchemaInferrer {
     }
 
     // For all values and recursively for all strings in json,
-    infer(config: Config, _configFile: ConfigFile): string {
+    infer(config: Config, _configFile: ConfigFile): z.ZodTypeAny {
         switch (config.valueType) {
             case 'STRING': {
                 const templateStrings = this.getAllTemplateStrings(config);
 
                 if (templateStrings.length === 0) {
-                    return 'z.string()';
+                    return z.string();
                 }
 
                 // If multiple template strings, merge their schemas
                 if (templateStrings.length > 1) {
                     const schemas = templateStrings.map(str => MustacheExtractor.extractSchema(str));
-                    const mergedSchema = schemas.reduce((acc, schema) => {
-                        if (acc) {
-                            return this.mergeSchemas(acc as ZodObject<any>, schema as ZodObject<any>);
-                        }
 
-                        return schema;
-                    });
-
-                    // If the schema is empty (no properties), just return basic string
-                    if (Object.keys(mergedSchema._def.shape()).length === 0) {
-                        return 'z.string()';
+                    // Replace reduce with a loop
+                    let mergedSchema: ZodObject<ZodRawShape> | null = null;
+                    for (const schema of schemas) {
+                        mergedSchema = mergedSchema === null ? schema as ZodObject<ZodRawShape> : this.mergeSchemas(
+                            mergedSchema,
+                            schema as ZodObject<ZodRawShape>
+                        );
                     }
 
-                    return `z.function().args(${ZodUtils.zodToString(mergedSchema)}).returns(z.string())`;
+                    // If the schema is empty (no properties), just return basic string
+                    if (mergedSchema && Object.keys(mergedSchema._def.shape()).length === 0) {
+                        return z.string();
+                    }
+
+                    return mergedSchema ?
+                        z.function().args(mergedSchema).returns(z.string()) :
+                        z.function().args(schemas[0]).returns(z.string());
                 }
 
                 const schema = MustacheExtractor.extractSchema(templateStrings[0]);
 
                 // If the schema is empty (no properties), just return basic string
                 if (Object.keys(schema._def.shape()).length === 0) {
-                    return 'z.string()';
+                    return z.string();
                 }
 
-                return `z.function().args(${ZodUtils.zodToString(schema)}).returns(z.string())`;
+                return z.function().args(schema).returns(z.string());
             }
 
             case 'BOOL': {
-                return 'z.boolean()';
+                return z.boolean();
             }
 
             case 'INT': {
-                return 'z.number()';
+                return z.number();
             }
 
             case 'STRING_LIST': {
-                return 'z.array(z.string())';
+                return z.array(z.string());
             }
 
             case 'DURATION': {
-                return 'z.string().duration()';
+                return z.string().duration();
             }
 
             case 'JSON': {
-                if (config.schemaKey && this.getZodSchemaByKey) {
-                    const schema = this.getZodSchemaByKey(config.schemaKey);
-                    if (schema) {
-                        return schema;
-                    }
-                }
-
                 // Get all JSON values
                 const jsonValues = this.getAllJsonValues(config);
                 console.log('JSON values:', JSON.stringify(jsonValues, null, 2));
@@ -252,36 +232,56 @@ export class SchemaInferrer {
                             return schema;
                         });
 
-                        // Merge all schemas together
-                        const mergedSchema = schemas.reduce((acc, schema, index) => {
-                            console.log(`Merging schema ${index}:`, ZodUtils.zodToString(schema));
-                            if (acc instanceof z.ZodObject && schema instanceof z.ZodObject) {
-                                const result = this.mergeSchemas(acc, schema);
-                                console.log('Merged result:', ZodUtils.zodToString(result));
-                                return result;
+                        // Process each schema
+                        let mergedSchema: ZodTypeAny | null = null;
+                        for (const [i, schema] of schemas.entries()) {
+                            console.log(`Processing schema ${i}:`, ZodUtils.zodToString(schema));
+
+                            if (mergedSchema === null) {
+                                mergedSchema = schema;
+                            } else if (mergedSchema instanceof z.ZodObject && schema instanceof z.ZodObject) {
+                                mergedSchema = this.mergeSchemas(mergedSchema, schema);
+                                console.log('Merged result:', ZodUtils.zodToString(mergedSchema));
                             }
+                        }
 
-                            return acc || schema;
-                        });
-
-                        console.log('Final merged schema:', ZodUtils.zodToString(mergedSchema));
-                        return ZodUtils.zodToString(mergedSchema);
+                        if (mergedSchema) {
+                            console.log('Final merged schema:', ZodUtils.zodToString(mergedSchema));
+                            return mergedSchema;
+                        }
                     } catch (error) {
                         console.warn(`Error inferring JSON schema for ${config.key}:`, error);
                     }
                 }
 
-                return "z.union([z.array(z.any()), z.record(z.any())])";
+                return z.union([z.array(z.any()), z.record(z.any())]);
             }
 
             case 'LOG_LEVEL': {
-                return 'z.enum(["TRACE", "DEBUG", "INFO", "WARN", "ERROR"])';
+                return z.enum(["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]);
             }
 
             default: {
-                return 'z.any()';
+                return z.any();
             }
         }
+    }
+
+    private areArgumentShapesDifferent(argsA: Record<string, ZodTypeAny>, argsB: Record<string, ZodTypeAny>): boolean {
+        // Check for structural differences that would make merging inappropriate
+        const keysA = Object.keys(argsA);
+        const keysB = Object.keys(argsB);
+
+        // If one has section helpers and the other has simple placeholders, they're different
+        const hasSectionA = keysA.some(key => argsA[key] && argsA[key]._def && argsA[key]._def.typeName === 'ZodArray');
+        const hasSectionB = keysB.some(key => argsB[key] && argsB[key]._def && argsB[key]._def.typeName === 'ZodArray');
+
+        if (hasSectionA !== hasSectionB) {
+            return true;
+        }
+
+        // If they have no keys in common, they're different
+        return !keysA.some(key => keysB.includes(key));
     }
 
     // Get all JSON values from the config

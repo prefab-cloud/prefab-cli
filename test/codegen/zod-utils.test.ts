@@ -207,4 +207,121 @@ describe('ZodUtils', () => {
             expect(ZodUtils.prefabValueTypeToTypescriptReturnType(unknownConfig as Config)).to.equal('any');
         });
     });
+
+    describe('simplifyFunctions', () => {
+        it('should keep primitive types unchanged', () => {
+            const stringSchema = z.string();
+            const numberSchema = z.number();
+            const booleanSchema = z.boolean();
+
+            expect(ZodUtils.simplifyFunctions(stringSchema)).to.equal(stringSchema);
+            expect(ZodUtils.simplifyFunctions(numberSchema)).to.equal(numberSchema);
+            expect(ZodUtils.simplifyFunctions(booleanSchema)).to.equal(booleanSchema);
+        });
+
+        it('should replace function with its return type', () => {
+            const fnSchema = z.function()
+                .args(z.string())
+                .returns(z.number());
+
+            const result = ZodUtils.simplifyFunctions(fnSchema);
+            expect(result._def.typeName).to.equal('ZodNumber');
+        });
+
+        it('should handle complex function schemas', () => {
+            const complexFnSchema = z.function()
+                .args(z.object({
+                    role: z.boolean().optional(),
+                    users: z.array(z.object({
+                        name: z.string(),
+                        language: z.string()
+                    })),
+                    accent: z.string()
+                }))
+                .returns(z.string());
+
+            const result = ZodUtils.simplifyFunctions(complexFnSchema);
+            expect(result._def.typeName).to.equal('ZodString');
+        });
+
+        it('should handle objects with function properties', () => {
+            const objWithFn = z.object({
+                name: z.string(),
+                getAge: z.function()
+                    .args(z.void())
+                    .returns(z.number())
+            });
+
+            const result = ZodUtils.simplifyFunctions(objWithFn);
+            expect(result._def.typeName).to.equal('ZodObject');
+
+            const shape = result._def.shape();
+            expect(shape.name._def.typeName).to.equal('ZodString');
+            expect(shape.getAge._def.typeName).to.equal('ZodNumber');
+        });
+
+        it('should handle arrays of functions', () => {
+            const arrayOfFns = z.array(
+                z.function()
+                    .args(z.string())
+                    .returns(z.boolean())
+            );
+
+            const result = ZodUtils.simplifyFunctions(arrayOfFns);
+            expect(result._def.typeName).to.equal('ZodArray');
+            expect(result._def.type._def.typeName).to.equal('ZodBoolean');
+        });
+
+        it('should handle nested objects with functions', () => {
+            const nestedObj = z.object({
+                user: z.object({
+                    name: z.string(),
+                    getDetails: z.function()
+                        .args(z.void())
+                        .returns(z.object({
+                            age: z.number(),
+                            email: z.string()
+                        }))
+                })
+            });
+
+            const result = ZodUtils.simplifyFunctions(nestedObj);
+            expect(result._def.typeName).to.equal('ZodObject');
+
+            const userShape = result._def.shape().user._def.shape();
+            expect(userShape.name._def.typeName).to.equal('ZodString');
+            expect(userShape.getDetails._def.typeName).to.equal('ZodObject');
+
+            const detailsShape = userShape.getDetails._def.shape();
+            expect(detailsShape.age._def.typeName).to.equal('ZodNumber');
+            expect(detailsShape.email._def.typeName).to.equal('ZodString');
+        });
+
+        it('should handle optional functions', () => {
+            const optionalFn = z.function()
+                .args(z.string())
+                .returns(z.number())
+                .optional();
+
+            const result = ZodUtils.simplifyFunctions(optionalFn);
+            expect(result._def.typeName).to.equal('ZodOptional');
+            expect(result._def.innerType._def.typeName).to.equal('ZodNumber');
+        });
+
+        it('should handle union types containing functions', () => {
+            const unionWithFn = z.union([
+                z.string(),
+                z.function()
+                    .args(z.void())
+                    .returns(z.boolean())
+            ]);
+
+            const result = ZodUtils.simplifyFunctions(unionWithFn);
+            expect(result._def.typeName).to.equal('ZodUnion');
+
+            const options = result._def.options;
+            expect(options[0]._def.typeName).to.equal('ZodString');
+            expect(options[1]._def.typeName).to.equal('ZodBoolean');
+        });
+    });
 }); 

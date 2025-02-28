@@ -287,4 +287,55 @@ export const ZodUtils = {
             }
         }
     },
+
+    /**
+     * Simplify a Zod schema by replacing function types with their return types
+     */
+    simplifyFunctions(schema: z.ZodTypeAny): z.ZodTypeAny {
+        if (!schema || !schema._def) return schema;
+
+        // Check for ZodFunction type
+        if (schema._def.typeName === 'ZodFunction') {
+            // Replace function with its return type
+            return this.simplifyFunctions(schema._def.returns);
+        }
+
+        // Handle ZodObject recursively
+        if (schema._def.typeName === 'ZodObject') {
+            const shape = schema._def.shape();
+            const newShape: Record<string, z.ZodTypeAny> = {};
+
+            // Process each property
+            for (const key in shape) {
+                if (Object.prototype.hasOwnProperty.call(shape, key)) {
+                    newShape[key] = this.simplifyFunctions(shape[key]);
+                }
+            }
+
+            return z.object(newShape);
+        }
+
+        // Handle ZodArray recursively
+        if (schema._def.typeName === 'ZodArray') {
+            const elementType = this.simplifyFunctions(schema._def.type);
+            return z.array(elementType);
+        }
+
+        // Handle ZodOptional recursively
+        if (schema._def.typeName === 'ZodOptional') {
+            const innerType = this.simplifyFunctions(schema._def.innerType);
+            return z.optional(innerType);
+        }
+
+        // Handle ZodUnion recursively
+        if (schema._def.typeName === 'ZodUnion') {
+            const options = schema._def.options.map((option: z.ZodTypeAny) =>
+                this.simplifyFunctions(option)
+            );
+            return z.union(options);
+        }
+
+        // For all other types, return as is
+        return schema;
+    },
 }; 

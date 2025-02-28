@@ -2,7 +2,6 @@ import Mustache from 'mustache';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import * as z from 'zod';
 
 import type { ConfigFile } from './types.js';
 
@@ -25,7 +24,8 @@ export class ZodGenerator {
             .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
             .map(config => {
                 const schemaObj = this.schemaInferrer.infer(config, this.configFile);
-                const zodType = ZodUtils.zodToString(schemaObj);
+                const simplified = ZodUtils.simplifyFunctions(schemaObj);
+                const zodType = ZodUtils.zodToString(simplified);
 
                 return {
                     key: config.key,
@@ -39,7 +39,6 @@ export class ZodGenerator {
             .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
             .map(config => {
                 const schemaObj = this.schemaInferrer.infer(config, this.configFile);
-                // const zodType = ZodUtils.zodToString(schemaObj);
 
                 let returnValue = "raw";
 

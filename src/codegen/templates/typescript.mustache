@@ -36,7 +36,7 @@ export class PrefabTypesafe {
   }
 
   {{#accessorMethods}}
-  {{methodName}}({{#params}}{{params}}{{/params}}): {{{returnType}}} {
+  {{methodName}}({{#params}}params: {{params}}{{/params}}): {{{returnType}}} {
 
     const raw = this.get('{{key}}');
     return {{{returnValue}}};

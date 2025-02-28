@@ -231,12 +231,12 @@ describe('ZodUtils', () => {
         it('should handle complex function schemas', () => {
             const complexFnSchema = z.function()
                 .args(z.object({
+                    accent: z.string(),
                     role: z.boolean().optional(),
                     users: z.array(z.object({
-                        name: z.string(),
-                        language: z.string()
-                    })),
-                    accent: z.string()
+                        language: z.string(),
+                        name: z.string()
+                    }))
                 }))
                 .returns(z.string());
 
@@ -246,10 +246,10 @@ describe('ZodUtils', () => {
 
         it('should handle objects with function properties', () => {
             const objWithFn = z.object({
-                name: z.string(),
                 getAge: z.function()
                     .args(z.void())
-                    .returns(z.number())
+                    .returns(z.number()),
+                name: z.string()
             });
 
             const result = ZodUtils.simplifyFunctions(objWithFn);
@@ -275,13 +275,13 @@ describe('ZodUtils', () => {
         it('should handle nested objects with functions', () => {
             const nestedObj = z.object({
                 user: z.object({
-                    name: z.string(),
                     getDetails: z.function()
                         .args(z.void())
                         .returns(z.object({
                             age: z.number(),
                             email: z.string()
-                        }))
+                        })),
+                    name: z.string()
                 })
             });
 
@@ -319,9 +319,101 @@ describe('ZodUtils', () => {
             const result = ZodUtils.simplifyFunctions(unionWithFn);
             expect(result._def.typeName).to.equal('ZodUnion');
 
-            const options = result._def.options;
+            const { options } = result._def;
             expect(options[0]._def.typeName).to.equal('ZodString');
             expect(options[1]._def.typeName).to.equal('ZodBoolean');
         });
     });
+
+    describe('generateReturnValueCode', () => {
+        it('should return "raw" for primitive types', () => {
+            expect(ZodUtils.generateReturnValueCode(z.string())).to.equal('raw');
+            expect(ZodUtils.generateReturnValueCode(z.number())).to.equal('raw');
+            expect(ZodUtils.generateReturnValueCode(z.boolean())).to.equal('raw');
+        });
+
+        it('should handle arrays with primitive elements', () => {
+            const arraySchema = z.array(z.string());
+            expect(ZodUtils.generateReturnValueCode(arraySchema)).to.equal('raw');
+        });
+
+        it('should handle simple objects', () => {
+            const objSchema = z.object({
+                age: z.number(),
+                name: z.string()
+            });
+
+            const result = ZodUtils.generateReturnValueCode(objSchema);
+            expect(result).to.equal('{ age: raw.age, name: raw.name }');
+        });
+
+        it('should handle nested objects', () => {
+            const nestedSchema = z.object({
+                user: z.object({
+                    name: z.string(),
+                    profile: z.object({
+                        bio: z.string()
+                    })
+                })
+            });
+
+            const result = ZodUtils.generateReturnValueCode(nestedSchema);
+            expect(result).to.equal('{ user: { name: raw.user.name, profile: { bio: raw.user.profile.bio } } }');
+        });
+
+        it('should handle arrays of objects', () => {
+            const arrayOfObjSchema = z.array(
+                z.object({
+                    id: z.number(),
+                    name: z.string()
+                })
+            );
+
+            const result = ZodUtils.generateReturnValueCode(arrayOfObjSchema);
+            expect(result).to.equal('Array.isArray(raw) ? raw.map(item => { id: item.id, name: item.name }) : []');
+        });
+
+        it('should handle optional fields', () => {
+            const optionalSchema = z.object({
+                age: z.number().optional(),
+                name: z.string()
+            });
+
+            const result = ZodUtils.generateReturnValueCode(optionalSchema);
+            expect(result).to.equal('{ age: raw.age, name: raw.name }');
+        });
+
+        it('should handle functions by using their return type', () => {
+            const fnSchema = z.function()
+                .args(z.string())
+                .returns(z.number());
+
+            expect(ZodUtils.generateReturnValueCode(fnSchema)).to.equal('Mustache.render(raw, params)');
+        });
+    });
+
+    describe('paramsOf', () => {
+        it('should return undefined for non-function schemas', () => {
+            const stringSchema = z.string();
+            const result = ZodUtils.paramsOf(stringSchema);
+            expect(result).to.be.undefined;
+        });
+
+        it('should extract arguments schema from function schema', () => {
+            const argsSchema = z.object({ age: z.number(), name: z.string() });
+            const fnSchema = z.function()
+                .args(argsSchema)
+                .returns(z.boolean());
+
+            const result = ZodUtils.paramsOf(fnSchema);
+            expect(result).to.equal(argsSchema);
+
+            // We can also check that the structure is correct
+            expect(result?._def.typeName).to.equal('ZodObject');
+            const shape = result?._def.shape();
+            expect(shape.name._def.typeName).to.equal('ZodString');
+            expect(shape.age._def.typeName).to.equal('ZodNumber');
+        });
+    });
+
 }); 

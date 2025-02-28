@@ -39,17 +39,16 @@ export class ZodGenerator {
             .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
             .map(config => {
                 const schemaObj = this.schemaInferrer.infer(config, this.configFile);
+                const returnValue = ZodUtils.generateReturnValueCode(schemaObj)
 
-                let returnValue = "raw";
-
-                if (config.valueType === 'JSON') {
-                    returnValue = "raw";
-                }
+                const paramsSchema = ZodUtils.paramsOf(schemaObj);
+                const params = paramsSchema ? ZodUtils.zodTypeToTypescript(paramsSchema) : '';
 
                 return {
                     key: config.key,
                     methodName: ZodUtils.keyToMethodName(config.key),
-                    returnType: ZodUtils.zodTypeToTypescript(schemaObj),
+                    params,
+                    returnType: ZodUtils.zodTypeToTypescript(ZodUtils.simplifyFunctions(schemaObj)),
                     returnValue
                 };
             });

@@ -19,6 +19,81 @@ export const ZodUtils = {
     },
 
     /**
+     * Generate code for transforming raw data based on a Zod schema
+     * @param zodType The Zod schema
+     * @returns string representing the code to transform raw data
+     */
+    generateReturnValueCode(zodType: z.ZodTypeAny): string {
+        if (!zodType || !zodType._def) return 'raw';
+
+        switch (zodType._def.typeName) {
+            case 'ZodString':
+            case 'ZodNumber':
+            case 'ZodBoolean':
+            case 'ZodNull':
+            case 'ZodUndefined': {
+                return 'raw';
+            }
+
+            case 'ZodArray': {
+                const elementCode = this.generateReturnValueCode(zodType._def.type);
+                if (elementCode === 'raw') {
+                    return 'raw';
+                }
+
+                return `Array.isArray(raw) ? raw.map(item => ${elementCode.replaceAll('raw', 'item')}) : []`;
+            }
+
+            case 'ZodObject': {
+                const shape = zodType._def.shape();
+                const props = [];
+
+                for (const key in shape) {
+                    if (Object.hasOwn(shape, key)) {
+                        const propCode = this.generateReturnValueCode(shape[key]);
+                        if (propCode === 'raw') {
+                            props.push(`${key}: raw.${key}`);
+                        } else {
+                            props.push(`${key}: ${propCode.replaceAll('raw', `raw.${key}`)}`);
+                        }
+                    }
+                }
+
+                if (props.length === 0) {
+                    return 'raw';
+                }
+
+                return `{ ${props.join(', ')} }`;
+            }
+
+            case 'ZodOptional': {
+                const innerCode = this.generateReturnValueCode(zodType._def.innerType);
+                if (innerCode === 'raw') {
+                    return 'raw';
+                }
+
+                return `raw === undefined ? undefined : ${innerCode}`;
+            }
+
+            case 'ZodFunction': {
+                // For functions, we'll simplify by returning their return type's transformation
+                const returnTypeCode = "Mustache.render(raw, params)";
+
+                return returnTypeCode;
+            }
+
+            case 'ZodUnion': {
+                // For unions, we'd ideally need type checking, but for now just return raw
+                return 'raw';
+            }
+
+            default: {
+                return 'raw';
+            }
+        }
+    },
+
+    /**
      * Convert config key to a valid method name
      */
     keyToMethodName(key: string): string {
@@ -58,6 +133,34 @@ export const ZodUtils = {
         result = result.replaceAll(/[^\w$]/g, '_');
 
         return result;
+    },
+
+    /**
+     * Extract parameter schema from a Zod function schema
+     * @param schema The Zod schema
+     * @returns The parameters schema if it's a function, or undefined otherwise
+     */
+    paramsOf(schema: z.ZodTypeAny): undefined | z.ZodTypeAny {
+        if (!schema || !schema._def) return undefined;
+
+        // Check if this is a function schema
+        if (schema._def.typeName === 'ZodFunction') {
+            // Get the args schema (which is actually a ZodTuple)
+            const argsSchema = schema._def.args;
+
+            // If it's a tuple with a single item, return that item
+            if (argsSchema._def.typeName === 'ZodTuple' &&
+                argsSchema._def.items &&
+                argsSchema._def.items.length === 1) {
+                return argsSchema._def.items[0];
+            }
+
+            // Otherwise return the args schema as is
+            return argsSchema;
+        }
+
+        // Not a function, return undefined
+        return undefined;
     },
 
     /**
@@ -105,10 +208,61 @@ export const ZodUtils = {
     },
 
     /**
+     * Simplify a Zod schema by replacing function types with their return types
+     */
+    simplifyFunctions(schema: z.ZodTypeAny): z.ZodTypeAny {
+        if (!schema || !schema._def) return schema;
+
+        // Check for ZodFunction type
+        if (schema._def.typeName === 'ZodFunction') {
+            // Replace function with its return type
+            return this.simplifyFunctions(schema._def.returns);
+        }
+
+        // Handle ZodObject recursively
+        if (schema._def.typeName === 'ZodObject') {
+            const shape = schema._def.shape();
+            const newShape: Record<string, z.ZodTypeAny> = {};
+
+            // Process each property
+            for (const key in shape) {
+                if (Object.hasOwn(shape, key)) {
+                    newShape[key] = this.simplifyFunctions(shape[key]);
+                }
+            }
+
+            return z.object(newShape);
+        }
+
+        // Handle ZodArray recursively
+        if (schema._def.typeName === 'ZodArray') {
+            const elementType = this.simplifyFunctions(schema._def.type);
+            return z.array(elementType);
+        }
+
+        // Handle ZodOptional recursively
+        if (schema._def.typeName === 'ZodOptional') {
+            const innerType = this.simplifyFunctions(schema._def.innerType);
+            return z.optional(innerType);
+        }
+
+        // Handle ZodUnion recursively
+        if (schema._def.typeName === 'ZodUnion') {
+            const options = schema._def.options.map((option: z.ZodTypeAny) =>
+                this.simplifyFunctions(option)
+            );
+            return z.union(options);
+        }
+
+        // For all other types, return as is
+        return schema;
+    },
+
+    /**
      * Convert a Zod schema to its string representation
      */
     zodToString(schema: z.ZodType): string {
-        // Use type assertion to access internal properties
+        // Keep using any for internal properties that aren't exposed in the type definitions
         const def = schema._def as any;
 
         // Check for primitive types
@@ -260,8 +414,10 @@ export const ZodUtils = {
                 const shape = zodType._def.shape();
                 const props = [];
                 for (const key in shape) {
-                    const propType = this.zodTypeToTypescript(shape[key]);
-                    props.push(`${key}: ${propType}`);
+                    if (Object.hasOwn(shape, key)) {
+                        const propType = this.zodTypeToTypescript(shape[key]);
+                        props.push(`${key}: ${propType}`);
+                    }
                 }
 
                 return `{ ${props.join('; ')} }`;
@@ -286,56 +442,5 @@ export const ZodUtils = {
                 return 'any';
             }
         }
-    },
-
-    /**
-     * Simplify a Zod schema by replacing function types with their return types
-     */
-    simplifyFunctions(schema: z.ZodTypeAny): z.ZodTypeAny {
-        if (!schema || !schema._def) return schema;
-
-        // Check for ZodFunction type
-        if (schema._def.typeName === 'ZodFunction') {
-            // Replace function with its return type
-            return this.simplifyFunctions(schema._def.returns);
-        }
-
-        // Handle ZodObject recursively
-        if (schema._def.typeName === 'ZodObject') {
-            const shape = schema._def.shape();
-            const newShape: Record<string, z.ZodTypeAny> = {};
-
-            // Process each property
-            for (const key in shape) {
-                if (Object.prototype.hasOwnProperty.call(shape, key)) {
-                    newShape[key] = this.simplifyFunctions(shape[key]);
-                }
-            }
-
-            return z.object(newShape);
-        }
-
-        // Handle ZodArray recursively
-        if (schema._def.typeName === 'ZodArray') {
-            const elementType = this.simplifyFunctions(schema._def.type);
-            return z.array(elementType);
-        }
-
-        // Handle ZodOptional recursively
-        if (schema._def.typeName === 'ZodOptional') {
-            const innerType = this.simplifyFunctions(schema._def.innerType);
-            return z.optional(innerType);
-        }
-
-        // Handle ZodUnion recursively
-        if (schema._def.typeName === 'ZodUnion') {
-            const options = schema._def.options.map((option: z.ZodTypeAny) =>
-                this.simplifyFunctions(option)
-            );
-            return z.union(options);
-        }
-
-        // For all other types, return as is
-        return schema;
     },
 }; 

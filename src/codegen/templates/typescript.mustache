@@ -36,33 +36,9 @@ export class PrefabTypesafe {
   }
 
   {{#accessorMethods}}
-  {{methodName}}({{#params}}params: {{params}}{{/params}}): {{{returnType}}} {
-
+  {{methodName}}(){{#isFunctionReturn}}{{#params}}: (params: {{params}}) => {{/params}}{{/isFunctionReturn}}{{^isFunctionReturn}}: {{/isFunctionReturn}}{{{returnType}}} {
     const raw = this.get('{{key}}');
     return {{{returnValue}}};
-    
-
-    {{#jsonTemplate}}
-    
-    // Transform template strings into functions
-    return {{{implementation}}};
-    {{/jsonTemplate}}
-    
-    {{#stringTemplate}}
-    const value = this.get('{{key}}');
-    
-    // Handle string template
-    if (typeof value === 'string') {
-      return Mustache.render(value, params || {});
-    }
-    
-    throw new Error(`Expected string for {{key}}, got ${typeof value}`);
-    {{/stringTemplate}}
-    
-    {{#simpleValue}}
-    // Simple value, no template processing needed
-    return this.get('{{key}}');
-    {{/simpleValue}}
   }
   {{/accessorMethods}}
 }

@@ -347,73 +347,117 @@ describe('ZodUtils', () => {
             expect(result).to.equal('{ age: raw.age, name: raw.name }');
         });
 
-        it('should handle nested objects', () => {
+        it('should handle placeholder in object', () => {
             const nestedSchema = z.object({
-                user: z.object({
-                    name: z.string(),
-                    profile: z.object({
-                        bio: z.string()
-                    })
-                })
+                message: z.function()
+                    .args(z.object({ name: z.string() }))
+                    .returns(z.number())
             });
-
             const result = ZodUtils.generateReturnValueCode(nestedSchema);
-            expect(result).to.equal('{ user: { name: raw.user.name, profile: { bio: raw.user.profile.bio } } }');
+            expect(result).to.equal('{message: (params: {name: string}) => Mustache.render(raw.message, params)}');
         });
 
-        it('should handle arrays of objects', () => {
-            const arrayOfObjSchema = z.array(
-                z.object({
-                    id: z.number(),
-                    name: z.string()
+        it('should handle deep nested function placeholders', () => {
+            const deepNestedSchema = z.object({
+                data: z.object({
+                    greeting: z.function()
+                        .args(z.object({ name: z.string(), title: z.string() }))
+                        .returns(z.string())
                 })
-            );
-
-            const result = ZodUtils.generateReturnValueCode(arrayOfObjSchema);
-            expect(result).to.equal('Array.isArray(raw) ? raw.map(item => { id: item.id, name: item.name }) : []');
-        });
-
-        it('should handle optional fields', () => {
-            const optionalSchema = z.object({
-                age: z.number().optional(),
-                name: z.string()
             });
 
-            const result = ZodUtils.generateReturnValueCode(optionalSchema);
-            expect(result).to.equal('{ age: raw.age, name: raw.name }');
+            const result = ZodUtils.generateReturnValueCode(deepNestedSchema);
+            expect(result).to.equal('{data: {greeting: (params: {name: string; title: string}) => Mustache.render(raw.data.greeting, params)}}');
         });
 
-        it('should handle functions by using their return type', () => {
-            const fnSchema = z.function()
-                .args(z.string())
-                .returns(z.number());
+        it('should handle multiple function placeholders in object', () => {
+            const multiSchema = z.object({
+                systemMessage: z.function()
+                    .args(z.object({ placeholders: z.string() }))
+                    .returns(z.string()),
+                userMessage: z.function()
+                    .args(z.object({
+                        userMessage: z.string(),
+                        extractedFiltersAsText: z.string()
+                    }))
+                    .returns(z.string()),
+                model: z.string(),
+                temperature: z.number()
+            });
 
-            expect(ZodUtils.generateReturnValueCode(fnSchema)).to.equal('Mustache.render(raw, params)');
-        });
-    });
-
-    describe('paramsOf', () => {
-        it('should return undefined for non-function schemas', () => {
-            const stringSchema = z.string();
-            const result = ZodUtils.paramsOf(stringSchema);
-            expect(result).to.be.undefined;
-        });
-
-        it('should extract arguments schema from function schema', () => {
-            const argsSchema = z.object({ age: z.number(), name: z.string() });
-            const fnSchema = z.function()
-                .args(argsSchema)
-                .returns(z.boolean());
-
-            const result = ZodUtils.paramsOf(fnSchema);
-            expect(result).to.equal(argsSchema);
-
-            // We can also check that the structure is correct
-            expect(result?._def.typeName).to.equal('ZodObject');
-            const shape = result?._def.shape();
-            expect(shape.name._def.typeName).to.equal('ZodString');
-            expect(shape.age._def.typeName).to.equal('ZodNumber');
+            const result = ZodUtils.generateReturnValueCode(multiSchema);
+            expect(result).to.contain('systemMessage: (params: {placeholders: string}) => Mustache.render(raw.systemMessage, params)');
+            expect(result).to.contain('userMessage: (params: {userMessage: string; extractedFiltersAsText: string}) => Mustache.render(raw.userMessage, params)');
+            expect(result).to.contain('model: raw.model');
+            expect(result).to.contain('temperature: raw.temperature');
         });
     });
 
-}); 
+    it('should handle nested objects', () => {
+        const nestedSchema = z.object({
+            user: z.object({
+                name: z.string(),
+                profile: z.object({
+                    bio: z.string()
+                })
+            })
+        });
+
+        const result = ZodUtils.generateReturnValueCode(nestedSchema);
+        expect(result).to.equal('{ user: { name: raw.user.name, profile: { bio: raw.user.profile.bio } } }');
+    });
+
+    it('should handle arrays of objects', () => {
+        const arrayOfObjSchema = z.array(
+            z.object({
+                id: z.number(),
+                name: z.string()
+            })
+        );
+
+        const result = ZodUtils.generateReturnValueCode(arrayOfObjSchema);
+        expect(result).to.equal('Array.isArray(raw) ? raw.map(item => { id: item.id, name: item.name }) : []');
+    });
+
+    it('should handle optional fields', () => {
+        const optionalSchema = z.object({
+            age: z.number().optional(),
+            name: z.string()
+        });
+
+        const result = ZodUtils.generateReturnValueCode(optionalSchema);
+        expect(result).to.equal('{ age: raw.age, name: raw.name }');
+    });
+
+    it('should handle functions by using their return type', () => {
+        const fnSchema = z.function()
+            .args(z.string())
+            .returns(z.number());
+
+        expect(ZodUtils.generateReturnValueCode(fnSchema)).to.equal('Mustache.render(raw, params)');
+    });
+});
+
+describe('paramsOf', () => {
+    it('should return undefined for non-function schemas', () => {
+        const stringSchema = z.string();
+        const result = ZodUtils.paramsOf(stringSchema);
+        expect(result).to.be.undefined;
+    });
+
+    it('should extract arguments schema from function schema', () => {
+        const argsSchema = z.object({ age: z.number(), name: z.string() });
+        const fnSchema = z.function()
+            .args(argsSchema)
+            .returns(z.boolean());
+
+        const result = ZodUtils.paramsOf(fnSchema);
+        expect(result).to.equal(argsSchema);
+
+        // We can also check that the structure is correct
+        expect(result?._def.typeName).to.equal('ZodObject');
+        const shape = result?._def.shape();
+        expect(shape.name._def.typeName).to.equal('ZodString');
+        expect(shape.age._def.typeName).to.equal('ZodNumber');
+    });
+});

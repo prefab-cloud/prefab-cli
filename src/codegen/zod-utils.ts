@@ -21,9 +21,10 @@ export const ZodUtils = {
     /**
      * Generate code for transforming raw data based on a Zod schema
      * @param zodType The Zod schema
+     * @param propertyPath Current property path for nested properties
      * @returns string representing the code to transform raw data
      */
-    generateReturnValueCode(zodType: z.ZodTypeAny): string {
+    generateReturnValueCode(zodType: z.ZodTypeAny, propertyPath: string = ''): string {
         if (!zodType || !zodType._def) return 'raw';
 
         switch (zodType._def.typeName) {
@@ -40,8 +41,7 @@ export const ZodUtils = {
                 if (elementCode === 'raw') {
                     return 'raw';
                 }
-
-                return `Array.isArray(raw) ? raw.map(item => ${elementCode.replaceAll('raw', 'item')}) : []`;
+                return `Array.isArray(raw) ? raw.map(item => { ${elementCode.replaceAll('raw', 'item')} }) : []`;
             }
 
             case 'ZodObject': {
@@ -50,11 +50,17 @@ export const ZodUtils = {
 
                 for (const key in shape) {
                     if (Object.hasOwn(shape, key)) {
-                        const propCode = this.generateReturnValueCode(shape[key]);
+                        // Remove the leading dot for first-level properties
+                        const propPath = propertyPath ? `${propertyPath}.${key}` : `.${key}`;
+                        const propCode = this.generateReturnValueCode(shape[key], propPath);
+
                         if (propCode === 'raw') {
-                            props.push(`${key}: raw.${key}`);
+                            props.push(`${key}: raw${propPath}`);
+                        } else if (shape[key]._def.typeName === 'ZodFunction') {
+                            // Handle function within object directly
+                            props.push(`${key}: ${propCode}`);
                         } else {
-                            props.push(`${key}: ${propCode.replaceAll('raw', `raw.${key}`)}`);
+                            props.push(`${key}: ${propCode.replaceAll('raw', `raw${propPath}`)}`);
                         }
                     }
                 }
@@ -67,19 +73,21 @@ export const ZodUtils = {
             }
 
             case 'ZodOptional': {
-                const innerCode = this.generateReturnValueCode(zodType._def.innerType);
+                const innerCode = this.generateReturnValueCode(zodType._def.innerType, propertyPath);
                 if (innerCode === 'raw') {
                     return 'raw';
                 }
-
-                return `raw === undefined ? undefined : ${innerCode}`;
+                return `raw${propertyPath} === undefined ? undefined : ${innerCode}`;
             }
 
             case 'ZodFunction': {
-                // For functions, we'll simplify by returning their return type's transformation
-                const returnTypeCode = "Mustache.render(raw, params)";
+                // For functions, we need special handling based on context
+                const paramsSchema = this.paramsOf(zodType);
+                const paramsType = paramsSchema ? this.zodTypeToTypescript(paramsSchema) : '{}';
 
-                return returnTypeCode;
+
+                return `(params: ${paramsType}) => Mustache.render(raw${propertyPath}, params)`;
+
             }
 
             case 'ZodUnion': {
@@ -434,8 +442,10 @@ export const ZodUtils = {
             }
 
             case 'ZodFunction': {
+                const paramsSchema = this.paramsOf(zodType);
+                const paramsType = paramsSchema ? this.zodTypeToTypescript(paramsSchema) : '{}';
                 const returnType = this.zodTypeToTypescript(zodType._def.returns);
-                return `() => ${returnType}`;
+                return `(params: ${paramsType}) => ${returnType}`;
             }
 
             default: {

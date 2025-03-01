@@ -7,6 +7,8 @@ interface MustacheNode {
     name: string;
 }
 
+// Extracts a zod schema from a mustache template.
+// eg "Hello {{name}}!" -> z.object({ name: z.string() })
 export class MustacheExtractor {
     static extractSchema(template: string): z.ZodObject<Record<string, z.ZodTypeAny>> {
         if (!template) {

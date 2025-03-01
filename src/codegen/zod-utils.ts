@@ -470,6 +470,7 @@ export const ZodUtils = {
                     if (typeString.includes('=>')) {
                         return `(${typeString})`;
                     }
+
                     return typeString;
                 });
                 return unionTypes.join(' | ');

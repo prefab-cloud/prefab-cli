@@ -42,16 +42,3 @@ export class PrefabTypesafe {
   }
   {{/accessorMethods}}
 }
-
-// Add a duration validator to zod
-declare module "zod" {
-  interface ZodString {
-    duration(): ZodString;
-  }
-}
-
-if (z.string().duration === undefined) {
-  z.string().prototype.duration = function () {
-    return this;
-  };
-}

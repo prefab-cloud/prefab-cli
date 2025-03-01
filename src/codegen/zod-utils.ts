@@ -41,7 +41,14 @@ export const ZodUtils = {
                 if (elementCode === 'raw') {
                     return propertyPath ? `raw${propertyPath}` : 'raw';
                 }
-                return `Array.isArray(raw${propertyPath}) ? raw${propertyPath}.map(item => ${elementCode.replaceAll('raw', 'item')}) : []`;
+
+                // When the element code is an object literal (starts with { and ends with }),
+                // wrap it in parentheses to avoid syntax errors in arrow functions
+                const processedElementCode = elementCode.trim().startsWith('{') && elementCode.trim().endsWith('}')
+                    ? `(${elementCode})`
+                    : elementCode;
+
+                return `Array.isArray(raw${propertyPath}) ? raw${propertyPath}.map(item => ${processedElementCode.replaceAll('raw', 'item')}) : []`;
             }
 
             case 'ZodObject': {
@@ -50,18 +57,23 @@ export const ZodUtils = {
 
                 for (const key in shape) {
                     if (Object.hasOwn(shape, key)) {
-                        const newPath = propertyPath ? `${propertyPath}.${key}` : `.${key}`;
+                        // Always use bracket notation for consistency and to handle all edge cases
+                        const newPath = propertyPath ? `${propertyPath}["${key}"]` : `["${key}"]`;
                         const propCode = this.generateReturnValueCode(shape[key], newPath);
+
+                        // Quote the key if it's not a valid identifier
+                        const needsQuotes = !(/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key));
+                        const outputKey = needsQuotes ? `"${key}"` : key;
 
                         if (shape[key]._def.typeName === 'ZodFunction') {
                             // Handle function within object directly
-                            props.push(`${key}: ${propCode}`);
+                            props.push(`${outputKey}: ${propCode}`);
                         } else if (propCode === `raw${newPath}`) {
                             // Simple passthrough for primitive types
-                            props.push(`${key}: raw${newPath}`);
+                            props.push(`${outputKey}: raw${newPath}`);
                         } else {
                             // For complex types that aren't functions
-                            props.push(`${key}: ${propCode}`);
+                            props.push(`${outputKey}: ${propCode}`);
                         }
                     }
                 }
@@ -90,7 +102,23 @@ export const ZodUtils = {
             }
 
             case 'ZodUnion': {
-                // For unions, we'd ideally need type checking, but for now just return raw
+                // For union types, we need to examine each option
+                const options = zodType._def.options;
+
+                // Check if any of the options are functions
+                const hasFunctions = options.some((t: z.ZodTypeAny) => t._def.typeName === 'ZodFunction');
+
+                if (hasFunctions) {
+                    // If we have functions in the union, we need to handle differently
+                    // For simplicity, use the first function type in the union
+                    for (const option of options) {
+                        if (option._def.typeName === 'ZodFunction') {
+                            return this.generateReturnValueCode(option, propertyPath);
+                        }
+                    }
+                }
+
+                // If no functions or a simpler case, just return raw value
                 return propertyPath ? `raw${propertyPath}` : 'raw';
             }
 
@@ -436,7 +464,14 @@ export const ZodUtils = {
             }
 
             case 'ZodUnion': {
-                const unionTypes = zodType._def.options.map((t: z.ZodTypeAny) => this.zodTypeToTypescript(t));
+                const unionTypes = zodType._def.options.map((t: z.ZodTypeAny) => {
+                    const typeString = this.zodTypeToTypescript(t);
+                    // If it's a function type (contains => notation), wrap it in parentheses
+                    if (typeString.includes('=>')) {
+                        return `(${typeString})`;
+                    }
+                    return typeString;
+                });
                 return unionTypes.join(' | ');
             }
 

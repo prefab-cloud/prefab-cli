@@ -167,4 +167,133 @@ describe('SchemaInferrer', () => {
             expect(ZodUtils.zodToString(result)).to.equal('z.object({systemMessage: z.union([z.function().args(z.object({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()), z.function().args(z.object({placeholder: z.string()})).returns(z.string())]), nested: z.object({stuff: z.array(z.object({name: z.string()})).optional(), otherStuff: z.function().args(z.object({placeholder2: z.string()})).returns(z.string()).optional()})})');
         });
     });
+
+    describe('getAllTemplateStrings', () => {
+        let inferrer: SchemaInferrer;
+
+        beforeEach(() => {
+            // Initialize SchemaInferrer
+            inferrer = new SchemaInferrer();
+        });
+
+        it('should extract strings from direct string values', () => {
+            const config: Config = {
+                configType: 'CONFIG',
+                key: 'test-config',
+                rows: [
+                    {
+                        values: [
+                            {
+                                value: {
+                                    string: 'Hello {{name}}!'
+                                }
+                            }
+                        ]
+                    }
+                ],
+                valueType: 'STRING'
+            };
+
+            const result = inferrer.getAllTemplateStrings(config);
+
+            expect(result).to.have.length(1);
+            expect(result).to.contain('Hello {{name}}!');
+        });
+
+        it('should extract strings from JSON values', () => {
+            const config: Config = {
+                configType: 'CONFIG',
+                key: 'test-json-config',
+                rows: [
+                    {
+                        values: [
+                            {
+                                value: {
+                                    json: {
+                                        json: JSON.stringify({
+                                            farewell: 'Goodbye {{name}}!',
+                                            greeting: 'Hello {{name}}!',
+                                            nested: {
+                                                message: 'Welcome to {{place}}!'
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ],
+                schemaKey: '',
+                valueType: 'JSON'
+            };
+
+            const result = inferrer.getAllTemplateStrings(config);
+
+            expect(result).to.have.length(3);
+            expect(result).to.contain('Hello {{name}}!');
+            expect(result).to.contain('Goodbye {{name}}!');
+            expect(result).to.contain('Welcome to {{place}}!');
+        });
+
+        it('should handle mixed string and JSON values', () => {
+            const config: Config = {
+                configType: 'CONFIG',
+                key: 'mixed-config',
+                rows: [
+                    {
+                        values: [
+                            {
+                                value: {
+                                    string: 'Direct {{variable}}'
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        values: [
+                            {
+                                value: {
+                                    json: {
+                                        json: JSON.stringify({
+                                            text: 'JSON {{variable}}'
+                                        })
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ],
+                schemaKey: '',
+                valueType: 'STRING'
+            };
+
+            const result = inferrer.getAllTemplateStrings(config);
+
+            expect(result).to.have.length(2);
+            expect(result).to.contain('Direct {{variable}}');
+            expect(result).to.contain('JSON {{variable}}');
+        });
+
+        it('should handle empty values gracefully', () => {
+            const config: Config = {
+                configType: 'CONFIG',
+                key: 'empty-config',
+                rows: [
+                    {
+                        values: [
+                            {
+                                value: {} // Empty value object
+                            }
+                        ]
+                    }
+                ],
+                schemaKey: '',
+                valueType: 'STRING'
+            };
+
+            const result = inferrer.getAllTemplateStrings(config);
+
+            expect(result).to.have.length(0);
+        });
+    });
 });

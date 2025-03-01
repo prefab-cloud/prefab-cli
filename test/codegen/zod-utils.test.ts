@@ -354,7 +354,7 @@ describe('ZodUtils', () => {
                     .returns(z.number())
             });
             const result = ZodUtils.generateReturnValueCode(nestedSchema);
-            expect(result).to.equal('{message: (params: {name: string}) => Mustache.render(raw.message, params)}');
+            expect(result).to.equal('{ message: (params: { name: string }) => Mustache.render(raw.message, params) }');
         });
 
         it('should handle deep nested function placeholders', () => {
@@ -367,27 +367,28 @@ describe('ZodUtils', () => {
             });
 
             const result = ZodUtils.generateReturnValueCode(deepNestedSchema);
-            expect(result).to.equal('{data: {greeting: (params: {name: string; title: string}) => Mustache.render(raw.data.greeting, params)}}');
+            expect(result).to.equal('{ data: { greeting: (params: { name: string; title: string }) => Mustache.render(raw.data.greeting, params) } }');
         });
 
         it('should handle multiple function placeholders in object', () => {
             const multiSchema = z.object({
+                model: z.string(),
                 systemMessage: z.function()
                     .args(z.object({ placeholders: z.string() }))
                     .returns(z.string()),
+                temperature: z.number(),
                 userMessage: z.function()
                     .args(z.object({
-                        userMessage: z.string(),
-                        extractedFiltersAsText: z.string()
+                        extractedFiltersAsText: z.string(),
+                        userMessage: z.string()
                     }))
-                    .returns(z.string()),
-                model: z.string(),
-                temperature: z.number()
+                    .returns(z.string())
             });
 
             const result = ZodUtils.generateReturnValueCode(multiSchema);
-            expect(result).to.contain('systemMessage: (params: {placeholders: string}) => Mustache.render(raw.systemMessage, params)');
-            expect(result).to.contain('userMessage: (params: {userMessage: string; extractedFiltersAsText: string}) => Mustache.render(raw.userMessage, params)');
+            console.log(result);
+            expect(result).to.contain('systemMessage: (params: { placeholders: string }) => Mustache.render(raw.systemMessage, params)');
+            expect(result).to.contain('userMessage: (params: { extractedFiltersAsText: string; userMessage: string }) => Mustache.render(raw.userMessage, params)');
             expect(result).to.contain('model: raw.model');
             expect(result).to.contain('temperature: raw.temperature');
         });
@@ -434,7 +435,7 @@ describe('ZodUtils', () => {
             .args(z.string())
             .returns(z.number());
 
-        expect(ZodUtils.generateReturnValueCode(fnSchema)).to.equal('Mustache.render(raw, params)');
+        expect(ZodUtils.generateReturnValueCode(fnSchema)).to.equal('(params: string) => Mustache.render(raw, params)');
     });
 });
 

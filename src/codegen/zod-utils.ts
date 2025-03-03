@@ -1,4 +1,4 @@
-import { camelCase, pascalCase } from 'change-case';
+import { camelCase } from 'change-case';
 import { z } from 'zod';
 
 export const ZodUtils = {
@@ -131,17 +131,26 @@ export const ZodUtils = {
      * Convert config key to a valid method name
      */
     keyToMethodName(key: string): string {
+        // Replace spaces with periods to handle them consistently
+        const processedKey = key.replaceAll(/\s+/g, '.');
+
         // Split by periods to get parts
-        const parts = key.split('.');
+        const parts = processedKey.split('.');
 
         return parts.map((part, index) => {
-            // Convert to camelCase or pascalCase based on position
-            const transformed = index === 0
-                ? camelCase(part)
-                : pascalCase(part);
+            // For the first part, always use camelCase
+            if (index === 0) {
+                return this.makeSafeIdentifier(camelCase(part));
+            }
 
-            // Ensure it's a valid identifier
-            return this.makeSafeIdentifier(transformed);
+            // For subsequent parts
+            if (part.includes('-')) {
+                // Handle hyphenated parts with camelCase (not PascalCase)
+                return this.makeSafeIdentifier(camelCase(part));
+            }
+
+            // For simple parts after first dot, keep lowercase
+            return this.makeSafeIdentifier(part.toLowerCase());
         }).join('_');
     },
 
@@ -149,7 +158,7 @@ export const ZodUtils = {
      * Convert a config key to a schema variable name
      */
     keyToSchemaName(key: string): string {
-        // Convert 'my.config.key' to 'myConfigKeySchema'
+        // Convert key to method name and append Schema
         return this.keyToMethodName(key) + 'Schema';
     },
 

@@ -7,7 +7,7 @@ import { ZodGenerator } from '../../src/codegen/zod-generator.js';
  * Helper function to compare strings with normalized line endings
  */
 function expectToEqualWithNormalizedLineEndings(actual: string, expected: string): void {
-    expect(actual.trim().replaceAll(/\r\n/g, '\n')).to.equal(expected);
+    expect(actual.trim().replaceAll('\r\n', '\n')).to.equal(expected);
 }
 
 // Simple tests using the actual filesystem and templates
@@ -89,7 +89,7 @@ describe('ZodGenerator', () => {
 
             expect(schemaLines).to.have.lengthOf(3);
             expect(schemaLines[0].key).to.equal('example.feature.flag');
-            expect(schemaLines[0].schemaName).to.equal('example_Feature_FlagSchema');
+            expect(schemaLines[0].schemaName).to.equal('example_feature_flagSchema');
         });
     });
 
@@ -100,7 +100,7 @@ describe('ZodGenerator', () => {
 
             expect(accessorMethods).to.have.lengthOf(3);
             expect(accessorMethods[0].key).to.equal('example.feature.flag');
-            expect(accessorMethods[0].methodName).to.equal('example_Feature_Flag');
+            expect(accessorMethods[0].methodName).to.equal('example_feature_flag');
         });
 
         it('should identify function returns correctly', () => {
@@ -119,7 +119,7 @@ describe('ZodGenerator', () => {
             const generator = new ZodGenerator(mockConfigFile);
             const accessorMethod = generator.generateAccessorMethod(mockBoolConfig);
 
-            expect(accessorMethod.methodName).to.equal('example_Feature_Flag');
+            expect(accessorMethod.methodName).to.equal('example_feature_flag');
             expect(accessorMethod.key).to.equal('example.feature.flag');
             expect(accessorMethod.isFunctionReturn).to.be.false;
             expect(accessorMethod.returnType).to.equal('boolean');
@@ -130,7 +130,7 @@ describe('ZodGenerator', () => {
             const generator = new ZodGenerator(mockConfigFile);
             const accessorMethod = generator.generateAccessorMethod(mockStringConfig);
 
-            expect(accessorMethod.methodName).to.equal('example_Config_String');
+            expect(accessorMethod.methodName).to.equal('example_config_string');
             expect(accessorMethod.key).to.equal('example.config.string');
             expect(accessorMethod.isFunctionReturn).to.be.false;
             expect(accessorMethod.returnType).to.equal('string');
@@ -141,7 +141,7 @@ describe('ZodGenerator', () => {
             const generator = new ZodGenerator(mockConfigFile);
             const accessorMethod = generator.generateAccessorMethod(mockTemplateConfig);
 
-            expect(accessorMethod.methodName).to.equal('example_Config_Function');
+            expect(accessorMethod.methodName).to.equal('example_config_function');
             expect(accessorMethod.key).to.equal('example.config.function');
             expect(accessorMethod.isFunctionReturn).to.be.true;
             expect(accessorMethod.returnType).to.equal('string');
@@ -156,7 +156,7 @@ describe('ZodGenerator', () => {
             const result = generator.renderAccessorMethod(mockBoolConfig);
 
             // Use a single multiline string assertion for better readability
-            const expectedOutput = `example_Feature_Flag(): boolean {
+            const expectedOutput = `example_feature_flag(): boolean {
   const raw = this.get('example.feature.flag');
   return raw;
 }`;
@@ -170,7 +170,7 @@ describe('ZodGenerator', () => {
             const result = generator.renderAccessorMethod(mockTemplateConfig);
 
             // Use a single multiline string assertion for better readability
-            const expectedOutput = `example_Config_Function(): (params: { name: string }) => string {
+            const expectedOutput = `example_config_function(): (params: { name: string }) => string {
   const raw = this.get('example.config.function');
   return (params: { name: string }) => Mustache.render(raw, params);
 }`;
@@ -213,7 +213,7 @@ describe('ZodGenerator', () => {
             const accessorMethod = generator.renderAccessorMethod(complexConfig);
 
             // Use a single multiline string assertion for better readability
-            const expectedOutput = `example_Greeting_Template(): (params: { name: string; company: string; user.id: string }) => string {
+            const expectedOutput = `example_greeting_template(): (params: { name: string; company: string; user.id: string }) => string {
   const raw = this.get('example.greeting.template');
   return (params: { name: string; company: string; user.id: string }) => Mustache.render(raw, params);
 }`;

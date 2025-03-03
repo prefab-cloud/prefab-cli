@@ -1,11 +1,15 @@
 export interface ConfigValue {
     value: {
         bool?: boolean;
-        int?: string;
+        int?: number;
         json?: {
             json: string;
         };
         logLevel?: string;
+        schema?: {
+            schema: string;
+            schemaType: string;
+        };
         string?: string;
     };
 }
@@ -14,11 +18,13 @@ export interface ConfigRow {
     values: ConfigValue[];
 }
 
+
 export interface Config {
-    configType: string;
+    configType: 'CONFIG' | 'FEATURE_FLAG' | 'SCHEMA';
     key: string;
     rows: ConfigRow[];
-    valueType: string;
+    schemaKey?: string;
+    valueType: 'BOOL' | 'DOUBLE' | 'DURATION' | 'INT' | 'JSON' | 'LOG_LEVEL' | 'STRING' | 'STRING_LIST';
 }
 
 export interface ConfigFile {

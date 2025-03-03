@@ -2,135 +2,205 @@ import Mustache from 'mustache';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { z } from 'zod';
 
 import type { Config, ConfigFile } from './types.js';
 
-import { MustacheExtractor } from './mustache-extractor.js';
+import { SchemaInferrer } from './schema-inferrer.js';
+import { ZodUtils } from './zod-utils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+export enum SupportedLanguage {
+    Python = 'python',
+    TypeScript = 'typescript',
+}
+
+export interface AccessorMethod {
+    isFunctionReturn: boolean;
+    key: string;
+    methodName: string;
+    params: string;
+    returnType: string;
+    returnValue: string;
+}
+
+export interface SchemaLine {
+    key: string;
+    schemaName: string;
+    zodType: string;
+}
+
+export interface TemplateData {
+    accessorMethods: AccessorMethod[];
+    schemaLines: SchemaLine[];
+}
+
+/**
+ * Generates typed code for configs using Zod for validation
+ */
 export class ZodGenerator {
-    constructor(private configFile: ConfigFile) { }
+    private configFile: ConfigFile;
+    private schemaInferrer: SchemaInferrer;
 
-    generate(): string {
-        console.log('Generating Zod schemas for configs...');
+    constructor(configFile: ConfigFile) {
+        this.configFile = configFile;
+        this.schemaInferrer = new SchemaInferrer();
+    }
 
-        // Collect configs into schema lines
-        const schemaLines = this.configFile.configs.map(config => ({
+    /**
+     * Generate code for the specified language
+     */
+    generate(language: SupportedLanguage = SupportedLanguage.TypeScript): string {
+        console.log(`Generating ${language} code for configs...`);
+
+        // Get base template for the framework
+        const templateName = this.getTemplateNameForLanguage(language);
+        const templatePath = path.join(__dirname, 'templates', `${templateName}.mustache`);
+
+        if (!fs.existsSync(templatePath)) {
+            throw new Error(`Template for language '${language}' not found at ${templatePath}`);
+        }
+
+        const baseTemplate = fs.readFileSync(templatePath, 'utf8');
+
+        // Generate individual accessor methods
+        const accessorMethods = this.configFile.configs
+            .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
+            .map(config => this.renderAccessorMethod(config, language))
+            .join('\n\n  ');
+
+        // Generate individual schema lines
+        const schemaLines = this.configFile.configs
+            .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
+            .map(config => this.renderSchemaLine(config, language))
+            .join(',\n  ');
+
+        // Render the base template with the generated content
+        const result = Mustache.render(baseTemplate, {
+            accessorMethods,
+            schemaLines,
+        });
+
+        return result;
+    }
+
+    /**
+     * Generate an accessor method for a single config
+     */
+    generateAccessorMethod(config: Config): AccessorMethod {
+        const schemaObj = this.schemaInferrer.infer(config, this.configFile);
+        const returnValue = ZodUtils.generateReturnValueCode(schemaObj);
+
+        const paramsSchema = ZodUtils.paramsOf(schemaObj);
+        const params = paramsSchema ? ZodUtils.zodTypeToTypescript(paramsSchema) : '';
+        // For function return types, they should return a function taking params
+        const isFunction = schemaObj._def.typeName === 'ZodFunction';
+        const returnType = isFunction
+            ? ZodUtils.zodTypeToTypescript(schemaObj._def.returns)
+            : ZodUtils.zodTypeToTypescript(schemaObj);
+
+        return {
+            isFunctionReturn: isFunction,
             key: config.key,
-            zodType: this.getZodTypeForValueType(config)
-        }));
+            methodName: ZodUtils.keyToMethodName(config.key),
+            params,
+            returnType,
+            returnValue,
+        };
+    }
 
-        // Load and render template
-        const templatePath = path.join(__dirname, 'templates', 'typescript.mustache');
+    /**
+     * Generate accessor methods for all configs
+     */
+    generateAccessorMethods(): AccessorMethod[] {
+        return this.configFile.configs
+            .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
+            .map(config => this.generateAccessorMethod(config));
+    }
+
+    /**
+     * Generate a schema line for a single config
+     */
+    generateSchemaLine(config: Config): SchemaLine {
+        const schemaObj = this.schemaInferrer.infer(config, this.configFile);
+        const simplified = ZodUtils.simplifyFunctions(schemaObj);
+        const zodType = ZodUtils.zodToString(simplified);
+
+        return {
+            key: config.key,
+            schemaName: ZodUtils.keyToMethodName(config.key) + 'Schema',
+            zodType,
+        };
+    }
+
+    /**
+     * Generate schema lines for all configs
+     */
+    generateSchemaLines(): SchemaLine[] {
+        return this.configFile.configs
+            .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
+            .map(config => this.generateSchemaLine(config));
+    }
+
+    /**
+     * Prepare all data needed for templates
+     */
+    prepareTemplateData(): TemplateData {
+        const accessorMethods = this.generateAccessorMethods();
+        const schemaLines = this.generateSchemaLines();
+
+        return {
+            accessorMethods,
+            schemaLines,
+        };
+    }
+
+    /**
+     * Render a single accessor method for the given language
+     */
+    renderAccessorMethod(config: Config, language: SupportedLanguage = SupportedLanguage.TypeScript): string {
+        const templateName = this.getTemplateNameForLanguage(language);
+        const templatePath = path.join(__dirname, 'templates', `${templateName}-accessor.mustache`);
+
+        if (!fs.existsSync(templatePath)) {
+            throw new Error(`Accessor template for language '${language}' not found at ${templatePath}`);
+        }
+
         const template = fs.readFileSync(templatePath, 'utf8');
-        const output = Mustache.render(template, { schemaLines });
+        const accessorMethod = this.generateAccessorMethod(config);
 
-        console.log('\nGenerated Schema:\n');
-        return output;
+        return Mustache.render(template, accessorMethod);
     }
 
-    getAllTemplateStrings(config: Config): string[] {
-        return config.rows.flatMap(row =>
-            row.values.flatMap(valueObj => {
-                if (valueObj.value.string) {
-                    return [valueObj.value.string];
-                }
+    /**
+     * Render a single schema line for the given language
+     */
+    renderSchemaLine(config: Config, language: SupportedLanguage = SupportedLanguage.TypeScript): string {
+        const templateName = this.getTemplateNameForLanguage(language);
+        const templatePath = path.join(__dirname, 'templates', `${templateName}-schema.mustache`);
 
-                // Handle JSON values that might contain templates
-                if (valueObj.value.json?.json) {
-                    try {
-                        const jsonObj = JSON.parse(valueObj.value.json.json);
-                        // Recursively find all string values in the JSON object
-                        const jsonStrings: string[] = [];
-                        JSON.stringify(jsonObj, (_, value) => {
-                            if (typeof value === 'string') {
-                                jsonStrings.push(value);
-                            }
+        if (!fs.existsSync(templatePath)) {
+            throw new Error(`Schema template for language '${language}' not found at ${templatePath}`);
+        }
 
-                            return value;
-                        });
-                        return jsonStrings;
-                    } catch (error) {
-                        console.warn(`Failed to parse JSON for ${config.key}:`, error);
-                        return [];
-                    }
-                }
+        const template = fs.readFileSync(templatePath, 'utf8');
+        const schemaLine = this.generateSchemaLine(config);
 
-                return [];
-            })
-        );
+        return Mustache.render(template, schemaLine);
     }
 
-    // For objects found in mustache templates, convert the zod to a string
-    zodToString(schema: z.ZodType): string {
-        if (schema instanceof z.ZodObject) {
-            const shape = schema._def.shape();
-            const props = Object.entries(shape)
-                .map(([key, value]) => `        ${key}: ${this.zodToString(value as z.ZodType)}`)
-                .join(',\n');
-            return `z.object({\n${props}\n    })`;
+    /**
+     * Get the template file name for the given language
+     */
+    private getTemplateNameForLanguage(language: SupportedLanguage): string {
+        if (language === SupportedLanguage.TypeScript) {
+            return 'typescript';
         }
 
-        if (schema instanceof z.ZodArray) {
-            return `z.array(${this.zodToString(schema._def.type)})`;
+        if (language === SupportedLanguage.Python) {
+            return 'python';
         }
 
-        if (schema instanceof z.ZodString) {
-            return 'z.string()';
-        }
-
-        if (schema instanceof z.ZodOptional) {
-            const { innerType } = schema._def;
-            return `${this.zodToString(innerType)}.optional()`;
-        }
-
-        if (schema instanceof z.ZodBoolean) {
-            return 'z.boolean()';
-        }
-
-        console.warn('Unknown zod type:', schema);
-        return 'z.any()';
-    }
-
-    private getZodTypeForValueType(config: Config): string {
-        switch (config.valueType) {
-            case 'STRING': {
-                const templateStrings = this.getAllTemplateStrings(config);
-                const schema = MustacheExtractor.extractSchema(templateStrings[0]);
-
-                // If the schema is empty (no properties), just return basic MustacheString
-                if (Object.keys(schema._def.shape()).length === 0) {
-                    return 'MustacheString()';
-                }
-
-                return `MustacheString(${this.zodToString(schema)})`;
-            }
-
-            case 'BOOL': {
-                return 'z.boolean()';
-            }
-
-            case 'INT': {
-                return 'z.number()';
-            }
-
-            case 'DURATION': {
-                return 'z.string().duration()';
-            }
-
-            case 'JSON': {
-                return "z.union([z.array(z.any()), z.record(z.any())])";
-            }
-
-            case 'LOG_LEVEL': {
-                return 'z.enum(["TRACE", "DEBUG", "INFO", "WARN", "ERROR"])';
-            }
-
-            default: {
-                return 'z.any()';
-            }
-        }
+        return 'typescript';
     }
 }

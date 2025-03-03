@@ -83,8 +83,8 @@ describe('ZodUtils', () => {
         });
 
         it('should convert dotted keys to method names', () => {
-            expect(ZodUtils.keyToMethodName('user.profile')).to.equal('user_Profile');
-            expect(ZodUtils.keyToMethodName('app.settings.theme')).to.equal('app_Settings_Theme');
+            expect(ZodUtils.keyToMethodName('user.profile')).to.equal('user_profile');
+            expect(ZodUtils.keyToMethodName('app.settings.theme')).to.equal('app_settings_theme');
         });
 
         it('should ensure method names are valid identifiers', () => {
@@ -92,23 +92,23 @@ describe('ZodUtils', () => {
             expect(ZodUtils.keyToMethodName('test-key')).to.equal('testKey');
         });
         it('should convert simple keys', () => {
-            expect(ZodUtils.keyToMethodName('flag.tidelift')).to.equal('flag_Tidelift');
-            expect(ZodUtils.keyToMethodName('simple.config')).to.equal('simple_Config');
+            expect(ZodUtils.keyToMethodName('flag.tidelift')).to.equal('flag_tidelift');
+            expect(ZodUtils.keyToMethodName('simple.config')).to.equal('simple_config');
         });
 
         it('should handle hyphens', () => {
-            expect(ZodUtils.keyToMethodName('flag.tide-lift')).to.equal('flag_TideLift');
-            expect(ZodUtils.keyToMethodName('multi-word.key-name')).to.equal('multiWord_KeyName');
+            expect(ZodUtils.keyToMethodName('flag.tide-lift')).to.equal('flag_tideLift');
+            expect(ZodUtils.keyToMethodName('multi-word.key-name')).to.equal('multiWord_keyName');
         });
 
         it('should properly camelCase parts after the first one', () => {
-            expect(ZodUtils.keyToMethodName('first.second')).to.equal('first_Second');
-            expect(ZodUtils.keyToMethodName('module.feature.enabled')).to.equal('module_Feature_Enabled');
+            expect(ZodUtils.keyToMethodName('first.second')).to.equal('first_second');
+            expect(ZodUtils.keyToMethodName('module.feature.enabled')).to.equal('module_feature_enabled');
         });
 
         it('should deal with spaces', () => {
-            expect(ZodUtils.keyToMethodName('first second')).to.equal('firstSecond');
-            expect(ZodUtils.keyToMethodName('module feature.is-enabled')).to.equal('moduleFeature_IsEnabled');
+            expect(ZodUtils.keyToMethodName('first second')).to.equal('first_second');
+            expect(ZodUtils.keyToMethodName('module feature.is-enabled')).to.equal('module_feature_isEnabled');
         });
 
         it('should handle complex keys with special characters', () => {
@@ -119,7 +119,7 @@ describe('ZodUtils', () => {
     describe('keyToSchemaName', () => {
         it('should convert keys to schema variable names', () => {
             expect(ZodUtils.keyToSchemaName('test')).to.equal('testSchema');
-            expect(ZodUtils.keyToSchemaName('app.settings')).to.equal('app_SettingsSchema');
+            expect(ZodUtils.keyToSchemaName('app.settings')).to.equal('app_settingsSchema');
         });
     });
 

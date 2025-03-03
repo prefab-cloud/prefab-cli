@@ -17,6 +17,17 @@ describe('ZodUtils', () => {
             expect(ZodUtils.zodToString(schema)).to.equal('z.boolean()');
         });
 
+        it('should convert a Zod integer to string representation', () => {
+            const schema = z.number().int();
+            expect(ZodUtils.zodToString(schema)).to.equal('z.number().int()');
+        });
+
+        it('should convert a regular Zod number to string representation', () => {
+            const schema = z.number();
+            const result = ZodUtils.zodToString(schema);
+            expect(result).to.equal('z.number()');
+        });
+
         it('should convert a ZodObject to string representation', () => {
             const schema = z.object({
                 age: z.string(),
@@ -162,49 +173,6 @@ describe('ZodUtils', () => {
         it('should handle unknown Zod types', () => {
             const unknownType = {} as unknown as z.ZodTypeAny;
             expect(ZodUtils.zodTypeToTsType(unknownType)).to.equal('any');
-        });
-    });
-
-    describe('valueTypeToReturnType', () => {
-        it('should map primitive config value types to TypeScript types', () => {
-            const boolConfig: Pick<Config, 'valueType'> = { valueType: 'BOOL' };
-            const stringConfig: Pick<Config, 'valueType'> = { valueType: 'STRING' };
-            const intConfig: Pick<Config, 'valueType'> = { valueType: 'INT' };
-
-            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(boolConfig as Config)).to.equal('boolean');
-            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(stringConfig as Config)).to.equal('string');
-            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(intConfig as Config)).to.equal('number');
-        });
-
-        it('should map complex config value types to TypeScript types', () => {
-            const durationConfig: Pick<Config, 'valueType'> = { valueType: 'DURATION' };
-            const stringListConfig: Pick<Config, 'valueType'> = { valueType: 'STRING_LIST' };
-            const logLevelConfig: Pick<Config, 'valueType'> = { valueType: 'LOG_LEVEL' };
-
-            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(durationConfig as Config)).to.equal('string');
-            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(stringListConfig as Config)).to.equal('string[]');
-            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(logLevelConfig as Config)).to.equal('"TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR"');
-        });
-
-        it('should handle JSON config with schema reference', () => {
-            const jsonConfig: Pick<Config, 'schemaKey' | 'valueType'> = {
-                schemaKey: 'user.schema',
-                valueType: 'JSON'
-            };
-
-            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(jsonConfig as Config)).to.equal('z.infer<typeof user_SchemaSchema>');
-        });
-
-        it('should handle JSON config without schema reference', () => {
-            const jsonConfig: Pick<Config, 'valueType'> = { valueType: 'JSON' };
-            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(jsonConfig as Config)).to.equal('any[] | Record<string, any>');
-        });
-
-        it('should handle unknown config value types', () => {
-            // Define a union type including the custom valueType
-            type TestValueType = 'UNKNOWN' | Config['valueType'];
-            const unknownConfig = { valueType: 'UNKNOWN' as TestValueType };
-            expect(ZodUtils.prefabValueTypeToTypescriptReturnType(unknownConfig as Config)).to.equal('any');
         });
     });
 

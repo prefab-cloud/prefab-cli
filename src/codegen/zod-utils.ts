@@ -1,8 +1,6 @@
 import { camelCase, pascalCase } from 'change-case';
 import { z } from 'zod';
 
-import type { Config } from './types.js';
-
 export const ZodUtils = {
     /**
      * Generate TypeScript parameter type from Zod schema shape
@@ -104,7 +102,7 @@ export const ZodUtils = {
 
             case 'ZodUnion': {
                 // For union types, we need to examine each option
-                const {options} = zodType._def;
+                const { options } = zodType._def;
 
                 // Check if any of the options are functions
                 const hasFunctions = options.some((t: z.ZodTypeAny) => t._def.typeName === 'ZodFunction');
@@ -200,50 +198,6 @@ export const ZodUtils = {
     },
 
     /**
-     * Map config value types to TypeScript return types
-     */
-    prefabValueTypeToTypescriptReturnType(config: Config): string {
-        switch (config.valueType) {
-            case 'BOOL': {
-                return 'boolean';
-            }
-
-            case 'STRING': {
-                return 'string';
-            }
-
-            case 'INT': {
-                return 'number';
-            }
-
-            case 'DURATION': {
-                return 'string';
-            }
-
-            case 'STRING_LIST': {
-                return 'string[]';
-            }
-
-            case 'JSON': {
-                if (config.schemaKey) {
-                    // Instead of converting to TypeScript, reference the schema with z.infer
-                    return `z.infer<typeof ${this.keyToSchemaName(config.schemaKey)}>`;
-                }
-
-                return 'any[] | Record<string, any>';
-            }
-
-            case 'LOG_LEVEL': {
-                return '"TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR"';
-            }
-
-            default: {
-                return 'any';
-            }
-        }
-    },
-
-    /**
      * Simplify a Zod schema by replacing function types with their return types
      */
     simplifyFunctions(schema: z.ZodTypeAny): z.ZodTypeAny {
@@ -307,6 +261,14 @@ export const ZodUtils = {
         }
 
         if (def.typeName === 'ZodNumber') {
+            // Check if this is an integer by examining the checks array
+            if (def.checks && Array.isArray(def.checks)) {
+                const hasIntCheck = def.checks.some((check: any) => check.kind === 'int');
+                if (hasIntCheck) {
+                    return 'z.number().int()';
+                }
+            }
+
             return 'z.number()';
         }
 
@@ -316,6 +278,10 @@ export const ZodUtils = {
 
         if (def.typeName === 'ZodNull') {
             return 'z.null()';
+        }
+
+        if (def.typeName === 'ZodUndefined') {
+            return 'z.undefined()';
         }
 
         if (def.typeName === 'ZodArray') {

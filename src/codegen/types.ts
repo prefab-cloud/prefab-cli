@@ -24,7 +24,7 @@ export interface Config {
     key: string;
     rows: ConfigRow[];
     schemaKey?: string;
-    valueType: 'BOOL' | 'DURATION' | 'INT' | 'JSON' | 'LOG_LEVEL' | 'STRING' | 'STRING_LIST';
+    valueType: 'BOOL' | 'DOUBLE' | 'DURATION' | 'INT' | 'JSON' | 'LOG_LEVEL' | 'STRING' | 'STRING_LIST';
 }
 
 export interface ConfigFile {

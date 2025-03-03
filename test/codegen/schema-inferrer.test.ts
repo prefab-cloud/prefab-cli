@@ -23,6 +23,23 @@ describe('SchemaInferrer', () => {
 
             const result = schemaInferrer.infer(config, configFile);
             expect(result).to.be.instanceOf(z.ZodNumber);
+            expect(ZodUtils.zodToString(result)).to.equal('z.number().int()');
+        });
+
+        it('should infer from a double', () => {
+            const config: Config = {
+                configType: 'CONFIG',
+                key: 'test',
+                rows: [{ values: [{ value: { int: 1 } }] }],
+                valueType: 'DOUBLE',
+            };
+            const schemaInferrer = new SchemaInferrer();
+            const configFile: ConfigFile = {
+                configs: [config],
+            };
+
+            const result = schemaInferrer.infer(config, configFile);
+            expect(result).to.be.instanceOf(z.ZodNumber);
             expect(ZodUtils.zodToString(result)).to.equal('z.number()');
         });
 

@@ -206,6 +206,10 @@ export class SchemaInferrer {
             }
 
             case 'INT': {
+                return z.number().int();
+            }
+
+            case 'DOUBLE': {
                 return z.number();
             }
 

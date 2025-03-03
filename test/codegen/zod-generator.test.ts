@@ -3,6 +3,13 @@ import { expect } from 'chai';
 import { Config, ConfigFile } from '../../src/codegen/types.js';
 import { ZodGenerator } from '../../src/codegen/zod-generator.js';
 
+/**
+ * Helper function to compare strings with normalized line endings
+ */
+function expectToEqualWithNormalizedLineEndings(actual: string, expected: string): void {
+    expect(actual.trim().replaceAll(/\r\n/g, '\n')).to.equal(expected);
+}
+
 // Simple tests using the actual filesystem and templates
 describe('ZodGenerator', () => {
     let mockConfigFile: ConfigFile;
@@ -154,7 +161,8 @@ describe('ZodGenerator', () => {
   return raw;
 }`;
 
-            expect(result.trim()).to.equal(expectedOutput);
+            // Normalize line endings before comparison
+            expectToEqualWithNormalizedLineEndings(result, expectedOutput);
         });
 
         it('should render a template function accessor method with the actual template', () => {
@@ -167,7 +175,8 @@ describe('ZodGenerator', () => {
   return (params: { name: string }) => Mustache.render(raw, params);
 }`;
 
-            expect(result.trim()).to.equal(expectedOutput);
+            // Normalize line endings before comparison
+            expectToEqualWithNormalizedLineEndings(result, expectedOutput);
         });
     });
 
@@ -209,7 +218,8 @@ describe('ZodGenerator', () => {
   return (params: { name: string; company: string; user.id: string }) => Mustache.render(raw, params);
 }`;
 
-            expect(accessorMethod.trim()).to.equal(expectedOutput);
+            // Normalize line endings before comparison
+            expectToEqualWithNormalizedLineEndings(accessorMethod, expectedOutput);
         });
     });
 }); 

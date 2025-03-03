@@ -62,7 +62,7 @@ export const ZodUtils = {
                         const propCode = this.generateReturnValueCode(shape[key], newPath);
 
                         // Quote the key if it's not a valid identifier
-                        const needsQuotes = !(/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key));
+                        const needsQuotes = !(/^[$A-Z_a-z][\w$]*$/.test(key));
                         const outputKey = needsQuotes ? `"${key}"` : key;
 
                         if (shape[key]._def.typeName === 'ZodFunction') {
@@ -90,6 +90,7 @@ export const ZodUtils = {
                 if (innerCode === `raw${propertyPath}`) {
                     return innerCode;
                 }
+
                 return `raw${propertyPath} === undefined ? undefined : ${innerCode}`;
             }
 
@@ -103,7 +104,7 @@ export const ZodUtils = {
 
             case 'ZodUnion': {
                 // For union types, we need to examine each option
-                const options = zodType._def.options;
+                const {options} = zodType._def;
 
                 // Check if any of the options are functions
                 const hasFunctions = options.some((t: z.ZodTypeAny) => t._def.typeName === 'ZodFunction');

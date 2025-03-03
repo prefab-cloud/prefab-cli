@@ -1,0 +1,4 @@
+{{methodName}}(){{#isFunctionReturn}}{{#params}}: (params: {{params}}) => {{/params}}{{/isFunctionReturn}}{{^isFunctionReturn}}: {{/isFunctionReturn}}{{{returnType}}} {
+  const raw = this.get('{{key}}');
+  return {{{returnValue}}};
+} 

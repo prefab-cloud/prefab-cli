@@ -421,7 +421,16 @@ describe('ZodUtils', () => {
         );
 
         const result = ZodUtils.generateReturnValueCode(arrayOfObjSchema, '', SupportedLanguage.TypeScript);
-        expect(result).to.equal('Array.isArray(raw) ? raw.map(item => ({ "id": item["id"], "name": item["name"] })) : []');
+        expect(result).to.equal('raw');
+    });
+
+    it('should handle arrays of strings', () => {
+        const arrayOfStringSchema = z.array(z.string());
+
+        let result = ZodUtils.generateReturnValueCode(arrayOfStringSchema, '', SupportedLanguage.TypeScript);
+        expect(result).to.equal('raw');
+        result = ZodUtils.generateReturnValueCode(arrayOfStringSchema, '', SupportedLanguage.Python);
+        expect(result).to.equal('raw');
     });
 
     it('should handle optional fields', () => {

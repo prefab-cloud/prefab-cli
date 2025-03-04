@@ -87,9 +87,9 @@ export class ZodGenerator {
     /**
      * Generate an accessor method for a single config
      */
-    generateAccessorMethod(config: Config): AccessorMethod {
+    generateAccessorMethod(config: Config, language: SupportedLanguage): AccessorMethod {
         const schemaObj = this.schemaInferrer.infer(config, this.configFile);
-        const returnValue = ZodUtils.generateReturnValueCode(schemaObj);
+        const returnValue = ZodUtils.generateReturnValueCode(schemaObj, '', language);
 
         const paramsSchema = ZodUtils.paramsOf(schemaObj);
         const params = paramsSchema ? ZodUtils.zodTypeToTypescript(paramsSchema) : '';
@@ -145,7 +145,7 @@ export class ZodGenerator {
         }
 
         const template = fs.readFileSync(templatePath, 'utf8');
-        const accessorMethod = this.generateAccessorMethod(config);
+        const accessorMethod = this.generateAccessorMethod(config, language);
 
         // Handle special cases for different languages
         if (language === SupportedLanguage.Python) {

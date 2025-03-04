@@ -1,5 +1,6 @@
 import { camelCase } from 'change-case';
 import { z } from 'zod';
+import { SupportedLanguage } from './zod-generator.js';
 
 export const ZodUtils = {
     /**
@@ -22,7 +23,7 @@ export const ZodUtils = {
      * @param propertyPath Current property path for nested properties
      * @returns string representing the code to transform raw data
      */
-    generateReturnValueCode(zodType: z.ZodTypeAny, propertyPath: string = ''): string {
+    generateReturnValueCode(zodType: z.ZodTypeAny, propertyPath: string = '', language: SupportedLanguage): string {
         if (!zodType || !zodType._def) return 'raw';
 
         switch (zodType._def.typeName) {
@@ -35,7 +36,7 @@ export const ZodUtils = {
             }
 
             case 'ZodArray': {
-                const elementCode = this.generateReturnValueCode(zodType._def.type);
+                const elementCode = this.generateReturnValueCode(zodType._def.type, propertyPath, language);
                 if (elementCode === 'raw') {
                     return propertyPath ? `raw${propertyPath}` : 'raw';
                 }
@@ -57,7 +58,7 @@ export const ZodUtils = {
                     if (Object.hasOwn(shape, key)) {
                         // Always use bracket notation for consistency and to handle all edge cases
                         const newPath = propertyPath ? `${propertyPath}["${key}"]` : `["${key}"]`;
-                        const propCode = this.generateReturnValueCode(shape[key], newPath);
+                        const propCode = this.generateReturnValueCode(shape[key], newPath, language);
 
                         const outputKey = `"${key}"`
 
@@ -82,7 +83,7 @@ export const ZodUtils = {
             }
 
             case 'ZodOptional': {
-                const innerCode = this.generateReturnValueCode(zodType._def.innerType, propertyPath);
+                const innerCode = this.generateReturnValueCode(zodType._def.innerType, propertyPath, language);
                 if (innerCode === `raw${propertyPath}`) {
                     return innerCode;
                 }
@@ -110,7 +111,7 @@ export const ZodUtils = {
                     // For simplicity, use the first function type in the union
                     for (const option of options) {
                         if (option._def.typeName === 'ZodFunction') {
-                            return this.generateReturnValueCode(option, propertyPath);
+                            return this.generateReturnValueCode(option, propertyPath, language);
                         }
                     }
                 }

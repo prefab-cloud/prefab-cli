@@ -169,6 +169,45 @@ export class ZodGenerator {
         const template = fs.readFileSync(templatePath, 'utf8');
         const accessorMethod = this.generateAccessorMethod(config);
 
+        // Handle special cases for different languages
+        if (language === SupportedLanguage.Python) {
+            // Handle Python template functions 
+            if (accessorMethod.isFunctionReturn) {
+                accessorMethod.returnValue = `lambda params: pystache.render(raw, params)`;
+            }
+            // Handle JSON objects for Python
+            else if (config.valueType === 'JSON') {
+                // Extract object properties from the sample JSON
+                try {
+                    const sampleValue = config.rows[0]?.values[0]?.value?.json?.json || '{}';
+                    const jsonObj = JSON.parse(sampleValue);
+                    // Generate properly quoted properties
+                    const properties = Object.keys(jsonObj)
+                        .map(key => `"${key}": raw["${key}"]`)
+                        .join(', ');
+                    accessorMethod.returnValue = `{ ${properties} }`;
+                } catch {
+                    // Fallback if JSON parsing fails
+                    accessorMethod.returnValue = 'raw';
+                }
+            }
+        }
+        // Handle JSON objects for TypeScript
+        else if (config.valueType === 'JSON') {
+            try {
+                const sampleValue = config.rows[0]?.values[0]?.value?.json?.json || '{}';
+                const jsonObj = JSON.parse(sampleValue);
+                // Generate properly quoted properties for TypeScript
+                const properties = Object.keys(jsonObj)
+                    .map(key => `"${key}": raw["${key}"]`)
+                    .join(', ');
+                accessorMethod.returnValue = `{ ${properties} }`;
+            } catch {
+                // Fallback if JSON parsing fails
+                accessorMethod.returnValue = 'raw';
+            }
+        }
+
         return Mustache.render(template, accessorMethod);
     }
 
@@ -187,6 +226,16 @@ export class ZodGenerator {
         const schemaLine = this.generateSchemaLine(config);
 
         return Mustache.render(template, schemaLine);
+    }
+
+    // Helper method to extract parameter names from TypeScript param string
+    private extractParamNames(paramsStr: string | undefined): string[] {
+        if (!paramsStr) return [];
+
+        // Simple regex to extract parameter names from TypeScript interface
+        // e.g., "{ name: string; company: string }" -> ["name", "company"]
+        const matches = paramsStr.match(/(\w+(?:\.\w+)?)\s*:/g) || [];
+        return matches.map(m => m.replace(':', '').trim());
     }
 
     /**

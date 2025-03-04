@@ -41,13 +41,7 @@ export const ZodUtils = {
                     return propertyPath ? `raw${propertyPath}` : 'raw';
                 }
 
-                // When the element code is an object literal (starts with { and ends with }),
-                // wrap it in parentheses to avoid syntax errors in arrow functions
-                const processedElementCode = elementCode.trim().startsWith('{') && elementCode.trim().endsWith('}')
-                    ? `(${elementCode})`
-                    : elementCode;
-
-                return `Array.isArray(raw${propertyPath}) ? raw${propertyPath}.map(item => ${processedElementCode.replaceAll('raw', 'item')}) : []`;
+                return propertyPath ? `raw${propertyPath}` : 'raw';
             }
 
             case 'ZodObject': {

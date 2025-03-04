@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import type { Config } from '../../src/codegen/types.js';
 
+import { SupportedLanguage } from '../../src/codegen/zod-generator.js';
 import { ZodUtils } from '../../src/codegen/zod-utils.js';
 
 describe('ZodUtils', () => {
@@ -83,8 +84,8 @@ describe('ZodUtils', () => {
         });
 
         it('should convert dotted keys to method names', () => {
-            expect(ZodUtils.keyToMethodName('user.profile')).to.equal('user_Profile');
-            expect(ZodUtils.keyToMethodName('app.settings.theme')).to.equal('app_Settings_Theme');
+            expect(ZodUtils.keyToMethodName('user.profile')).to.equal('user_profile');
+            expect(ZodUtils.keyToMethodName('app.settings.theme')).to.equal('app_settings_theme');
         });
 
         it('should ensure method names are valid identifiers', () => {
@@ -92,23 +93,23 @@ describe('ZodUtils', () => {
             expect(ZodUtils.keyToMethodName('test-key')).to.equal('testKey');
         });
         it('should convert simple keys', () => {
-            expect(ZodUtils.keyToMethodName('flag.tidelift')).to.equal('flag_Tidelift');
-            expect(ZodUtils.keyToMethodName('simple.config')).to.equal('simple_Config');
+            expect(ZodUtils.keyToMethodName('flag.tidelift')).to.equal('flag_tidelift');
+            expect(ZodUtils.keyToMethodName('simple.config')).to.equal('simple_config');
         });
 
         it('should handle hyphens', () => {
-            expect(ZodUtils.keyToMethodName('flag.tide-lift')).to.equal('flag_TideLift');
-            expect(ZodUtils.keyToMethodName('multi-word.key-name')).to.equal('multiWord_KeyName');
+            expect(ZodUtils.keyToMethodName('flag.tide-lift')).to.equal('flag_tideLift');
+            expect(ZodUtils.keyToMethodName('multi-word.key-name')).to.equal('multiWord_keyName');
         });
 
         it('should properly camelCase parts after the first one', () => {
-            expect(ZodUtils.keyToMethodName('first.second')).to.equal('first_Second');
-            expect(ZodUtils.keyToMethodName('module.feature.enabled')).to.equal('module_Feature_Enabled');
+            expect(ZodUtils.keyToMethodName('first.second')).to.equal('first_second');
+            expect(ZodUtils.keyToMethodName('module.feature.enabled')).to.equal('module_feature_enabled');
         });
 
         it('should deal with spaces', () => {
-            expect(ZodUtils.keyToMethodName('first second')).to.equal('firstSecond');
-            expect(ZodUtils.keyToMethodName('module feature.is-enabled')).to.equal('moduleFeature_IsEnabled');
+            expect(ZodUtils.keyToMethodName('first second')).to.equal('first_second');
+            expect(ZodUtils.keyToMethodName('module feature.is-enabled')).to.equal('module_feature_isEnabled');
         });
 
         it('should handle complex keys with special characters', () => {
@@ -119,7 +120,7 @@ describe('ZodUtils', () => {
     describe('keyToSchemaName', () => {
         it('should convert keys to schema variable names', () => {
             expect(ZodUtils.keyToSchemaName('test')).to.equal('testSchema');
-            expect(ZodUtils.keyToSchemaName('app.settings')).to.equal('app_SettingsSchema');
+            expect(ZodUtils.keyToSchemaName('app.settings')).to.equal('app_settingsSchema');
         });
     });
 
@@ -295,14 +296,14 @@ describe('ZodUtils', () => {
 
     describe('generateReturnValueCode', () => {
         it('should return "raw" for primitive types', () => {
-            expect(ZodUtils.generateReturnValueCode(z.string())).to.equal('raw');
-            expect(ZodUtils.generateReturnValueCode(z.number())).to.equal('raw');
-            expect(ZodUtils.generateReturnValueCode(z.boolean())).to.equal('raw');
+            expect(ZodUtils.generateReturnValueCode(z.string(), '', SupportedLanguage.TypeScript)).to.equal('raw');
+            expect(ZodUtils.generateReturnValueCode(z.number(), '', SupportedLanguage.TypeScript)).to.equal('raw');
+            expect(ZodUtils.generateReturnValueCode(z.boolean(), '', SupportedLanguage.TypeScript)).to.equal('raw');
         });
 
         it('should handle arrays with primitive elements', () => {
             const arraySchema = z.array(z.string());
-            expect(ZodUtils.generateReturnValueCode(arraySchema)).to.equal('raw');
+            expect(ZodUtils.generateReturnValueCode(arraySchema, '', SupportedLanguage.TypeScript)).to.equal('raw');
         });
 
         it('should handle simple objects', () => {
@@ -311,8 +312,18 @@ describe('ZodUtils', () => {
                 name: z.string()
             });
 
-            const result = ZodUtils.generateReturnValueCode(objSchema);
-            expect(result).to.equal('{ age: raw["age"], name: raw["name"] }');
+            const result = ZodUtils.generateReturnValueCode(objSchema, '', SupportedLanguage.TypeScript);
+            expect(result).to.equal('{ "age": raw["age"], "name": raw["name"] }');
+        });
+
+        it('should handle simple objects in python', () => {
+            const objSchema = z.object({
+                age: z.number(),
+                name: z.string()
+            });
+
+            const result = ZodUtils.generateReturnValueCode(objSchema, '', SupportedLanguage.Python);
+            expect(result).to.equal('{ "age": raw["age"], "name": raw["name"] }');
         });
 
         it('should handle placeholder in object', () => {
@@ -321,8 +332,34 @@ describe('ZodUtils', () => {
                     .args(z.object({ name: z.string() }))
                     .returns(z.number())
             });
-            const result = ZodUtils.generateReturnValueCode(nestedSchema);
-            expect(result).to.equal('{ message: (params: { name: string }) => Mustache.render(raw["message"], params) }');
+            const result = ZodUtils.generateReturnValueCode(nestedSchema, '', SupportedLanguage.TypeScript);
+            expect(result).to.equal('{ "message": (params: { name: string }) => Mustache.render(raw["message"], params) }');
+        });
+
+        it('should handle placeholder in typescript', () => {
+            const placeholderSchema = z.function()
+                .args(z.object({ name: z.string() }))
+                .returns(z.number());
+            const result = ZodUtils.generateReturnValueCode(placeholderSchema, '', SupportedLanguage.TypeScript);
+            expect(result).to.equal('(params: { name: string }) => Mustache.render(raw, params)');
+        });
+
+        it('should handle placeholder in Python', () => {
+            const placeholderSchema = z.function()
+                .args(z.object({ name: z.string() }))
+                .returns(z.number());
+            const result = ZodUtils.generateReturnValueCode(placeholderSchema, '', SupportedLanguage.Python);
+            expect(result).to.equal('lambda params: pystache.render(raw, params)');
+        });
+
+        it('should handle placeholder in object in python', () => {
+            const nestedSchema = z.object({
+                message: z.function()
+                    .args(z.object({ name: z.string() }))
+                    .returns(z.number())
+            });
+            const result = ZodUtils.generateReturnValueCode(nestedSchema, '', SupportedLanguage.Python);
+            expect(result).to.equal('{ "message": lambda params: pystache.render(raw["message"], params) }');
         });
 
         it('should handle deep nested function placeholders', () => {
@@ -334,8 +371,8 @@ describe('ZodUtils', () => {
                 })
             });
 
-            const result = ZodUtils.generateReturnValueCode(deepNestedSchema);
-            expect(result).to.equal('{ data: { greeting: (params: { name: string; title: string }) => Mustache.render(raw["data"]["greeting"], params) } }');
+            const result = ZodUtils.generateReturnValueCode(deepNestedSchema, '', SupportedLanguage.TypeScript);
+            expect(result).to.equal('{ "data": { "greeting": (params: { name: string; title: string }) => Mustache.render(raw["data"]["greeting"], params) } }');
         });
 
         it('should handle multiple function placeholders in object', () => {
@@ -353,11 +390,11 @@ describe('ZodUtils', () => {
                     .returns(z.string())
             });
 
-            const result = ZodUtils.generateReturnValueCode(multiSchema);
-            expect(result).to.contain('systemMessage: (params: { placeholders: string }) => Mustache.render(raw["systemMessage"], params)');
-            expect(result).to.contain('userMessage: (params: { extractedFiltersAsText: string; userMessage: string }) => Mustache.render(raw["userMessage"], params)');
-            expect(result).to.contain('model: raw["model"]');
-            expect(result).to.contain('temperature: raw["temperature"]');
+            const result = ZodUtils.generateReturnValueCode(multiSchema, '', SupportedLanguage.TypeScript);
+            expect(result).to.contain('"systemMessage": (params: { placeholders: string }) => Mustache.render(raw["systemMessage"], params)');
+            expect(result).to.contain('"userMessage": (params: { extractedFiltersAsText: string; userMessage: string }) => Mustache.render(raw["userMessage"], params)');
+            expect(result).to.contain('"model": raw["model"]');
+            expect(result).to.contain('"temperature": raw["temperature"]');
         });
     });
 
@@ -371,8 +408,8 @@ describe('ZodUtils', () => {
             })
         });
 
-        const result = ZodUtils.generateReturnValueCode(nestedSchema);
-        expect(result).to.equal('{ user: { name: raw["user"]["name"], profile: { bio: raw["user"]["profile"]["bio"] } } }');
+        const result = ZodUtils.generateReturnValueCode(nestedSchema, '', SupportedLanguage.TypeScript);
+        expect(result).to.equal('{ "user": { "name": raw["user"]["name"], "profile": { "bio": raw["user"]["profile"]["bio"] } } }');
     });
 
     it('should handle arrays of objects', () => {
@@ -383,8 +420,17 @@ describe('ZodUtils', () => {
             })
         );
 
-        const result = ZodUtils.generateReturnValueCode(arrayOfObjSchema);
-        expect(result).to.equal('Array.isArray(raw) ? raw.map(item => ({ id: item["id"], name: item["name"] })) : []');
+        const result = ZodUtils.generateReturnValueCode(arrayOfObjSchema, '', SupportedLanguage.TypeScript);
+        expect(result).to.equal('raw');
+    });
+
+    it('should handle arrays of strings', () => {
+        const arrayOfStringSchema = z.array(z.string());
+
+        let result = ZodUtils.generateReturnValueCode(arrayOfStringSchema, '', SupportedLanguage.TypeScript);
+        expect(result).to.equal('raw');
+        result = ZodUtils.generateReturnValueCode(arrayOfStringSchema, '', SupportedLanguage.Python);
+        expect(result).to.equal('raw');
     });
 
     it('should handle optional fields', () => {
@@ -393,8 +439,8 @@ describe('ZodUtils', () => {
             name: z.string()
         });
 
-        const result = ZodUtils.generateReturnValueCode(optionalSchema);
-        expect(result).to.equal('{ age: raw["age"], name: raw["name"] }');
+        const result = ZodUtils.generateReturnValueCode(optionalSchema, '', SupportedLanguage.TypeScript);
+        expect(result).to.equal('{ "age": raw["age"], "name": raw["name"] }');
     });
 
     it('should handle functions by using their return type', () => {
@@ -402,7 +448,7 @@ describe('ZodUtils', () => {
             .args(z.string())
             .returns(z.number());
 
-        expect(ZodUtils.generateReturnValueCode(fnSchema)).to.equal('(params: string) => Mustache.render(raw, params)');
+        expect(ZodUtils.generateReturnValueCode(fnSchema, '', SupportedLanguage.TypeScript)).to.equal('(params: string) => Mustache.render(raw, params)');
     });
 });
 

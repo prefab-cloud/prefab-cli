@@ -1,5 +1,6 @@
-import { camelCase, pascalCase } from 'change-case';
+import { camelCase } from 'change-case';
 import { z } from 'zod';
+import { SupportedLanguage } from './zod-generator.js';
 
 export const ZodUtils = {
     /**
@@ -22,7 +23,7 @@ export const ZodUtils = {
      * @param propertyPath Current property path for nested properties
      * @returns string representing the code to transform raw data
      */
-    generateReturnValueCode(zodType: z.ZodTypeAny, propertyPath: string = ''): string {
+    generateReturnValueCode(zodType: z.ZodTypeAny, propertyPath: string = '', language: SupportedLanguage): string {
         if (!zodType || !zodType._def) return 'raw';
 
         switch (zodType._def.typeName) {
@@ -35,18 +36,12 @@ export const ZodUtils = {
             }
 
             case 'ZodArray': {
-                const elementCode = this.generateReturnValueCode(zodType._def.type);
+                const elementCode = this.generateReturnValueCode(zodType._def.type, propertyPath, language);
                 if (elementCode === 'raw') {
                     return propertyPath ? `raw${propertyPath}` : 'raw';
                 }
 
-                // When the element code is an object literal (starts with { and ends with }),
-                // wrap it in parentheses to avoid syntax errors in arrow functions
-                const processedElementCode = elementCode.trim().startsWith('{') && elementCode.trim().endsWith('}')
-                    ? `(${elementCode})`
-                    : elementCode;
-
-                return `Array.isArray(raw${propertyPath}) ? raw${propertyPath}.map(item => ${processedElementCode.replaceAll('raw', 'item')}) : []`;
+                return propertyPath ? `raw${propertyPath}` : 'raw';
             }
 
             case 'ZodObject': {
@@ -57,11 +52,9 @@ export const ZodUtils = {
                     if (Object.hasOwn(shape, key)) {
                         // Always use bracket notation for consistency and to handle all edge cases
                         const newPath = propertyPath ? `${propertyPath}["${key}"]` : `["${key}"]`;
-                        const propCode = this.generateReturnValueCode(shape[key], newPath);
+                        const propCode = this.generateReturnValueCode(shape[key], newPath, language);
 
-                        // Quote the key if it's not a valid identifier
-                        const needsQuotes = !(/^[$A-Z_a-z][\w$]*$/.test(key));
-                        const outputKey = needsQuotes ? `"${key}"` : key;
+                        const outputKey = `"${key}"`
 
                         if (shape[key]._def.typeName === 'ZodFunction') {
                             // Handle function within object directly
@@ -84,7 +77,7 @@ export const ZodUtils = {
             }
 
             case 'ZodOptional': {
-                const innerCode = this.generateReturnValueCode(zodType._def.innerType, propertyPath);
+                const innerCode = this.generateReturnValueCode(zodType._def.innerType, propertyPath, language);
                 if (innerCode === `raw${propertyPath}`) {
                     return innerCode;
                 }
@@ -96,8 +89,11 @@ export const ZodUtils = {
                 // For functions, we need special handling based on context
                 const paramsSchema = this.paramsOf(zodType);
                 const paramsType = paramsSchema ? this.zodTypeToTypescript(paramsSchema) : '{}';
-
-                return `(params: ${paramsType}) => Mustache.render(raw${propertyPath}, params)`;
+                if (language === SupportedLanguage.TypeScript) {
+                    return `(params: ${paramsType}) => Mustache.render(raw${propertyPath}, params)`;
+                } else {
+                    return `lambda params: pystache.render(raw${propertyPath}, params)`;
+                }
             }
 
             case 'ZodUnion': {
@@ -112,7 +108,7 @@ export const ZodUtils = {
                     // For simplicity, use the first function type in the union
                     for (const option of options) {
                         if (option._def.typeName === 'ZodFunction') {
-                            return this.generateReturnValueCode(option, propertyPath);
+                            return this.generateReturnValueCode(option, propertyPath, language);
                         }
                     }
                 }
@@ -131,17 +127,26 @@ export const ZodUtils = {
      * Convert config key to a valid method name
      */
     keyToMethodName(key: string): string {
+        // Replace spaces with periods to handle them consistently
+        const processedKey = key.replaceAll(/\s+/g, '.');
+
         // Split by periods to get parts
-        const parts = key.split('.');
+        const parts = processedKey.split('.');
 
         return parts.map((part, index) => {
-            // Convert to camelCase or pascalCase based on position
-            const transformed = index === 0
-                ? camelCase(part)
-                : pascalCase(part);
+            // For the first part, always use camelCase
+            if (index === 0) {
+                return this.makeSafeIdentifier(camelCase(part));
+            }
 
-            // Ensure it's a valid identifier
-            return this.makeSafeIdentifier(transformed);
+            // For subsequent parts
+            if (part.includes('-')) {
+                // Handle hyphenated parts with camelCase (not PascalCase)
+                return this.makeSafeIdentifier(camelCase(part));
+            }
+
+            // For simple parts after first dot, keep lowercase
+            return this.makeSafeIdentifier(part.toLowerCase());
         }).join('_');
     },
 
@@ -149,7 +154,7 @@ export const ZodUtils = {
      * Convert a config key to a schema variable name
      */
     keyToSchemaName(key: string): string {
-        // Convert 'my.config.key' to 'myConfigKeySchema'
+        // Convert key to method name and append Schema
         return this.keyToMethodName(key) + 'Schema';
     },
 

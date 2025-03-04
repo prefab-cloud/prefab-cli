@@ -67,7 +67,7 @@ export class ZodGenerator {
         const accessorMethods = this.configFile.configs
             .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
             .map(config => this.renderAccessorMethod(config, language))
-            .join('\n\n  ');
+            .join('\n');
 
         // Generate individual schema lines
         const schemaLines = this.configFile.configs
@@ -87,9 +87,9 @@ export class ZodGenerator {
     /**
      * Generate an accessor method for a single config
      */
-    generateAccessorMethod(config: Config): AccessorMethod {
+    generateAccessorMethod(config: Config, language: SupportedLanguage): AccessorMethod {
         const schemaObj = this.schemaInferrer.infer(config, this.configFile);
-        const returnValue = ZodUtils.generateReturnValueCode(schemaObj);
+        const returnValue = ZodUtils.generateReturnValueCode(schemaObj, '', language);
 
         const paramsSchema = ZodUtils.paramsOf(schemaObj);
         const params = paramsSchema ? ZodUtils.zodTypeToTypescript(paramsSchema) : '';
@@ -107,15 +107,6 @@ export class ZodGenerator {
             returnType,
             returnValue,
         };
-    }
-
-    /**
-     * Generate accessor methods for all configs
-     */
-    generateAccessorMethods(): AccessorMethod[] {
-        return this.configFile.configs
-            .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
-            .map(config => this.generateAccessorMethod(config));
     }
 
     /**
@@ -143,19 +134,6 @@ export class ZodGenerator {
     }
 
     /**
-     * Prepare all data needed for templates
-     */
-    prepareTemplateData(): TemplateData {
-        const accessorMethods = this.generateAccessorMethods();
-        const schemaLines = this.generateSchemaLines();
-
-        return {
-            accessorMethods,
-            schemaLines,
-        };
-    }
-
-    /**
      * Render a single accessor method for the given language
      */
     renderAccessorMethod(config: Config, language: SupportedLanguage = SupportedLanguage.TypeScript): string {
@@ -167,7 +145,7 @@ export class ZodGenerator {
         }
 
         const template = fs.readFileSync(templatePath, 'utf8');
-        const accessorMethod = this.generateAccessorMethod(config);
+        const accessorMethod = this.generateAccessorMethod(config, language);
 
         return Mustache.render(template, accessorMethod);
     }
@@ -187,6 +165,16 @@ export class ZodGenerator {
         const schemaLine = this.generateSchemaLine(config);
 
         return Mustache.render(template, schemaLine);
+    }
+
+    // Helper method to extract parameter names from TypeScript param string
+    private extractParamNames(paramsStr: string | undefined): string[] {
+        if (!paramsStr) return [];
+
+        // Simple regex to extract parameter names from TypeScript interface
+        // e.g., "{ name: string; company: string }" -> ["name", "company"]
+        const matches = paramsStr.match(/(\w+(?:\.\w+)?)\s*:/g) || [];
+        return matches.map(m => m.replace(':', '').trim());
     }
 
     /**

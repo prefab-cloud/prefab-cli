@@ -1,13 +1,13 @@
 import { expect } from 'chai';
 
 import { Config, ConfigFile } from '../../src/codegen/types.js';
-import { ZodGenerator } from '../../src/codegen/zod-generator.js';
+import { SupportedLanguage, ZodGenerator } from '../../src/codegen/zod-generator.js';
 
 /**
  * Helper function to compare strings with normalized line endings
  */
 function expectToEqualWithNormalizedLineEndings(actual: string, expected: string): void {
-    expect(actual.trim().replaceAll(/\r\n/g, '\n')).to.equal(expected);
+    expect(actual.trim().replaceAll('\r\n', '\n')).to.equal(expected);
 }
 
 // Simple tests using the actual filesystem and templates
@@ -15,6 +15,9 @@ describe('ZodGenerator', () => {
     let mockConfigFile: ConfigFile;
     let mockBoolConfig: Config;
     let mockStringConfig: Config;
+    let mockObjectConfig: Config;
+    let mockObjectWithPlaceholderConfig: Config;
+    let mockObjectWithPlaceholderConfigMultiValue: Config;
     let mockTemplateConfig: Config;
 
     beforeEach(() => {
@@ -54,6 +57,60 @@ describe('ZodGenerator', () => {
             valueType: 'STRING',
         };
 
+        mockObjectConfig = {
+            configType: 'CONFIG',
+            key: 'example.config.object',
+            rows: [
+                {
+                    values: [
+                        {
+                            value: {
+                                json: { json: '{"name": "John", "age": 30}' }
+                            }
+                        }
+                    ]
+                }
+            ],
+            valueType: 'JSON',
+        };
+
+        mockObjectWithPlaceholderConfig = {
+            configType: 'CONFIG',
+            key: 'example.config.object',
+            rows: [
+                {
+                    values: [
+                        {
+                            value: {
+                                json: { json: '{"template": "template {{placeholder}}"}' }
+                            }
+                        }
+                    ]
+                }
+            ],
+            valueType: 'JSON',
+        };
+        mockObjectWithPlaceholderConfigMultiValue = {
+            configType: 'CONFIG',
+            key: 'example.config.object',
+            rows: [
+                {
+                    values: [
+                        {
+                            value: {
+                                json: { json: '{"template": "template {{other_placeholder}}", "num": 20}' }
+                            }
+                        },
+                        {
+                            value: {
+                                json: { json: '{"template": "template {{placeholder}}"}' }
+                            }
+                        }
+                    ]
+                }
+            ],
+            valueType: 'JSON',
+        };
         // Create a template string config (function)
         mockTemplateConfig = {
             configType: 'CONFIG',
@@ -72,11 +129,14 @@ describe('ZodGenerator', () => {
             valueType: 'STRING',
         };
 
+
+
         // Create mock config file with sample configs
         mockConfigFile = {
             configs: [
                 mockBoolConfig,
                 mockStringConfig,
+                mockObjectConfig,
                 mockTemplateConfig,
             ],
         };
@@ -87,39 +147,18 @@ describe('ZodGenerator', () => {
             const generator = new ZodGenerator(mockConfigFile);
             const schemaLines = generator.generateSchemaLines();
 
-            expect(schemaLines).to.have.lengthOf(3);
+            expect(schemaLines).to.have.lengthOf(4);
             expect(schemaLines[0].key).to.equal('example.feature.flag');
-            expect(schemaLines[0].schemaName).to.equal('example_Feature_FlagSchema');
-        });
-    });
-
-    describe('generateAccessorMethods', () => {
-        it('should generate accessor methods for configs', () => {
-            const generator = new ZodGenerator(mockConfigFile);
-            const accessorMethods = generator.generateAccessorMethods();
-
-            expect(accessorMethods).to.have.lengthOf(3);
-            expect(accessorMethods[0].key).to.equal('example.feature.flag');
-            expect(accessorMethods[0].methodName).to.equal('example_Feature_Flag');
-        });
-
-        it('should identify function returns correctly', () => {
-            const generator = new ZodGenerator(mockConfigFile);
-            const accessorMethods = generator.generateAccessorMethods();
-
-            // The boolean flag should not be a function return
-            expect(accessorMethods[0].isFunctionReturn).to.be.false;
-            // The string with mustache template should be identified as a function
-            expect(accessorMethods[2].isFunctionReturn).to.be.true;
+            expect(schemaLines[0].schemaName).to.equal('example_feature_flagSchema');
         });
     });
 
     describe('generateAccessorMethod', () => {
         it('should generate a boolean accessor method correctly', () => {
             const generator = new ZodGenerator(mockConfigFile);
-            const accessorMethod = generator.generateAccessorMethod(mockBoolConfig);
+            const accessorMethod = generator.generateAccessorMethod(mockBoolConfig, SupportedLanguage.TypeScript);
 
-            expect(accessorMethod.methodName).to.equal('example_Feature_Flag');
+            expect(accessorMethod.methodName).to.equal('example_feature_flag');
             expect(accessorMethod.key).to.equal('example.feature.flag');
             expect(accessorMethod.isFunctionReturn).to.be.false;
             expect(accessorMethod.returnType).to.equal('boolean');
@@ -128,9 +167,9 @@ describe('ZodGenerator', () => {
 
         it('should generate a string accessor method correctly', () => {
             const generator = new ZodGenerator(mockConfigFile);
-            const accessorMethod = generator.generateAccessorMethod(mockStringConfig);
+            const accessorMethod = generator.generateAccessorMethod(mockStringConfig, SupportedLanguage.TypeScript);
 
-            expect(accessorMethod.methodName).to.equal('example_Config_String');
+            expect(accessorMethod.methodName).to.equal('example_config_string');
             expect(accessorMethod.key).to.equal('example.config.string');
             expect(accessorMethod.isFunctionReturn).to.be.false;
             expect(accessorMethod.returnType).to.equal('string');
@@ -139,9 +178,9 @@ describe('ZodGenerator', () => {
 
         it('should generate a template function accessor method correctly', () => {
             const generator = new ZodGenerator(mockConfigFile);
-            const accessorMethod = generator.generateAccessorMethod(mockTemplateConfig);
+            const accessorMethod = generator.generateAccessorMethod(mockTemplateConfig, SupportedLanguage.TypeScript);
 
-            expect(accessorMethod.methodName).to.equal('example_Config_Function');
+            expect(accessorMethod.methodName).to.equal('example_config_function');
             expect(accessorMethod.key).to.equal('example.config.function');
             expect(accessorMethod.isFunctionReturn).to.be.true;
             expect(accessorMethod.returnType).to.equal('string');
@@ -156,8 +195,8 @@ describe('ZodGenerator', () => {
             const result = generator.renderAccessorMethod(mockBoolConfig);
 
             // Use a single multiline string assertion for better readability
-            const expectedOutput = `example_Feature_Flag(): boolean {
-  const raw = this.get('example.feature.flag');
+            const expectedOutput = `example_feature_flag(contexts?: Contexts | ContextObj): boolean {
+  const raw = this.get('example.feature.flag', contexts);
   return raw;
 }`;
 
@@ -170,9 +209,23 @@ describe('ZodGenerator', () => {
             const result = generator.renderAccessorMethod(mockTemplateConfig);
 
             // Use a single multiline string assertion for better readability
-            const expectedOutput = `example_Config_Function(): (params: { name: string }) => string {
-  const raw = this.get('example.config.function');
+            const expectedOutput = `example_config_function(contexts?: Contexts | ContextObj): (params: { name: string }) => string {
+  const raw = this.get('example.config.function', contexts);
   return (params: { name: string }) => Mustache.render(raw, params);
+}`;
+
+            // Normalize line endings before comparison
+            expectToEqualWithNormalizedLineEndings(result, expectedOutput);
+        });
+
+        it('should render a JSON object accessor method with the actual template', () => {
+            const generator = new ZodGenerator(mockConfigFile);
+            const result = generator.renderAccessorMethod(mockObjectConfig);
+
+            // Use a single multiline string assertion for better readability
+            const expectedOutput = `example_config_object(contexts?: Contexts | ContextObj): { name: string; age: number } {
+  const raw = this.get('example.config.object', contexts);
+  return { "name": raw["name"], "age": raw["age"] };
 }`;
 
             // Normalize line endings before comparison
@@ -213,13 +266,110 @@ describe('ZodGenerator', () => {
             const accessorMethod = generator.renderAccessorMethod(complexConfig);
 
             // Use a single multiline string assertion for better readability
-            const expectedOutput = `example_Greeting_Template(): (params: { name: string; company: string; user.id: string }) => string {
-  const raw = this.get('example.greeting.template');
+            const expectedOutput = `example_greeting_template(contexts?: Contexts | ContextObj): (params: { name: string; company: string; user.id: string }) => string {
+  const raw = this.get('example.greeting.template', contexts);
   return (params: { name: string; company: string; user.id: string }) => Mustache.render(raw, params);
 }`;
 
             // Normalize line endings before comparison
             expectToEqualWithNormalizedLineEndings(accessorMethod, expectedOutput);
+        });
+    });
+
+    describe('renderAccessorMethod python', () => {
+        it('should render a boolean accessor method with the actual template', () => {
+            const generator = new ZodGenerator(mockConfigFile);
+            const result = generator.renderAccessorMethod(mockBoolConfig, SupportedLanguage.Python);
+
+            // Use a single multiline string assertion for better readability
+            const expectedOutput = `def example_feature_flag(self):
+      raw = self.get('example.feature.flag')
+      return raw`;
+
+            // Normalize line endings before comparison
+            expectToEqualWithNormalizedLineEndings(result, expectedOutput);
+        });
+        it('should render a template method with the actual template', () => {
+            const generator = new ZodGenerator(mockConfigFile);
+            const result = generator.renderAccessorMethod(mockTemplateConfig, SupportedLanguage.Python);
+
+            // Use a single multiline string assertion for better readability
+            const expectedOutput = `def example_config_function(self):
+      raw = self.get('example.config.function')
+      return lambda params: pystache.render(raw, params)`;
+
+            // Normalize line endings before comparison
+            expectToEqualWithNormalizedLineEndings(result, expectedOutput);
+        });
+        it('should render a JSON object with the actual template', () => {
+            const generator = new ZodGenerator(mockConfigFile);
+            const result = generator.renderAccessorMethod(mockObjectConfig, SupportedLanguage.Python);
+
+            // Use a single multiline string assertion for better readability
+            const expectedOutput = `def example_config_object(self):
+      raw = self.get('example.config.object')
+      return { "name": raw["name"], "age": raw["age"] }`;
+
+            // Normalize line endings before comparison
+            expectToEqualWithNormalizedLineEndings(result, expectedOutput);
+        });
+    });
+
+    describe('renderAccessorMethod for JSON with templates', () => {
+        it('should render a JSON object with template placeholders for TypeScript', () => {
+            const generator = new ZodGenerator(mockConfigFile);
+            const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfig);
+
+            // Use a single multiline string assertion for better readability
+            const expectedOutput = `example_config_object(contexts?: Contexts | ContextObj): { template: (params: { placeholder: string }) => string } {
+  const raw = this.get('example.config.object', contexts);
+  return { "template": (params: { placeholder: string }) => Mustache.render(raw["template"], params) };
+}`;
+
+            // Normalize line endings before comparison
+            expectToEqualWithNormalizedLineEndings(result, expectedOutput);
+        });
+
+        it('should render a JSON object with multiple values and templates for TypeScript', () => {
+            const generator = new ZodGenerator(mockConfigFile);
+            const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfigMultiValue);
+
+            // Use a single multiline string assertion for better readability
+            const expectedOutput = `example_config_object(contexts?: Contexts | ContextObj): { template: ((params: { other_placeholder: string }) => string) | ((params: { placeholder: string }) => string); num: any } {
+  const raw = this.get('example.config.object', contexts);
+  return { "template": (params: { other_placeholder: string }) => Mustache.render(raw["template"], params), "num": raw["num"] };
+}`;
+
+            // Normalize line endings before comparison
+            expectToEqualWithNormalizedLineEndings(result, expectedOutput);
+        });
+    });
+
+    describe('renderAccessorMethod python for JSON with templates', () => {
+        it('should render a JSON object with template placeholders for Python', () => {
+            const generator = new ZodGenerator(mockConfigFile);
+            const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfig, SupportedLanguage.Python);
+
+            // Use a single multiline string assertion for better readability
+            const expectedOutput = `def example_config_object(self):
+      raw = self.get('example.config.object')
+      return { "template": lambda params: pystache.render(raw["template"], params) }`;
+
+            // Normalize line endings before comparison
+            expectToEqualWithNormalizedLineEndings(result, expectedOutput);
+        });
+
+        it('should render a JSON object with multiple values and templates for Python', () => {
+            const generator = new ZodGenerator(mockConfigFile);
+            const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfigMultiValue, SupportedLanguage.Python);
+
+            // Use a single multiline string assertion for better readability
+            const expectedOutput = `def example_config_object(self):
+      raw = self.get('example.config.object')
+      return { "template": lambda params: pystache.render(raw["template"], params), "num": raw["num"] }`;
+
+            // Normalize line endings before comparison
+            expectToEqualWithNormalizedLineEndings(result, expectedOutput);
         });
     });
 }); 

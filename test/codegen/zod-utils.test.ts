@@ -312,7 +312,7 @@ describe('ZodUtils', () => {
             });
 
             const result = ZodUtils.generateReturnValueCode(objSchema);
-            expect(result).to.equal('{ age: raw["age"], name: raw["name"] }');
+            expect(result).to.equal('{ "age": raw["age"], "name": raw["name"] }');
         });
 
         it('should handle placeholder in object', () => {
@@ -322,7 +322,7 @@ describe('ZodUtils', () => {
                     .returns(z.number())
             });
             const result = ZodUtils.generateReturnValueCode(nestedSchema);
-            expect(result).to.equal('{ message: (params: { name: string }) => Mustache.render(raw["message"], params) }');
+            expect(result).to.equal('{ "message": (params: { name: string }) => Mustache.render(raw["message"], params) }');
         });
 
         it('should handle deep nested function placeholders', () => {
@@ -335,7 +335,7 @@ describe('ZodUtils', () => {
             });
 
             const result = ZodUtils.generateReturnValueCode(deepNestedSchema);
-            expect(result).to.equal('{ data: { greeting: (params: { name: string; title: string }) => Mustache.render(raw["data"]["greeting"], params) } }');
+            expect(result).to.equal('{ "data": { "greeting": (params: { name: string; title: string }) => Mustache.render(raw["data"]["greeting"], params) } }');
         });
 
         it('should handle multiple function placeholders in object', () => {
@@ -354,10 +354,10 @@ describe('ZodUtils', () => {
             });
 
             const result = ZodUtils.generateReturnValueCode(multiSchema);
-            expect(result).to.contain('systemMessage: (params: { placeholders: string }) => Mustache.render(raw["systemMessage"], params)');
-            expect(result).to.contain('userMessage: (params: { extractedFiltersAsText: string; userMessage: string }) => Mustache.render(raw["userMessage"], params)');
-            expect(result).to.contain('model: raw["model"]');
-            expect(result).to.contain('temperature: raw["temperature"]');
+            expect(result).to.contain('"systemMessage": (params: { placeholders: string }) => Mustache.render(raw["systemMessage"], params)');
+            expect(result).to.contain('"userMessage": (params: { extractedFiltersAsText: string; userMessage: string }) => Mustache.render(raw["userMessage"], params)');
+            expect(result).to.contain('"model": raw["model"]');
+            expect(result).to.contain('"temperature": raw["temperature"]');
         });
     });
 
@@ -372,7 +372,7 @@ describe('ZodUtils', () => {
         });
 
         const result = ZodUtils.generateReturnValueCode(nestedSchema);
-        expect(result).to.equal('{ user: { name: raw["user"]["name"], profile: { bio: raw["user"]["profile"]["bio"] } } }');
+        expect(result).to.equal('{ "user": { "name": raw["user"]["name"], "profile": { "bio": raw["user"]["profile"]["bio"] } } }');
     });
 
     it('should handle arrays of objects', () => {
@@ -384,7 +384,7 @@ describe('ZodUtils', () => {
         );
 
         const result = ZodUtils.generateReturnValueCode(arrayOfObjSchema);
-        expect(result).to.equal('Array.isArray(raw) ? raw.map(item => ({ id: item["id"], name: item["name"] })) : []');
+        expect(result).to.equal('Array.isArray(raw) ? raw.map(item => ({ "id": item["id"], "name": item["name"] })) : []');
     });
 
     it('should handle optional fields', () => {
@@ -394,7 +394,7 @@ describe('ZodUtils', () => {
         });
 
         const result = ZodUtils.generateReturnValueCode(optionalSchema);
-        expect(result).to.equal('{ age: raw["age"], name: raw["name"] }');
+        expect(result).to.equal('{ "age": raw["age"], "name": raw["name"] }');
     });
 
     it('should handle functions by using their return type', () => {

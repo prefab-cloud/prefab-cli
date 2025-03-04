@@ -59,9 +59,7 @@ export const ZodUtils = {
                         const newPath = propertyPath ? `${propertyPath}["${key}"]` : `["${key}"]`;
                         const propCode = this.generateReturnValueCode(shape[key], newPath);
 
-                        // Quote the key if it's not a valid identifier
-                        const needsQuotes = !(/^[$A-Z_a-z][\w$]*$/.test(key));
-                        const outputKey = needsQuotes ? `"${key}"` : key;
+                        const outputKey = `"${key}"`
 
                         if (shape[key]._def.typeName === 'ZodFunction') {
                             // Handle function within object directly

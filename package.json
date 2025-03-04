@@ -40,6 +40,7 @@
   "files": [
     "/bin",
     "/dist",
+    "/src/codegen/templates",
     "/oclif.manifest.json"
   ],
   "homepage": "https://github.com/prefab-cloud/prefab-cli",
@@ -56,7 +57,7 @@
   },
   "repository": "prefab-cloud/prefab-cli",
   "scripts": {
-    "build": "shx rm -rf dist && tsc -b",
+    "build": "shx rm -rf dist && tsc -b && shx cp -r src/codegen/templates dist/codegen/",
     "lint": "eslint . --cache --ext .ts",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "yarn lint",
@@ -67,7 +68,7 @@
     "update-submodule": "git submodule update --remote src/prefab-common",
     "version": "yarn build && oclif readme && git add README.md && cat package.json | jq .version | awk '{print \"// NOTE: This file is generated\\nexport default \"$1}' > src/version.ts && git add src/version.ts"
   },
-  "version": "0.5.0-pre1",
+  "version": "0.5.0-pre2",
   "bugs": "https://github.com/prefab-cloud/prefab-cli/issues",
   "keywords": [
     "oclif"

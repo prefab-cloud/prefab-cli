@@ -67,7 +67,7 @@ export class ZodGenerator {
         const accessorMethods = this.configFile.configs
             .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
             .map(config => this.renderAccessorMethod(config, language))
-            .join('\n\n  ');
+            .join('\n');
 
         // Generate individual schema lines
         const schemaLines = this.configFile.configs

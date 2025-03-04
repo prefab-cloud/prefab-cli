@@ -110,15 +110,6 @@ export class ZodGenerator {
     }
 
     /**
-     * Generate accessor methods for all configs
-     */
-    generateAccessorMethods(): AccessorMethod[] {
-        return this.configFile.configs
-            .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
-            .map(config => this.generateAccessorMethod(config));
-    }
-
-    /**
      * Generate a schema line for a single config
      */
     generateSchemaLine(config: Config): SchemaLine {
@@ -140,19 +131,6 @@ export class ZodGenerator {
         return this.configFile.configs
             .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
             .map(config => this.generateSchemaLine(config));
-    }
-
-    /**
-     * Prepare all data needed for templates
-     */
-    prepareTemplateData(): TemplateData {
-        const accessorMethods = this.generateAccessorMethods();
-        const schemaLines = this.generateSchemaLines();
-
-        return {
-            accessorMethods,
-            schemaLines,
-        };
     }
 
     /**
@@ -190,21 +168,6 @@ export class ZodGenerator {
                     // Fallback if JSON parsing fails
                     accessorMethod.returnValue = 'raw';
                 }
-            }
-        }
-        // Handle JSON objects for TypeScript
-        else if (config.valueType === 'JSON') {
-            try {
-                const sampleValue = config.rows[0]?.values[0]?.value?.json?.json || '{}';
-                const jsonObj = JSON.parse(sampleValue);
-                // Generate properly quoted properties for TypeScript
-                const properties = Object.keys(jsonObj)
-                    .map(key => `"${key}": raw["${key}"]`)
-                    .join(', ');
-                accessorMethod.returnValue = `{ ${properties} }`;
-            } catch {
-                // Fallback if JSON parsing fails
-                accessorMethod.returnValue = 'raw';
             }
         }
 

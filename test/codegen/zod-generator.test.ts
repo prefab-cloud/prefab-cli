@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import { Config, ConfigFile } from '../../src/codegen/types.js';
-import { ZodGenerator } from '../../src/codegen/zod-generator.js';
+import { SupportedLanguage, ZodGenerator } from '../../src/codegen/zod-generator.js';
 
 /**
  * Helper function to compare strings with normalized line endings
@@ -220,6 +220,21 @@ describe('ZodGenerator', () => {
 
             // Normalize line endings before comparison
             expectToEqualWithNormalizedLineEndings(accessorMethod, expectedOutput);
+        });
+    });
+
+    describe('renderAccessorMethod', () => {
+        it('should render a boolean accessor method with the actual template', () => {
+            const generator = new ZodGenerator(mockConfigFile);
+            const result = generator.renderAccessorMethod(mockBoolConfig, SupportedLanguage.Python);
+
+            // Use a single multiline string assertion for better readability
+            const expectedOutput = `def example_feature_flag(self):
+      raw = self.get('example.feature.flag')
+      return raw`;
+
+            // Normalize line endings before comparison
+            expectToEqualWithNormalizedLineEndings(result, expectedOutput);
         });
     });
 }); 

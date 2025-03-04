@@ -316,6 +316,16 @@ describe('ZodUtils', () => {
             expect(result).to.equal('{ "age": raw["age"], "name": raw["name"] }');
         });
 
+        it('should handle simple objects in python', () => {
+            const objSchema = z.object({
+                age: z.number(),
+                name: z.string()
+            });
+
+            const result = ZodUtils.generateReturnValueCode(objSchema, '', SupportedLanguage.Python);
+            expect(result).to.equal('{ "age": raw["age"], "name": raw["name"] }');
+        });
+
         it('should handle placeholder in object', () => {
             const nestedSchema = z.object({
                 message: z.function()
@@ -324,6 +334,32 @@ describe('ZodUtils', () => {
             });
             const result = ZodUtils.generateReturnValueCode(nestedSchema, '', SupportedLanguage.TypeScript);
             expect(result).to.equal('{ "message": (params: { name: string }) => Mustache.render(raw["message"], params) }');
+        });
+
+        it('should handle placeholder in typescript', () => {
+            const placeholderSchema = z.function()
+                .args(z.object({ name: z.string() }))
+                .returns(z.number());
+            const result = ZodUtils.generateReturnValueCode(placeholderSchema, '', SupportedLanguage.TypeScript);
+            expect(result).to.equal('(params: { name: string }) => Mustache.render(raw, params)');
+        });
+
+        it('should handle placeholder in Python', () => {
+            const placeholderSchema = z.function()
+                .args(z.object({ name: z.string() }))
+                .returns(z.number());
+            const result = ZodUtils.generateReturnValueCode(placeholderSchema, '', SupportedLanguage.Python);
+            expect(result).to.equal('lambda params: pystache.render(raw, params)');
+        });
+
+        it('should handle placeholder in object in python', () => {
+            const nestedSchema = z.object({
+                message: z.function()
+                    .args(z.object({ name: z.string() }))
+                    .returns(z.number())
+            });
+            const result = ZodUtils.generateReturnValueCode(nestedSchema, '', SupportedLanguage.Python);
+            expect(result).to.equal('{ "message": lambda params: pystache.render(raw["message"], params) }');
         });
 
         it('should handle deep nested function placeholders', () => {

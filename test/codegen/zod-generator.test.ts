@@ -156,8 +156,8 @@ describe('ZodGenerator', () => {
             const result = generator.renderAccessorMethod(mockBoolConfig);
 
             // Use a single multiline string assertion for better readability
-            const expectedOutput = `example_feature_flag(): boolean {
-  const raw = this.get('example.feature.flag');
+            const expectedOutput = `example_feature_flag(contexts?: Contexts | ContextObj): boolean {
+  const raw = this.get('example.feature.flag', contexts);
   return raw;
 }`;
 
@@ -170,8 +170,8 @@ describe('ZodGenerator', () => {
             const result = generator.renderAccessorMethod(mockTemplateConfig);
 
             // Use a single multiline string assertion for better readability
-            const expectedOutput = `example_config_function(): (params: { name: string }) => string {
-  const raw = this.get('example.config.function');
+            const expectedOutput = `example_config_function(contexts?: Contexts | ContextObj): (params: { name: string }) => string {
+  const raw = this.get('example.config.function', contexts);
   return (params: { name: string }) => Mustache.render(raw, params);
 }`;
 
@@ -213,8 +213,8 @@ describe('ZodGenerator', () => {
             const accessorMethod = generator.renderAccessorMethod(complexConfig);
 
             // Use a single multiline string assertion for better readability
-            const expectedOutput = `example_greeting_template(): (params: { name: string; company: string; user.id: string }) => string {
-  const raw = this.get('example.greeting.template');
+            const expectedOutput = `example_greeting_template(contexts?: Contexts | ContextObj): (params: { name: string; company: string; user.id: string }) => string {
+  const raw = this.get('example.greeting.template', contexts);
   return (params: { name: string; company: string; user.id: string }) => Mustache.render(raw, params);
 }`;
 

@@ -57,9 +57,7 @@ export class ZodGenerator {
         console.log(`Generating ${language} code for configs...`);
 
         if (language === SupportedLanguage.Python) {
-            doStuff(this.configFile, this.schemaInferrer);
-            return "wut";
-
+            return doStuff(this.configFile, this.schemaInferrer);
         }
 
 

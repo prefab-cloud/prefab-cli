@@ -48,6 +48,8 @@ export default class Generate extends APICommand {
 
     if (langInput === 'python') {
       language = SupportedLanguage.Python
+    } else if (langInput === 'react') {
+      language = SupportedLanguage.React
     } else if (langInput === 'typescript') {
       language = SupportedLanguage.TypeScript
     } else {

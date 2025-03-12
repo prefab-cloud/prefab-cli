@@ -23,6 +23,7 @@ export interface Config {
   key: string
   rows: ConfigRow[]
   schemaKey?: string
+  sendToClientSdk?: boolean
   valueType: 'BOOL' | 'DOUBLE' | 'DURATION' | 'INT' | 'JSON' | 'LOG_LEVEL' | 'STRING' | 'STRING_LIST'
 }
 

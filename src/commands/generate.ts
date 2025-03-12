@@ -15,7 +15,7 @@ export default class Generate extends APICommand {
 
   static examples = [
     '<%= config.bin %> <%= command.id %> --lang typescript',
-    '<%= config.bin %> <%= command.id %> --lang typescript --output-file src/custom/path/types.ts',
+    '<%= config.bin %> <%= command.id %> --lang typescript --output-dir custom/path',
     '<%= config.bin %> <%= command.id %> --lang python',
   ]
 
@@ -24,20 +24,28 @@ export default class Generate extends APICommand {
       default: 'typescript',
       description: 'language to generate code for (typescript or python)',
     }),
-    'output-file': Flags.string({
-      default: 'src/prefab/prefab.ts',
-      description: 'output file path for generated code',
+    'output-dir': Flags.string({
+      default: 'generated-sources',
+      description: 'output directory for generated code',
     }),
   }
 
   public async run(): Promise<JsonObj | void> {
     const {flags} = await this.parse(Generate)
+    
+    console.log('=== GENERATE COMMAND START ===')
+    console.log('API Key:', this.rawApiClient ? 'Set (hidden)' : 'Not set')
+    console.log('Environment:', this.currentEnvironment)
+    console.log('Base API URL:', process.env.PREFAB_API_URL || 'Default')
+    console.log('Language:', flags.lang)
+    console.log('Output directory:', flags['output-dir'])
 
-    // Get the language from the flag
+    // Get the language from the flag, using lowercase to ensure consistency
     const langInput = flags.lang?.toLowerCase()
-    let language: SupportedLanguage
-
+    
     // Map the input string to the appropriate enum value
+    let language: SupportedLanguage
+    
     if (langInput === 'python') {
       language = SupportedLanguage.Python
     } else if (langInput === 'typescript') {
@@ -49,26 +57,35 @@ export default class Generate extends APICommand {
     // Download the configuration using the APICommand's client
     const downloader = new ConfigDownloader(this)
     try {
+      console.log('Downloading config...')
       const configFile = await downloader.downloadConfig()
+      console.log('Config download complete.')
 
+      console.log('Creating generator...')
       const generator = new ZodGenerator(configFile)
+      console.log('Generating code...')
       const generatedCode = generator.generate(language)
+      console.log('Code generation complete. Size:', generatedCode.length)
 
-      // Set default file extension based on language
-      const fileExtension = language === SupportedLanguage.Python ? '.py' : '.ts'
+      // Set filename based on language
+      const filename = language === SupportedLanguage.Python ? 'prefab.py' : 'prefab.ts'
+      const outputDir = flags['output-dir']
 
       // Ensure the directory exists
-      const outputFile = flags['output-file'] || `src/prefab/prefab${fileExtension}`
-      const dir = path.dirname(outputFile)
-      await fs.promises.mkdir(dir, {recursive: true})
+      console.log('Creating directory:', outputDir)
+      await fs.promises.mkdir(outputDir, {recursive: true})
 
       // Write the generated code to the file
+      const outputFile = path.join(outputDir, filename)
+      console.log('Writing file:', outputFile)
       await fs.promises.writeFile(outputFile, generatedCode)
-      this.log(`Generated ${langInput} code at ${outputFile}`)
+      console.log(`Generated ${langInput} code at ${outputFile}`)
     } catch (error) {
+      console.error('ERROR:', error)
       this.error(error as Error)
     }
 
+    console.log('=== GENERATE COMMAND END ===')
     return {success: true}
   }
 }

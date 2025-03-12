@@ -1,12 +1,15 @@
-import Mustache from 'mustache'
-import fs from 'node:fs'
-import path from 'node:path'
-import {fileURLToPath} from 'node:url'
+import Mustache from 'mustache';
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 
-import type {Config, ConfigFile} from './types.js'
+import type {Config, ConfigFile} from './types.js';
 
-import {SchemaInferrer} from './schema-inferrer.js'
-import {ZodUtils} from './zod-utils.js'
+import {SchemaInferrer} from './schema-inferrer.js';
+import {ZodUtils} from './zod-utils.js';
+
+import {doStuff} from "./python/generator.js";
+import {ZodTypeAny} from "zod";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -47,11 +50,18 @@ export class ZodGenerator {
     this.schemaInferrer = new SchemaInferrer()
   }
 
-  /**
-   * Generate code for the specified language
-   */
-  generate(language: SupportedLanguage = SupportedLanguage.TypeScript): string {
-    console.log(`Generating ${language} code for configs...`)
+    /**
+     * Generate code for the specified language
+     */
+    generate(language: SupportedLanguage = SupportedLanguage.TypeScript): string {
+        console.log(`Generating ${language} code for configs...`);
+
+        if (language === SupportedLanguage.Python) {
+            doStuff(this.configFile, this.schemaInferrer);
+            return "wut";
+
+        }
+
 
     // Get base template for the framework
     const templateName = this.getTemplateNameForLanguage(language)
@@ -99,23 +109,23 @@ export class ZodGenerator {
       ? ZodUtils.zodTypeToTypescript(schemaObj._def.returns)
       : ZodUtils.zodTypeToTypescript(schemaObj)
 
-    return {
-      isFunctionReturn: isFunction,
-      key: config.key,
-      methodName: ZodUtils.keyToMethodName(config.key),
-      params,
-      returnType,
-      returnValue,
+        return {
+            isFunctionReturn: isFunction,
+            key: config.key,
+            methodName: ZodUtils.keyToMethodName(config.key),
+            params,
+            returnType,
+            returnValue,
+        };
     }
-  }
 
-  /**
-   * Generate a schema line for a single config
-   */
-  generateSchemaLine(config: Config): SchemaLine {
-    const schemaObj = this.schemaInferrer.infer(config, this.configFile)
-    const simplified = ZodUtils.simplifyFunctions(schemaObj)
-    const zodType = ZodUtils.zodToString(simplified)
+
+    /**
+     * Generate a schema line for a single config
+     */
+    generateSchemaLine(config: Config): SchemaLine {
+        const simplified = this.generateSimplifiedSchema(config)
+        const zodType = ZodUtils.zodToString(simplified);
 
     return {
       key: config.key,
@@ -124,14 +134,19 @@ export class ZodGenerator {
     }
   }
 
-  /**
-   * Generate schema lines for all configs
-   */
-  generateSchemaLines(): SchemaLine[] {
-    return this.configFile.configs
-      .filter((config) => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
-      .map((config) => this.generateSchemaLine(config))
-  }
+    /**
+     * Generate schema lines for all configs
+     */
+    generateSchemaLines(): SchemaLine[] {
+        return this.configFile.configs
+            .filter(config => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
+            .map(config => this.generateSchemaLine(config));
+    }
+
+    generateSimplifiedSchema(config:Config) : ZodTypeAny {
+        const schemaObj = this.schemaInferrer.infer(config, this.configFile);
+        return ZodUtils.simplifyFunctions(schemaObj)
+    }
 
   /**
    * Render a single accessor method for the given language

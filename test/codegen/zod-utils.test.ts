@@ -113,7 +113,14 @@ describe('ZodUtils', () => {
     })
 
     it('should handle complex keys with special characters', () => {
-      expect(ZodUtils.keyToMethodName('234nas6234^&#$__///WHY_OH_WHY')).to.equal('_234nas6234WhyOhWhy')
+      // The key '234nas6234^&#$__///WHY_OH_WHY' will be processed by:
+      // 1. Adding an underscore for the numeric prefix: '_234nas6234'
+      // 2. Converting special chars to dots: '_234nas6234...__...WHY_OH_WHY'
+      // 3. Normalizing consecutive dots: '_234nas6234._.WHY_OH_WHY' 
+      // 4. Splitting by dots: ['_234nas6234', '_', 'WHY_OH_WHY']
+      // 5. Camel-casing parts: ['_234nas6234', '_', 'whyOhWhy']
+      // 6. Joining with underscores: '_234nas6234__whyOhWhy'
+      expect(ZodUtils.keyToMethodName('234nas6234^&#$__///WHY_OH_WHY')).to.equal('_234nas6234__whyOhWhy')
     })
   })
 

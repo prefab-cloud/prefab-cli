@@ -129,20 +129,31 @@ export const ZodUtils = {
   keyToMethodName(key: string): string {
     // Replace spaces with periods to handle them consistently
     const processedKey = key.replaceAll(/\s+/g, '.')
-
+    
+    // Handle special characters that should be word separators
+    const normalizedKey = processedKey.replaceAll(/[-/\\:@#&*()!?=+[\]{}|;,<>%^~`]/g, '.')
+    
     // Split by periods to get parts
-    const parts = processedKey.split('.')
-
-    return parts
+    const parts = normalizedKey.split('.')
+    
+    // Filter out empty parts
+    const validParts = parts.filter(part => part.length > 0)
+    
+    if (validParts.length === 0) {
+      return '_empty_key'
+    }
+    
+    return validParts
       .map((part, index) => {
-        // For the first part, always use camelCase
+        // For the first part, always use camelCase for JS compatibility
+        // For Python, we'll later convert everything to snake_case
         if (index === 0) {
           return this.makeSafeIdentifier(camelCase(part))
         }
 
         // For subsequent parts
         if (part.includes('-')) {
-          // Handle hyphenated parts with camelCase (not PascalCase)
+          // Handle hyphenated parts with camelCase
           return this.makeSafeIdentifier(camelCase(part))
         }
 
@@ -161,7 +172,7 @@ export const ZodUtils = {
   },
 
   /**
-   * Ensure a string is a safe JavaScript identifier
+   * Ensure a string is a safe identifier for JavaScript and Python
    */
   makeSafeIdentifier(identifier: string): string {
     // Ensure it starts with a letter or underscore
@@ -171,7 +182,21 @@ export const ZodUtils = {
     }
 
     // Replace invalid characters with underscores
-    result = result.replaceAll(/[^\w$]/g, '_')
+    // Note: $ is allowed in JavaScript but not in Python, so we explicitly replace it
+    result = result.replaceAll(/[^\w]|[$]/g, '_')
+
+    // Avoid Python reserved keywords
+    const pythonKeywords = [
+      'False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await', 
+      'break', 'class', 'continue', 'def', 'del', 'elif', 'else', 'except', 
+      'finally', 'for', 'from', 'global', 'if', 'import', 'in', 'is', 
+      'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return', 
+      'try', 'while', 'with', 'yield'
+    ]
+    
+    if (pythonKeywords.includes(result)) {
+      result = result + '_'
+    }
 
     return result
   },

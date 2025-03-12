@@ -62,7 +62,8 @@ describe('UnifiedPythonGenerator', () => {
       expect(methodCode).to.include('Get API URL');
       expect(methodCode).to.include('config_value = self.get("get_api_url", context=context)');
       expect(methodCode).to.include('if config_value.HasField(\'string\'):');
-      expect(methodCode).to.include('return config_value.string');
+      expect(methodCode).to.include('raw = config_value.string');
+      expect(methodCode).to.include('return raw');
     });
 
     it('should generate a method for a list of strings', () => {
@@ -94,7 +95,8 @@ describe('UnifiedPythonGenerator', () => {
 
       const strExtraction = generator.generateValueExtraction('str', true, 'STRING');
       expect(strExtraction).to.include('if config_value.HasField(\'string\'):');
-      expect(strExtraction).to.include('return config_value.string');
+      expect(strExtraction).to.include('raw = config_value.string');
+      expect(strExtraction).to.include('return raw');
     });
 
     it('should generate extraction code for complex types', () => {
@@ -351,6 +353,156 @@ describe('UnifiedPythonGenerator', () => {
       // Test JSON value type with primitive return
       const jsonBoolMethodCode = generator.generateValueExtraction('bool', true, 'JSON');
       expect(jsonBoolMethodCode).to.include('config_value.HasField(\'json\')');
+    });
+  });
+
+  describe('Mustache template handling', () => {
+    it('should generate a parameter class for template parameters', () => {
+      // Create a template parameter schema
+      const paramsSchema = z.object({
+        name: z.string(),
+        company: z.string(),
+        userId: z.number().int()
+      });
+      
+      // Generate a parameter class
+      const paramClassName = generator.generateParamClass('getGreeting', paramsSchema);
+      
+      // Check the class name
+      expect(paramClassName).to.equal('GreetingParams');
+      
+      // Check the generated parameter classes
+      const paramClasses = (generator as any).paramClasses;
+      expect(paramClasses.has('GreetingParams')).to.be.true;
+      
+      const fields = paramClasses.get('GreetingParams').fields;
+      expect(fields).to.have.length(3);
+      expect(fields[0]).to.deep.include({ name: 'name', type: 'str' });
+      expect(fields[1]).to.deep.include({ name: 'company', type: 'str' });
+      expect(fields[2]).to.deep.include({ name: 'userId', type: 'int' });
+    });
+    
+    it('should detect template parameters in registerMethod', () => {
+      // Create a template function schema
+      const templateSchema = z.function()
+        .args(z.object({
+          name: z.string(),
+          company: z.string()
+        }))
+        .returns(z.string())
+        .describe('GreetingTemplate');
+      
+      // Register the method
+      generator.registerMethod(
+        'getGreetingTemplate',
+        templateSchema,
+        undefined,
+        [],
+        'Get a greeting template that can be rendered with name and company',
+        'STRING'
+      );
+      
+      // Check that the method was registered with template parameters
+      const method = (generator as any).methods.get('getGreetingTemplate');
+      expect(method).to.exist;
+      expect(method.hasTemplateParams).to.be.true;
+      expect(method.paramClassName).to.equal('GreetingTemplateParams');
+      
+      // The imports should include pystache
+      const imports = (generator as any).imports;
+      const standardImports = Array.from((imports as any).standardImports);
+      expect(standardImports).to.include('pystache');
+    });
+    
+    it('should generate value extraction with template support', () => {
+      // Test string extraction with template parameters
+      const extractionCode = generator.generateValueExtraction('str', true, 'STRING', true);
+      
+      expect(extractionCode).to.include('if config_value.HasField(\'string\'):');
+      expect(extractionCode).to.include('raw = config_value.string');
+      expect(extractionCode).to.include('return pystache.render(raw, params.__dict__) if params else raw');
+      
+      // Test string extraction without template parameters
+      const normalExtractionCode = generator.generateValueExtraction('str', true, 'STRING', false);
+      
+      expect(normalExtractionCode).to.include('if config_value.HasField(\'string\'):');
+      expect(normalExtractionCode).to.include('raw = config_value.string');
+      expect(normalExtractionCode).to.include('return raw');
+      expect(normalExtractionCode).not.to.include('pystache.render');
+    });
+    
+    it('should generate method code with template parameters', () => {
+      // Generate a method with template parameters
+      const methodCode = generator.generateMethodCode('getGreetingTemplate', {
+        returnType: 'str',
+        params: [],
+        docstring: 'Get a greeting template',
+        valueType: 'STRING',
+        hasTemplateParams: true,
+        paramClassName: 'GreetingTemplateParams'
+      });
+      
+      // Check method signature includes params parameter
+      expect(methodCode).to.include('def getGreetingTemplate(self, params: Optional[GreetingTemplateParams] = None');
+      
+      // Check method documentation
+      expect(methodCode).to.include('params: Parameters for template rendering');
+      
+      // Check value extraction with template rendering
+      expect(methodCode).to.include('if config_value.HasField(\'string\'):');
+      expect(methodCode).to.include('raw = config_value.string');
+      expect(methodCode).to.include('return pystache.render(raw, params.__dict__) if params else raw');
+
+      // Check that the docstring includes the explanation about template rendering behavior
+      expect(methodCode).to.include("Returns:");
+      expect(methodCode).to.include("str: If 'params' is provided, returns the template rendered with those parameters.");
+      expect(methodCode).to.include("If 'params' is None, returns the raw template string without rendering.");
+    });
+    
+    it('should generate correct imports for templates', () => {
+      // Create a generator without templates
+      const generatorNoTemplates = new UnifiedPythonGenerator({
+        className: 'NoTemplatesClient'
+      });
+      
+      // Register a regular method
+      generatorNoTemplates.registerMethod(
+        'getConfig',
+        z.object({ key: z.string() }),
+        undefined,
+        [],
+        'Get config',
+        'JSON'
+      );
+      
+      // Generate Python file
+      const pythonCodeNoTemplates = generatorNoTemplates.generatePythonFile();
+      
+      // Should not include pystache
+      expect(pythonCodeNoTemplates).not.to.include('import pystache');
+      
+      // Now create a generator with templates
+      const generatorWithTemplates = new UnifiedPythonGenerator({
+        className: 'TemplatesClient'
+      });
+      
+      // Register a template method
+      generatorWithTemplates.registerMethod(
+        'getGreetingTemplate',
+        z.function()
+          .args(z.object({ name: z.string() }))
+          .returns(z.string()),
+        undefined,
+        [],
+        'Get greeting template',
+        'STRING'
+      );
+      
+      // Generate Python file
+      const pythonCodeWithTemplates = generatorWithTemplates.generatePythonFile();
+      
+      // Should include pystache via the import collector
+      expect(pythonCodeWithTemplates).to.include('import pystache');
     });
   });
 }); 

@@ -1,0 +1,281 @@
+import * as acorn from 'acorn';
+import * as walk from 'acorn-walk';
+import { z } from 'zod';
+
+/**
+ * Options for the secure schema validator
+ */
+export interface SecureSchemaValidatorOptions {
+    /**
+     * Maximum allowed AST nodes to prevent DoS attacks
+     */
+    maxAstNodes?: number;
+
+    /**
+     * Whether to perform AST validation
+     */
+    astValidation?: boolean;
+}
+
+/**
+ * Default options for the secure schema validator
+ */
+const DEFAULT_OPTIONS: SecureSchemaValidatorOptions = {
+    maxAstNodes: 500,
+    astValidation: true
+};
+
+/**
+ * Validates a JavaScript expression AST for potentially unsafe operations
+ *
+ * @param ast - The AST to validate
+ * @param parentMap - Map of nodes to their parent nodes
+ * @returns An object with validation result and optional error message
+ */
+export function validateAst(ast: any, parentMap: WeakMap<any, any>): { isValid: boolean; error?: string } {
+    let isValid = true;
+    let error: string | undefined;
+
+    // Track what we've seen for detailed error messages
+    const issues: string[] = [];
+
+    // Count nodes to prevent DoS attacks with extremely large schemas
+    let nodeCount = 0;
+
+    // Helper function to check if an arrow function is used in a valid Zod method context
+    const isValidZodMethodArg = (node: any): boolean => {
+        // Check if this node is an argument to a method call
+        const parent = parentMap.get(node);
+        if (parent && parent.type === 'CallExpression' &&
+            parent.callee && parent.callee.type === 'MemberExpression') {
+
+            // Check if method is on an object that's part of a valid Zod chain
+            const memberExpr = parent.callee;
+
+            // Allow methods like refine, transform, superRefine, etc.
+            const allowedMethods = ['refine', 'transform', 'superRefine', 'pipe', 'preprocess'];
+            if (memberExpr.property && memberExpr.property.name &&
+                allowedMethods.includes(memberExpr.property.name)) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    // Count all nodes separately to track complexity
+    walk.full(ast, () => {
+        nodeCount++;
+    });
+
+    // Custom AST walker to check for unsafe patterns
+    walk.simple(ast, {
+
+        // Block function declarations
+        FunctionDeclaration(node: any) {
+            issues.push(`Forbidden node type: FunctionDeclaration`);
+            isValid = false;
+        },
+
+        FunctionExpression(node: any) {
+            issues.push(`Forbidden node type: FunctionExpression`);
+            isValid = false;
+        },
+
+        ArrowFunctionExpression(node: any) {
+            // Allow arrow functions only in valid Zod method contexts
+            if (!isValidZodMethodArg(node)) {
+                issues.push(`Forbidden standalone arrow function`);
+                isValid = false;
+            }
+        },
+
+        // Block class declarations
+        ClassDeclaration() {
+            issues.push(`Forbidden node type: ClassDeclaration`);
+            isValid = false;
+        },
+
+        ClassExpression() {
+            issues.push(`Forbidden node type: ClassExpression`);
+            isValid = false;
+        },
+
+        // Block imports, exports
+        ImportDeclaration() {
+            issues.push(`Forbidden operation: ImportDeclaration`);
+            isValid = false;
+        },
+
+        ExportNamedDeclaration() {
+            issues.push(`Forbidden operation: ExportNamedDeclaration`);
+            isValid = false;
+        },
+
+        ExportDefaultDeclaration() {
+            issues.push(`Forbidden operation: ExportDefaultDeclaration`);
+            isValid = false;
+        },
+
+        ExportAllDeclaration() {
+            issues.push(`Forbidden operation: ExportAllDeclaration`);
+            isValid = false;
+        },
+
+        // Block access to global objects and require
+        Identifier(node: any) {
+            const parent = parentMap.get(node);
+            const forbiddenGlobals = [
+                'window', 'global', 'process', 'console', 'document',
+                'navigator', 'localStorage', 'fetch', 'XMLHttpRequest',
+                'WebSocket', 'eval', 'require'
+            ];
+
+            if (forbiddenGlobals.includes(node.name) &&
+                !(parent?.type === 'MemberExpression' && parent.property === node)) {
+                issues.push(`Forbidden global object: ${node.name}`);
+                isValid = false;
+            }
+        },
+
+        // Block dangerous property access
+        MemberExpression(node: any) {
+            if (node.property.type === 'Identifier') {
+                const dangerousProps = [
+                    'constructor', 'prototype', '__proto__',
+                    '__defineGetter__', '__defineSetter__',
+                    '__lookupGetter__', '__lookupSetter__'
+                ];
+
+                if (dangerousProps.includes(node.property.name)) {
+                    issues.push(`Forbidden property access: ${node.property.name}`);
+                    isValid = false;
+                }
+            }
+        },
+
+        // Restrict function calls
+        CallExpression(node: any) {
+            if (node.callee.type === 'MemberExpression') {
+                const obj = node.callee.object;
+                if (obj.type === 'Identifier' && obj.name !== 'z') {
+                    issues.push(`Only calls to z.* methods are allowed, found: ${obj.name}`);
+                    isValid = false;
+                }
+            } else if (node.callee.type === 'Identifier' &&
+                node.callee.name === 'require') {
+                issues.push(`Forbidden function call: require`);
+                isValid = false;
+            } else if (node.callee.type === 'Identifier' &&
+                !['z'].includes(node.callee.name)) {
+                issues.push(`Forbidden function call: ${node.callee.name}`);
+                isValid = false;
+            }
+        },
+
+        // Block async/await
+        AwaitExpression() {
+            issues.push('Await expressions are not allowed');
+            isValid = false;
+        }
+    });
+
+    if (nodeCount > DEFAULT_OPTIONS.maxAstNodes!) {
+        isValid = false;
+        issues.push(`Schema exceeds maximum allowed complexity (${nodeCount} nodes > ${DEFAULT_OPTIONS.maxAstNodes} limit)`);
+    }
+
+    if (!isValid) {
+        error = `Schema contains potentially unsafe operations: ${issues.join(', ')}`;
+    }
+
+    return { isValid, error };
+}
+
+/**
+ * Securely evaluates a Zod schema string using AST validation
+ *
+ * @param schemaString - The schema string to evaluate
+ * @param options - Options for secure evaluation
+ * @returns The evaluated schema or an error
+ */
+export function secureEvaluateSchema(
+    schemaString: string,
+    options: SecureSchemaValidatorOptions = {}
+): { success: boolean; schema?: z.ZodType; error?: string } {
+    const mergedOptions = { ...DEFAULT_OPTIONS, ...options };
+    const trimmedSchema = schemaString.trim();
+
+    try {
+        // Phase 1: AST Validation (Static Analysis)
+        if (mergedOptions.astValidation) {
+            // Parse the schema string into an AST
+            const ast = acorn.parse(trimmedSchema, {
+                ecmaVersion: 2020,
+                allowAwaitOutsideFunction: false,
+                sourceType: 'script'
+            });
+
+            // Create a map to track parent-child relationships
+            const parentMap = new WeakMap<any, any>();
+
+            // Function to build parent-child relationships
+            function buildParentChildRelationships(node: any, parent: any = null) {
+                if (parent) {
+                    parentMap.set(node, parent);
+                }
+
+                // Recursively process all properties that might contain child nodes
+                for (const key in node) {
+                    if (Object.prototype.hasOwnProperty.call(node, key)) {
+                        const child = node[key];
+
+                        if (child && typeof child === 'object') {
+                            if (Array.isArray(child)) {
+                                for (const item of child) {
+                                    if (item && typeof item === 'object') {
+                                        buildParentChildRelationships(item, node);
+                                    }
+                                }
+                            } else {
+                                buildParentChildRelationships(child, node);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Build the parent-child relationships
+            buildParentChildRelationships(ast);
+
+            // Validate the AST for security concerns
+            const { isValid, error } = validateAst(ast, parentMap);
+
+            if (!isValid) {
+                return { success: false, error };
+            }
+        }
+
+        // Phase 2: Execute with Function constructor
+        // We're deliberately avoiding VM modules due to security concerns
+        // The AST validation provides our primary security layer
+        const constructSchema = new Function('z', `return ${trimmedSchema}`);
+        const schema = constructSchema(z);
+
+        // Phase 3: Validate Result
+        if (!schema || typeof schema !== 'object' || !('_def' in schema)) {
+            return {
+                success: false,
+                error: 'The provided string did not evaluate to a valid Zod schema'
+            };
+        }
+
+        return { success: true, schema };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error
+                ? `Evaluation error: ${error.message}`
+                : 'Unknown evaluation error'
+        };
+    }
+} 

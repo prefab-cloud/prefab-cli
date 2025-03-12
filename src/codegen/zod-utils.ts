@@ -89,7 +89,7 @@ export const ZodUtils = {
         // For functions, we need special handling based on context
         const paramsSchema = this.paramsOf(zodType)
         const paramsType = paramsSchema ? this.zodTypeToTypescript(paramsSchema) : '{}'
-        if (language === SupportedLanguage.TypeScript) {
+        if (language === SupportedLanguage.TypeScript || language === SupportedLanguage.React) {
           return `(params: ${paramsType}) => Mustache.render(raw${propertyPath}, params)`
         } else {
           return `lambda params: pystache.render(raw${propertyPath}, params)`

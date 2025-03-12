@@ -1,0 +1,18 @@
+{{#isFunctionReturn}}
+{{methodName}}(): {{#params}}(params: {{params}}) => {{{returnType}}}{{/params}}{{^params}}() => {{{returnType}}}{{/params}} {
+  const raw = this.get('{{key}}');
+  return {{{returnValue}}};
+}
+{{/isFunctionReturn}}
+{{^isFunctionReturn}}
+{{#isFeatureFlag}}
+get {{methodName}}() {
+  return this.prefab.isEnabled('{{key}}');
+}
+{{/isFeatureFlag}}
+{{^isFeatureFlag}}
+get {{methodName}}() {
+  return this.prefab.get('{{key}}') as {{returnType}};
+}
+{{/isFeatureFlag}}
+{{/isFunctionReturn}}

@@ -15,11 +15,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export enum SupportedLanguage {
   Python = 'python',
+  React = 'react',
   TypeScript = 'typescript',
 }
 
 export interface AccessorMethod {
   isFunctionReturn: boolean
+  isFeatureFlag: boolean
   key: string
   methodName: string
   params: string
@@ -70,17 +72,23 @@ export class ZodGenerator {
 
     const baseTemplate = fs.readFileSync(templatePath, 'utf8')
 
-    // Generate individual accessor methods
-    const accessorMethods = this.configFile.configs
+    // Filter configs based on type and sendToClientSdk for React
+    const filteredConfigs = this.configFile.configs
       .filter((config) => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
-      .map((config) => this.renderAccessorMethod(config, language))
-      .join('\n')
+      .filter(
+        (config) =>
+          language !== SupportedLanguage.React ||
+          config.configType === 'FEATURE_FLAG' ||
+          config.sendToClientSdk === true,
+      )
+
+    console.log('Exportable configs:', filteredConfigs.length)
+
+    // Generate individual accessor methods
+    const accessorMethods = filteredConfigs.map((config) => this.renderAccessorMethod(config, language)).join('\n')
 
     // Generate individual schema lines
-    const schemaLines = this.configFile.configs
-      .filter((config) => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
-      .map((config) => this.renderSchemaLine(config, language))
-      .join(',\n  ')
+    const schemaLines = filteredConfigs.map((config) => this.renderSchemaLine(config, language)).join(',\n  ')
 
     // Render the base template with the generated content
     const result = Mustache.render(baseTemplate, {
@@ -110,6 +118,7 @@ export class ZodGenerator {
       isFunctionReturn: isFunction,
       key: config.key,
       methodName: ZodUtils.keyToMethodName(config.key),
+      isFeatureFlag: config.configType === 'FEATURE_FLAG',
       params,
       returnType,
       returnValue,
@@ -178,16 +187,6 @@ export class ZodGenerator {
     return Mustache.render(template, schemaLine)
   }
 
-  // Helper method to extract parameter names from TypeScript param string
-  private extractParamNames(paramsStr: string | undefined): string[] {
-    if (!paramsStr) return []
-
-    // Simple regex to extract parameter names from TypeScript interface
-    // e.g., "{ name: string; company: string }" -> ["name", "company"]
-    const matches = paramsStr.match(/(\w+(?:\.\w+)?)\s*:/g) || []
-    return matches.map((m) => m.replace(':', '').trim())
-  }
-
   /**
    * Get the template file name for the given language
    */
@@ -198,6 +197,10 @@ export class ZodGenerator {
 
     if (language === SupportedLanguage.Python) {
       return 'python'
+    }
+
+    if (language === SupportedLanguage.React) {
+      return 'react'
     }
 
     return 'typescript'

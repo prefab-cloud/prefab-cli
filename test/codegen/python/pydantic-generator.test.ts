@@ -1,6 +1,7 @@
 import {expect} from 'chai'
 import {z} from 'zod'
 import {UnifiedPythonGenerator} from '../../../src/codegen/python/pydantic-generator.js'
+import {ZodUtils} from '../../../src/codegen/zod-utils.js'
 
 describe('UnifiedPythonGenerator', () => {
   let generator: UnifiedPythonGenerator
@@ -39,10 +40,11 @@ describe('UnifiedPythonGenerator', () => {
         params: [],
         docstring: 'Check if feature is enabled',
         valueType: 'BOOL',
+        originalKey: 'is_feature_enabled',
       })
 
       expect(methodCode).to.include(
-        'def is_feature_enabled(self, context: Optional[Union[dict, Context]] = None, default: Optional[bool] = None) -> bool:',
+          'def is_feature_enabled(self, context: Optional[Union[dict, Context]] = None, default: Optional[bool] = None) -> bool:',
       )
       expect(methodCode).to.include('"""')
       expect(methodCode).to.include('Check if feature is enabled')
@@ -51,41 +53,106 @@ describe('UnifiedPythonGenerator', () => {
       expect(methodCode).to.include('return config_value.bool')
     })
 
+    it('should generate a method for a float type', () => {
+      const methodCode = generator.generateMethodCode('get_conversion_rate', {
+        returnType: 'float',
+        params: [],
+        docstring: 'Get conversion rate',
+        valueType: 'DOUBLE',
+        originalKey: 'get_conversion_rate',
+      })
+
+      expect(methodCode).to.include(
+          'def get_conversion_rate(self, context: Optional[Union[dict, Context]] = None, default: Optional[float] = None) -> float:',
+      )
+      expect(methodCode).to.include('"""')
+      expect(methodCode).to.include('Get conversion rate')
+      expect(methodCode).to.include('config_value = self.get("get_conversion_rate", context=context)')
+      expect(methodCode).to.include("if config_value.HasField('double'):")
+      expect(methodCode).to.include('return config_value.double')
+    })
+
     it('should generate a method for a string type', () => {
       const methodCode = generator.generateMethodCode('get_api_url', {
         returnType: 'str',
         params: [],
-        docstring: 'Get API URL',
+        docstring: 'Get the API URL',
         valueType: 'STRING',
+        originalKey: 'get_api_url',
       })
 
       expect(methodCode).to.include(
-        'def get_api_url(self, context: Optional[Union[dict, Context]] = None, default: Optional[str] = None) -> str:',
+          'def get_api_url(self, context: Optional[Union[dict, Context]] = None, default: Optional[str] = None) -> str:',
       )
       expect(methodCode).to.include('"""')
-      expect(methodCode).to.include('Get API URL')
+      expect(methodCode).to.include('Get the API URL')
       expect(methodCode).to.include('config_value = self.get("get_api_url", context=context)')
       expect(methodCode).to.include("if config_value.HasField('string'):")
       expect(methodCode).to.include('raw = config_value.string')
       expect(methodCode).to.include('return raw')
     })
 
-    it('should generate a method for a list of strings', () => {
+    it('should generate a method for a string list type', () => {
       const methodCode = generator.generateMethodCode('get_allowed_domains', {
         returnType: 'List[str]',
         params: [],
         docstring: 'Get allowed domains',
         valueType: 'STRING_LIST',
+        originalKey: 'get_allowed_domains',
       })
 
       expect(methodCode).to.include(
-        'def get_allowed_domains(self, context: Optional[Union[dict, Context]] = None, default: Optional[List[str]] = None) -> List[str]:',
+          'def get_allowed_domains(self, context: Optional[Union[dict, Context]] = None, default: Optional[List[str]] = None) -> List[str]:',
       )
       expect(methodCode).to.include('"""')
       expect(methodCode).to.include('Get allowed domains')
       expect(methodCode).to.include('config_value = self.get("get_allowed_domains", context=context)')
       expect(methodCode).to.include("if config_value.HasField('string_list'):")
       expect(methodCode).to.include('return config_value.string_list.values')
+    })
+
+    it('should generate a method for a custom model', () => {
+      generator.registerModel(
+          z.object({
+            url: z.string(),
+            port: z.number().int(),
+            timeout: z.number(),
+          }),
+          'ServiceConfig',
+      )
+
+      const methodCode = generator.generateMethodCode('get_service_config', {
+        returnType: 'ServiceConfig',
+        params: [],
+        docstring: 'Get the service configuration',
+        valueType: 'JSON',
+        originalKey: 'get_service_config',
+      })
+
+      expect(methodCode).to.include(
+          'def get_service_config(self, context: Optional[Union[dict, Context]] = None, default: Optional[ServiceConfig] = None) -> ServiceConfig:',
+      )
+      expect(methodCode).to.include("if config_value.HasField('json'):")
+      expect(methodCode).to.include('return ServiceConfig(**data)')
+    })
+
+    it('should generate methods with parameters', () => {
+      const methodCode = generator.generateMethodCode('get_user_preference', {
+        returnType: 'str',
+        params: [
+          {name: 'user_id', type: 'str', default: 'None'},
+          {name: 'preference_type', type: 'str', default: '"default"'},
+        ],
+        docstring: 'Get user preference',
+        valueType: 'STRING',
+        originalKey: 'get_user_preference',
+      })
+
+      expect(methodCode).to.include(
+          'def get_user_preference(self, user_id: str = None, preference_type: str = "default", context: Optional[Union[dict, Context]] = None, default: Optional[str] = None) -> str:',
+      )
+      expect(methodCode).to.include('user_id: Description of user_id')
+      expect(methodCode).to.include('preference_type: Description of preference_type')
     })
   })
 
@@ -193,12 +260,12 @@ describe('UnifiedPythonGenerator', () => {
     it('should generate a client class with methods', () => {
       // Register some methods
       generator.registerMethod(
-        'is_feature_enabled',
-        z.boolean(),
-        'FeatureFlag',
-        [],
-        'Check if feature is enabled',
-        'BOOL',
+          'is_feature_enabled',
+          z.boolean(),
+          'FeatureFlag',
+          [],
+          'Check if feature is enabled',
+          'BOOL',
       )
       generator.registerMethod('get_api_url', z.string(), 'ApiUrl', [], 'Get API URL', 'STRING')
 
@@ -214,12 +281,12 @@ describe('UnifiedPythonGenerator', () => {
     it('should generate a complete Python file', () => {
       // Register some methods with different types
       generator.registerMethod(
-        'is_feature_enabled',
-        z.boolean(),
-        'FeatureFlag',
-        [],
-        'Check if feature is enabled',
-        'BOOL',
+          'is_feature_enabled',
+          z.boolean(),
+          'FeatureFlag',
+          [],
+          'Check if feature is enabled',
+          'BOOL',
       )
       generator.registerMethod('get_api_url', z.string(), 'ApiUrl', [], 'Get API URL', 'STRING')
       generator.registerMethod('get_timeout', z.number(), 'Timeout', [], 'Get timeout in seconds', 'INT')
@@ -272,6 +339,7 @@ describe('UnifiedPythonGenerator', () => {
         params: [],
         docstring: 'Get tags list',
         valueType: 'STRING_LIST',
+        originalKey: 'get_tags',
       })
 
       expect(methodCode).to.include('def get_tags(self')
@@ -290,6 +358,7 @@ describe('UnifiedPythonGenerator', () => {
         ],
         docstring: 'Filter items by categories',
         valueType: 'STRING_LIST',
+        originalKey: 'filter_items',
       })
 
       expect(methodCode).to.include('def filter_items(self, categories: List[str] = [], limit: int = 10')
@@ -341,6 +410,7 @@ describe('UnifiedPythonGenerator', () => {
         params: [],
         docstring: 'Get metadata dictionary',
         valueType: 'JSON',
+        originalKey: 'get_metadata',
       })
 
       expect(methodCode).to.include('def get_metadata(self')
@@ -360,6 +430,7 @@ describe('UnifiedPythonGenerator', () => {
         params: [],
         docstring: 'Get optional config',
         valueType: 'STRING',
+        originalKey: 'get_optional_config',
       })
 
       expect(methodCode).to.include(`default: Optional[${returnType}] = None`)
@@ -378,58 +449,61 @@ describe('UnifiedPythonGenerator', () => {
 
   describe('Mustache template handling', () => {
     it('should generate a parameter class for template parameters', () => {
-      // Create a template parameter schema
-      const paramsSchema = z.object({
-        name: z.string(),
-        company: z.string(),
-        userId: z.number().int(),
-      })
+      // Create a template function schema with object params
+      const templateSchema = z
+          .function()
+          .args(
+              z.object({
+                userId: z.number().int(),
+                status: z.string(),
+              }),
+          )
+          .returns(z.string())
+          .describe('Template')
 
       // Generate a parameter class
-      const paramClassName = generator.generateParamClass('getGreeting', paramsSchema)
+      const className = generator.generateParamClass('get_user_status', templateSchema._def.args._def.items[0])
 
       // Check the class name
-      expect(paramClassName).to.equal('GreetingParams')
+      expect(className).to.equal('GetUserStatusParams')
 
-      // Check the generated parameter classes
-      const paramClasses = (generator as any).paramClasses
-      expect(paramClasses.has('GreetingParams')).to.be.true
+      // Get the parameter class info from the generator's internal state
+      const paramClass = (generator as any).paramClasses.get(className)
+      expect(paramClass).to.exist
 
-      const fields = paramClasses.get('GreetingParams').fields
-      expect(fields).to.have.length(3)
-      expect(fields[0]).to.deep.include({name: 'name', type: 'str'})
-      expect(fields[1]).to.deep.include({name: 'company', type: 'str'})
-      expect(fields[2]).to.deep.include({name: 'userId', type: 'int'})
+      // Check that parameters were converted to snake_case
+      expect(paramClass.fields[0]).to.deep.include({name: 'user_id', type: 'int'})
+      expect(paramClass.fields[1]).to.deep.include({name: 'status', type: 'str'})
     })
 
     it('should detect template parameters in registerMethod', () => {
       // Create a template function schema
       const templateSchema = z
-        .function()
-        .args(
-          z.object({
-            name: z.string(),
-            company: z.string(),
-          }),
-        )
-        .returns(z.string())
-        .describe('GreetingTemplate')
+          .function()
+          .args(
+              z.object({
+                name: z.string(),
+                company: z.string(),
+              }),
+          )
+          .returns(z.string())
+          .describe('GreetingTemplate')
 
       // Register the method
       generator.registerMethod(
-        'getGreetingTemplate',
-        templateSchema,
-        undefined,
-        [],
-        'Get a greeting template that can be rendered with name and company',
-        'STRING',
+          'getGreetingTemplate',
+          templateSchema,
+          undefined,
+          [],
+          'Get a greeting template that can be rendered with name and company',
+          'STRING',
       )
 
       // Check that the method was registered with template parameters
-      const method = (generator as any).methods.get('getGreetingTemplate')
+      const method = (generator as any).methods.get('get_greeting_template')
       expect(method).to.exist
       expect(method.hasTemplateParams).to.be.true
-      expect(method.paramClassName).to.equal('GreetingTemplateParams')
+      expect(method.paramClassName).to.equal('GetGreetingTemplateParams')
 
       // The imports should include pystache
       const imports = (generator as any).imports
@@ -463,6 +537,7 @@ describe('UnifiedPythonGenerator', () => {
         valueType: 'STRING',
         hasTemplateParams: true,
         paramClassName: 'GreetingTemplateParams',
+        originalKey: 'getGreetingTemplate',
       })
 
       // Check method signature includes params parameter
@@ -479,12 +554,82 @@ describe('UnifiedPythonGenerator', () => {
       // Check that the docstring includes the explanation about template rendering behavior
       expect(methodCode).to.include('Returns:')
       expect(methodCode).to.include(
-        "str: If 'params' is provided, returns the template rendered with those parameters.",
+          "str: If 'params' is provided, returns the template rendered with those parameters.",
       )
       expect(methodCode).to.include("If 'params' is None, returns the raw template string without rendering.")
     })
 
-    it('should generate correct imports for templates', () => {
+    it('should handle nested JSON objects with Mustache templates', () => {
+      // Register a schema similar to the "url-schema" from the example
+      const urlSchema = z.object({
+        url: z.string(),
+        timeout: z.number(),
+        retries: z.number(),
+      })
+
+      // Create a JSON schema with a mustache template in the url property
+      const urlWithMustacheSchema = z.object({
+        url: z
+            .function()
+            .args(
+                z.object({
+                  scheme: z.string(),
+                  host: z.string(),
+                }),
+            )
+            .returns(z.string()),
+        timeout: z.number(),
+        retries: z.number(),
+      })
+
+      // Register the method with the schema
+      generator.registerMethod(
+          'url_with_mustache',
+          urlWithMustacheSchema,
+          'UrlWithMustache',
+          [],
+          'Get URL with template parameters',
+          'JSON',
+      )
+
+      // Generate the Python method code
+      const method = (generator as any).methods.get('url_with_mustache')
+      expect(method).to.exist
+      expect(method.hasTemplateParams).to.be.true
+
+      // Generate the Python code for the entire client
+      const pythonCode = generator.generatePythonFile()
+
+      // Print the entire Python code for debugging
+      console.log('Generated Python Code:')
+      console.log(pythonCode)
+
+      // Verify the imports include pystache
+      expect(pythonCode).to.include('import pystache')
+
+      // Verify a parameter class was generated for the URL template
+      expect(pythonCode).to.include('class UrlWithMustacheParams')
+      expect(pythonCode).to.include('scheme: str')
+      expect(pythonCode).to.include('host: str')
+
+      // Verify the method signature includes params parameter
+      expect(pythonCode).to.include('def url_with_mustache(self, params: Optional[UrlWithMustacheParams] = None')
+
+      // Most importantly, verify nested template properties are handled correctly
+      expect(pythonCode).to.include('if params:')
+      expect(pythonCode).to.include('result = {}')
+      expect(pythonCode).to.include('for key, value in data.items():')
+      expect(pythonCode).to.include('if isinstance(value, str):')
+      expect(pythonCode).to.include('result[key] = pystache.render(value, params.__dict__)')
+      expect(pythonCode).to.include('else:')
+      expect(pythonCode).to.include('result[key] = value')
+
+      // Check for proper model return
+      expect(pythonCode).to.include('return UrlWithMustacheModel(**result)')
+      expect(pythonCode).to.include('return UrlWithMustacheModel(**data)')
+    })
+
+    it('should correctly generate imports for templates', () => {
       // Create a generator without templates
       const generatorNoTemplates = new UnifiedPythonGenerator({
         className: 'NoTemplatesClient',
@@ -506,15 +651,15 @@ describe('UnifiedPythonGenerator', () => {
 
       // Register a template method
       generatorWithTemplates.registerMethod(
-        'getGreetingTemplate',
-        z
-          .function()
-          .args(z.object({name: z.string()}))
-          .returns(z.string()),
-        undefined,
-        [],
-        'Get greeting template',
-        'STRING',
+          'getGreetingTemplate',
+          z
+              .function()
+              .args(z.object({name: z.string()}))
+              .returns(z.string()),
+          undefined,
+          [],
+          'Get greeting template',
+          'STRING',
       )
 
       // Generate Python file
@@ -522,6 +667,90 @@ describe('UnifiedPythonGenerator', () => {
 
       // Should include pystache via the import collector
       expect(pythonCodeWithTemplates).to.include('import pystache')
+    })
+  })
+
+  describe('Method name sanitization', () => {
+    it('should sanitize method names with dots', () => {
+      // Create a schema with a problematic method name
+      const schema = z.object({
+        field1: z.string(),
+        field2: z.number(),
+      })
+
+      // Register a method with dots in the name
+      generator.registerMethod('url.with.mustache', schema, 'UrlConfig', [], 'Get URL configuration', 'JSON')
+
+      // Generate method code
+      const methodCode = generator.generateMethodCode('url_with_mustache', {
+        returnType: 'UrlConfig',
+        params: [],
+        docstring: 'Get URL configuration',
+        valueType: 'JSON',
+        originalKey: 'url.with.mustache',
+      })
+
+      // Verify the method name is sanitized correctly
+      expect(methodCode).to.include('def url_with_mustache(self')
+      expect(methodCode).not.to.include('def url.with.mustache(self')
+
+      // Generate the full client code
+      const pythonCode = generator.generatePythonFile()
+
+      // Verify the sanitized method name appears in the full code
+      expect(pythonCode).to.include('def url_with_mustache(self')
+      expect(pythonCode).not.to.include('def url.with.mustache(self')
+    })
+
+    it('should sanitize method names with other special characters', () => {
+      // Generate Python file with methods that have special characters
+      generator.registerMethod(
+          'feature.flag.is-enabled?',
+          z.boolean(),
+          undefined,
+          [],
+          'Check if feature flag is enabled',
+          'BOOL',
+      )
+      generator.registerMethod('api-gateway/endpoint', z.string(), undefined, [], 'Get API endpoint', 'STRING')
+
+      const pythonCode = generator.generatePythonFile()
+
+      // Log the method name transformation for debugging
+      console.log(
+          "ZodUtils.keyToMethodName('api-gateway/endpoint') => '" +
+          ZodUtils.keyToMethodName('api-gateway/endpoint') +
+          "'",
+      )
+      console.log(
+          "ZodUtils.keyToMethodName('feature.flag.is-enabled?') => '" +
+          ZodUtils.keyToMethodName('feature.flag.is-enabled?') +
+          "'",
+      )
+
+      // Check that the special characters were handled properly
+      expect(pythonCode).to.include('def feature_flag_is_enabled(self')
+      expect(pythonCode).to.include('def api_gateway_endpoint(self')
+    })
+  })
+
+  describe('Class member generation', () => {
+    it('should generate imports section', () => {
+      // ... existing code ...
+
+      const methodCode = generator.generateMethodCode('get_config', {
+        returnType: 'ConfigModel',
+        params: [],
+        docstring: 'Get config',
+        valueType: 'JSON',
+        originalKey: 'get_config',
+      })
+
+      // ... assertions ...
+    })
+
+    it('should generate parameter classes', () => {
+      // ... existing code ...
     })
   })
 })

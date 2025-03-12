@@ -1,7 +1,7 @@
-import { expect, test } from '@oclif/test'
+import {expect, test} from '@oclif/test'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import {fileURLToPath} from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -19,7 +19,7 @@ describe('generate', () => {
   test
     .stdout()
     .command(['generate'])
-    .it('runs generate without flags', ctx => {
+    .it('runs generate without flags', (ctx) => {
       // Updated to match the new default behavior (typescript is the default language)
       expect(ctx.stdout).to.include('Generating typescript code for configs')
     })
@@ -27,28 +27,28 @@ describe('generate', () => {
   test
     .stdout()
     .command(['generate', '--lang', 'typescript'])
-    .it('generates TypeScript definitions', ctx => {
+    .it('generates TypeScript definitions', (ctx) => {
       expect(ctx.stdout).to.include('Generating typescript code for configs')
     })
 
   test
     .stdout()
     .command(['gen', '--lang', 'typescript'])
-    .it('works with gen alias', ctx => {
+    .it('works with gen alias', (ctx) => {
       expect(ctx.stdout).to.include('Generating typescript code for configs')
     })
 
   test
     .stdout()
     .command(['generate', '--lang', 'python'])
-    .it('generates Python code', ctx => {
+    .it('generates Python code', (ctx) => {
       expect(ctx.stdout).to.include('Generating python code for configs')
     })
 
   test
     .stdout()
     .command(['generate', '--lang', 'invalid'])
-    .catch(error => {
+    .catch((error) => {
       expect(error.message).to.include('Unsupported language: invalid')
     })
     .it('handles invalid languages')

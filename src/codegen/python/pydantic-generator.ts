@@ -250,7 +250,7 @@ export class UnifiedPythonGenerator {
       paramClassName?: string
     }
   > = new Map()
-  protected paramClasses: Map<string, { fields: Array<{ name: string, type: string }> }> = new Map()
+  protected paramClasses: Map<string, {fields: Array<{name: string; type: string}>}> = new Map()
 
   constructor(private options: UnifiedGeneratorOptions = {}) {
     // Add base imports for the client
@@ -346,17 +346,17 @@ export class UnifiedPythonGenerator {
     // Register the return type schema, passing along the valueType
     const derivedSchemaName = schemaName || this.deriveSchemaNameFromMethod(methodName)
     const returnType = this.registerModel(returnSchema, derivedSchemaName, valueType)
-    
+
     // Check if this is a template function (has template parameters)
     const templateParams = ZodUtils.paramsOf(returnSchema)
     let hasTemplateParams = false
     let paramClassName: string | undefined = undefined
-    
+
     if (templateParams && isZodType(templateParams)) {
       hasTemplateParams = true
       // Generate a parameter class for the template parameters
       paramClassName = this.generateParamClass(methodName, templateParams)
-      
+
       // Add pystache import for template rendering
       this.imports.addStandardImport('pystache')
     }
@@ -368,7 +368,7 @@ export class UnifiedPythonGenerator {
       docstring: docstring || `Get ${derivedSchemaName}`,
       valueType,
       hasTemplateParams,
-      paramClassName
+      paramClassName,
     })
   }
 
@@ -378,35 +378,35 @@ export class UnifiedPythonGenerator {
   public generateParamClass(methodName: string, paramsSchema: z.ZodTypeAny): string {
     // Generate a class name based on the method name
     const className = `${this.deriveSchemaNameFromMethod(methodName)}Params`
-    
+
     // Only process object schemas
     if (paramsSchema instanceof z.ZodObject) {
       const typeDef = getTypeDef(paramsSchema)
       const shape = typeDef.shape ? typeDef.shape() : {}
-      
-      const fields: Array<{ name: string, type: string }> = []
-      
+
+      const fields: Array<{name: string; type: string}> = []
+
       // Process each field in the parameters schema
       for (const [fieldName, fieldSchema] of Object.entries(shape)) {
         if (isZodType(fieldSchema)) {
           const fieldType = this.getPydanticType(fieldSchema)
-          fields.push({ name: fieldName, type: fieldType })
+          fields.push({name: fieldName, type: fieldType})
         }
       }
-      
+
       // Store the parameter class information
-      this.paramClasses.set(className, { fields })
-      
+      this.paramClasses.set(className, {fields})
+
       return className
     }
-    
+
     // For non-object schemas, create a wrapper class with a single value field
     const singleParamClassName = `${this.deriveSchemaNameFromMethod(methodName)}Param`
     const valueType = this.getPydanticType(paramsSchema)
-    this.paramClasses.set(singleParamClassName, { 
-      fields: [{ name: 'value', type: valueType }] 
+    this.paramClasses.set(singleParamClassName, {
+      fields: [{name: 'value', type: valueType}],
     })
-    
+
     return singleParamClassName
   }
 
@@ -421,7 +421,7 @@ export class UnifiedPythonGenerator {
     if (needsJson) {
       imports.push('import json')
     }
-    
+
     // Always add typing imports for proper method signatures
     imports.push(`from typing import ${typingImports.sort().join(', ')}`)
 
@@ -431,7 +431,7 @@ export class UnifiedPythonGenerator {
 
     // Add the import collector's imports
     pythonCode += this.imports.getImportSection() + '\n\n'
-    
+
     // Add parameter classes if we have any
     if (this.paramClasses.size > 0) {
       pythonCode += this.generateParamClasses() + '\n'
@@ -447,28 +447,28 @@ export class UnifiedPythonGenerator {
 
     return pythonCode
   }
-  
+
   /**
    * Generate parameter classes for template parameters
    */
   public generateParamClasses(): string {
     let result = ''
-    
+
     for (const [className, classInfo] of this.paramClasses.entries()) {
       result += `@dataclass\nclass ${className}:\n`
-      
+
       if (classInfo.fields.length === 0) {
         result += '    pass\n\n'
         continue
       }
-      
+
       for (const field of classInfo.fields) {
         result += `    ${field.name}: ${field.type}\n`
       }
-      
+
       result += '\n'
     }
-    
+
     return result
   }
 
@@ -523,32 +523,30 @@ export class UnifiedPythonGenerator {
         ),
       )
     }
-    
+
     // Add template parameters if needed
     if (spec.hasTemplateParams && spec.paramClassName) {
       paramsList.push(`params: Optional[${spec.paramClassName}] = None`)
     }
-    
+
     // Use proper type annotations for context and default
     paramsList.push('context: Optional[Union[dict, Context]] = None')
     paramsList.push(`default: Optional[${spec.returnType}] = None`)
     const paramsDef = paramsList.join(', ')
 
     // Build parameter documentation
-    let paramsDoc = [
-      ...spec.params.map((p) => `            ${p.name}: Description of ${p.name}`),
-    ]
-    
+    let paramsDoc = [...spec.params.map((p) => `            ${p.name}: Description of ${p.name}`)]
+
     if (spec.hasTemplateParams) {
       paramsDoc.push(`            params: Parameters for template rendering`)
     }
-    
+
     paramsDoc = [
       ...paramsDoc,
       '            context: Optional context for the config lookup',
       `            default: Optional default value to return if config lookup fails or doesn\'t match expected type`,
     ]
-    
+
     const paramsDocStr = paramsDoc.join('\n')
 
     // Create additional return value documentation for template methods
@@ -560,13 +558,13 @@ export class UnifiedPythonGenerator {
 
     // Determine if return type is a basic type
     const isBasicType = ['str', 'int', 'float', 'bool', 'datetime.datetime', 'List[str]'].includes(spec.returnType)
-    
+
     // Generate value extraction with template support
     const valueExtraction = this.generateValueExtraction(
-      spec.returnType, 
-      isBasicType, 
-      spec.valueType, 
-      spec.hasTemplateParams
+      spec.returnType,
+      isBasicType,
+      spec.valueType,
+      spec.hasTemplateParams,
     )
 
     // Generate the method code
@@ -597,16 +595,16 @@ ${valueExtraction}
    * Generate value extraction code based on return type and value type
    */
   public generateValueExtraction(
-    returnType: string, 
-    isBasicType: boolean, 
+    returnType: string,
+    isBasicType: boolean,
     valueType?: string,
-    hasTemplateParams?: boolean
+    hasTemplateParams?: boolean,
   ): string {
     // String extraction with template support
     if (returnType === 'str' || (valueType && valueType.toUpperCase() === 'STRING')) {
       const extraction = `            if config_value.HasField('string'):
                 raw = config_value.string`
-      
+
       if (hasTemplateParams) {
         return `${extraction}
                 return pystache.render(raw, params.__dict__) if params else raw`
@@ -614,7 +612,7 @@ ${valueExtraction}
       return `${extraction}
                 return raw`
     }
-    
+
     // For other basic types, use the existing extraction logic
     if (isBasicType) {
       // Use valueType to determine which field to extract, then fall back to type-based inference
@@ -953,7 +951,7 @@ ${valueExtraction}
     neededImports.add('import logging')
     neededImports.add('from prefab_cloud_python import Client, Context')
     neededImports.add('from prefab_cloud_python.client import ConfigValue')
-    
+
     // Add dataclasses if we have parameter classes
     if (this.paramClasses.size > 0) {
       neededImports.add('from dataclasses import dataclass')
@@ -1088,7 +1086,7 @@ export function example(): void {
     [{name: 'environment', type: 'str', default: '"production"'}],
     'Get connection configuration for the specified environment',
   )
-  
+
   // Generate the file
   generator.writeToFile()
 }
@@ -1123,16 +1121,19 @@ export function exampleWithTemplate(): void {
     [{name: 'environment', type: 'str', default: '"production"'}],
     'Get connection configuration for the specified environment',
   )
-  
+
   // Register a template method using Mustache
-  const templateSchema = z.function()
-    .args(z.object({
-      name: z.string(),
-      company: z.string(),
-    }))
+  const templateSchema = z
+    .function()
+    .args(
+      z.object({
+        name: z.string(),
+        company: z.string(),
+      }),
+    )
     .returns(z.string())
     .describe('GreetingTemplate')
-    
+
   // Register the template method
   generator.registerMethod(
     'getGreetingTemplate',
@@ -1140,7 +1141,7 @@ export function exampleWithTemplate(): void {
     undefined,
     [],
     'Get a greeting template that can be rendered with a name and company',
-    'STRING' // Set the valueType to STRING
+    'STRING', // Set the valueType to STRING
   )
 
   // Generate the file
@@ -1151,7 +1152,7 @@ export function exampleWithTemplate(): void {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   console.log('Running example without templates...')
   example()
-  
+
   console.log('Running example with templates...')
   exampleWithTemplate()
 }

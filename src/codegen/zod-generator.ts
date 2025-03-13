@@ -2,13 +2,13 @@ import Mustache from 'mustache'
 import fs from 'node:fs'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
-import {ZodTypeAny} from 'zod'
-
 import type {Config, ConfigFile} from './types.js'
 
-import {doStuff} from './python/generator.js'
 import {SchemaInferrer} from './schema-inferrer.js'
 import {ZodUtils} from './zod-utils.js'
+
+import {generatePythonClientCode} from './python/generator.js'
+import {ZodTypeAny} from 'zod'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -56,11 +56,11 @@ export class ZodGenerator {
   /**
    * Generate code for the specified language
    */
-  generate(language: SupportedLanguage = SupportedLanguage.TypeScript): string {
+  generate(language: SupportedLanguage = SupportedLanguage.TypeScript, className?: string): string {
     console.log(`Generating ${language} code for configs...`)
 
     if (language === SupportedLanguage.Python) {
-      return doStuff(this.configFile, this.schemaInferrer)
+      return generatePythonClientCode(this.configFile, this.schemaInferrer, className || 'PrefabTypedClient')
     }
 
     // Get base template for the framework

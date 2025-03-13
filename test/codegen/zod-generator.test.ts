@@ -19,6 +19,7 @@ describe('ZodGenerator', () => {
   let mockObjectWithPlaceholderConfig: Config
   let mockObjectWithPlaceholderConfigMultiValue: Config
   let mockTemplateConfig: Config
+  let mockDurationConfig: Config
 
   beforeEach(() => {
     // Create a boolean feature flag config
@@ -72,6 +73,23 @@ describe('ZodGenerator', () => {
         },
       ],
       valueType: 'JSON',
+    }
+
+    mockDurationConfig = {
+      configType: 'CONFIG',
+      key: 'example.config.duration',
+      rows: [
+        {
+          values: [
+            {
+              value: {
+                duration: 'P1h30s',
+              },
+            },
+          ],
+        },
+      ],
+      valueType: 'DURATION',
     }
 
     mockObjectWithPlaceholderConfig = {
@@ -166,6 +184,17 @@ describe('ZodGenerator', () => {
       expect(accessorMethod.key).to.equal('example.config.string')
       expect(accessorMethod.isFunctionReturn).to.be.false
       expect(accessorMethod.returnType).to.equal('string')
+      expect(accessorMethod.returnValue).to.equal('raw')
+    })
+
+    it('should generate a duration accessor method correctly', () => {
+      const generator = new ZodGenerator(mockConfigFile)
+      const accessorMethod = generator.generateAccessorMethod(mockDurationConfig, SupportedLanguage.TypeScript)
+
+      expect(accessorMethod.methodName).to.equal('exampleConfigDuration')
+      expect(accessorMethod.key).to.equal('example.config.duration')
+      expect(accessorMethod.isFunctionReturn).to.be.false
+      expect(accessorMethod.returnType).to.equal('PrefabDuration')
       expect(accessorMethod.returnValue).to.equal('raw')
     })
 

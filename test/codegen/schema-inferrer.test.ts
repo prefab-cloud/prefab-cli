@@ -3,7 +3,7 @@ import {z} from 'zod'
 
 import type {Config, ConfigFile} from '../../src/codegen/types.js'
 
-import {SchemaInferrer} from '../../src/codegen/schema-inferrer.js'
+import {PrefabDurationSchema, SchemaInferrer} from '../../src/codegen/schema-inferrer.js'
 import {ZodUtils} from '../../src/codegen/zod-utils.js'
 
 describe('SchemaInferrer', () => {
@@ -60,6 +60,23 @@ describe('SchemaInferrer', () => {
       const result = inferrer.infer(config, configFile)
       expect(result).to.be.instanceOf(z.ZodString)
       expect(ZodUtils.zodToString(result)).to.equal('z.string()')
+    })
+
+    it('should infer from a duration', () => {
+      const config: Config = {
+        configType: 'CONFIG',
+        key: 'test',
+        rows: [{values: [{value: {duration: 'P1h30s'}}]}],
+        valueType: 'DURATION',
+      }
+      const configFile: ConfigFile = {
+        configs: [config],
+      }
+
+      const result = inferrer.infer(config, configFile)
+      expect(result).to.be.instanceOf(z.ZodBranded)
+      expect(result.description).to.equal('PrefabDurationSchema')
+      expect(ZodUtils.zodToString(result)).to.equal('PrefabDurationSchema')
     })
 
     it('should infer from a template string', () => {

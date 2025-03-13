@@ -6,6 +6,15 @@ import { z } from "zod";
 
 import Mustache from 'mustache';
 
+const PrefabDurationSchema = z
+  .object({
+    seconds: z.number(),
+    ms: z.number(),
+  })
+  .describe("PrefabDurationSchema");
+
+type PrefabDuration = z.infer<typeof PrefabDurationSchema>;
+
 // Generated parameter schemas for methods that use Mustache templates
 {{#accessorMethods}}
 {{#paramsSchema}}

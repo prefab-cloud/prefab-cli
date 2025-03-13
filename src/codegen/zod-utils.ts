@@ -433,6 +433,10 @@ export const ZodUtils = {
       return `z.object({${props}})`
     }
 
+    if (def.typeName === 'ZodBranded') {
+      return def.description
+    }
+
     console.warn('Unknown zod type:', schema)
     return 'z.any()'
   },

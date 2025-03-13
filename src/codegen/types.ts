@@ -11,6 +11,7 @@ export interface ConfigValue {
       schemaType: string
     }
     string?: string
+    duration?: string
   }
 }
 

@@ -104,15 +104,20 @@ export class ZodGenerator {
    */
   generateAccessorMethod(config: Config, language: SupportedLanguage): AccessorMethod {
     const schemaObj = this.schemaInferrer.infer(config, this.configFile)
-    const returnValue = ZodUtils.generateReturnValueCode(schemaObj, '', language)
+    let returnValue = ZodUtils.generateReturnValueCode(schemaObj, '', language)
 
     const paramsSchema = ZodUtils.paramsOf(schemaObj)
     const params = paramsSchema ? ZodUtils.zodTypeToTypescript(paramsSchema) : ''
     // For function return types, they should return a function taking params
     const isFunction = schemaObj._def.typeName === 'ZodFunction'
-    const returnType = isFunction
+    let returnType = isFunction
       ? ZodUtils.zodTypeToTypescript(schemaObj._def.returns)
       : ZodUtils.zodTypeToTypescript(schemaObj)
+
+    if (config.valueType === 'DURATION') {
+      returnValue = 'raw'
+      returnType = 'PrefabDuration'
+    }
 
     return {
       isFunctionReturn: isFunction,

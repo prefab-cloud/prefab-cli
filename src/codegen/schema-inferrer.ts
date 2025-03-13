@@ -8,6 +8,13 @@ import {MustacheExtractor} from './mustache-extractor.js'
 import {secureEvaluateSchema} from './schema-evaluator.js'
 import {ZodUtils} from './zod-utils.js'
 
+export const PrefabDurationSchema = z
+  .object({
+    definition: z.string(),
+  })
+  .describe('PrefabDurationSchema')
+  .brand<'PrefabDurationSchema'>()
+
 export class SchemaInferrer {
   private jsonToInferredZod = (data: unknown): ZodTypeAny => {
     if (Array.isArray(data)) {
@@ -403,7 +410,7 @@ export class SchemaInferrer {
       }
 
       case 'DURATION': {
-        return z.string().duration()
+        return PrefabDurationSchema
       }
 
       case 'JSON': {

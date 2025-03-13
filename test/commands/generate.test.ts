@@ -40,6 +40,13 @@ describe('generate', () => {
 
   test
     .stdout()
+    .command(['generate', '--lang', 'react'])
+    .it('generates React TypeScript definitions', (ctx) => {
+      expect(ctx.stdout).to.include('Generating react code for configs')
+    })
+
+  test
+    .stdout()
     .command(['generate', '--lang', 'python'])
     .it('generates Python code', (ctx) => {
       expect(ctx.stdout).to.include('Generating python code for configs')

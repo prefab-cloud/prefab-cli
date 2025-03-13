@@ -511,8 +511,12 @@ export class UnifiedPythonGenerator {
       for (const [fieldName, fieldSchema] of Object.entries(shape)) {
         if (isZodType(fieldSchema)) {
           const fieldType = this.getPydanticType(fieldSchema)
-          // Convert field name directly to Python snake_case
-          const pythonFieldName = this.toPythonMethodName(fieldName)
+
+          // IMPORTANT: For Pystache template parameters, we must preserve the exact
+          // field names for the template to work properly.
+          // Do NOT convert the field names to snake_case or any other format.
+          const pythonFieldName = fieldName
+
           fields.push({name: pythonFieldName, type: fieldType})
         }
       }

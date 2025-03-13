@@ -32,7 +32,7 @@ export default class Generate extends APICommand {
 
   public async run(): Promise<JsonObj | void> {
     const {flags} = await this.parse(Generate)
-    
+
     console.log('=== GENERATE COMMAND START ===')
     console.log('API Key:', this.rawApiClient ? 'Set (hidden)' : 'Not set')
     console.log('Environment:', this.currentEnvironment)
@@ -42,10 +42,10 @@ export default class Generate extends APICommand {
 
     // Get the language from the flag, using lowercase to ensure consistency
     const langInput = flags.lang?.toLowerCase()
-    
+
     // Map the input string to the appropriate enum value
     let language: SupportedLanguage
-    
+
     if (langInput === 'python') {
       language = SupportedLanguage.Python
     } else if (langInput === 'typescript') {

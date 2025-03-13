@@ -7,6 +7,7 @@ import * as path from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {z} from 'zod'
 import {ZodUtils} from '../zod-utils.js'
+import {camelCase} from 'change-case'
 
 // Type definitions with all required properties
 type ZodTypeDef = {
@@ -240,15 +241,16 @@ export class UnifiedPythonGenerator {
   protected imports: ImportCollector = new ImportCollector()
   protected models: Map<string, string> = new Map()
   protected methods: Map<
-    string,
-    {
-      returnType: string
-      params: MethodParam[]
-      docstring: string
-      valueType?: string
-      hasTemplateParams?: boolean
-      paramClassName?: string
-    }
+      string,
+      {
+        returnType: string
+        params: MethodParam[]
+        docstring: string
+        valueType?: string
+        hasTemplateParams?: boolean
+        paramClassName?: string
+        originalKey: string
+      }
   > = new Map()
   protected paramClasses: Map<string, {fields: Array<{name: string; type: string}>}> = new Map()
 
@@ -300,9 +302,9 @@ export class UnifiedPythonGenerator {
       if (typeDef.type && isZodType(typeDef.type)) {
         // Check if the element type is a basic type
         if (
-          typeDef.type instanceof z.ZodString ||
-          typeDef.type instanceof z.ZodNumber ||
-          typeDef.type instanceof z.ZodBoolean
+            typeDef.type instanceof z.ZodString ||
+            typeDef.type instanceof z.ZodNumber ||
+            typeDef.type instanceof z.ZodBoolean
         ) {
           const elementType = this.registerModel(typeDef.type, 'Element')
           this.imports.addTypingImport('List')
@@ -333,42 +335,161 @@ export class UnifiedPythonGenerator {
   }
 
   /**
+   * Check if a schema or any of its nested properties contain template functions
+   */
+  private hasNestedTemplateFunctions(schema: z.ZodTypeAny): boolean {
+    // Check if this is a ZodObject that might contain nested template functions
+    if (schema instanceof z.ZodObject) {
+      const shape = (schema as any)._def.shape()
+      // Check each property
+      for (const propKey of Object.keys(shape)) {
+        const propSchema = shape[propKey]
+        // If this property is a template function
+        if (ZodUtils.paramsOf(propSchema)) {
+          return true
+        }
+        // Recursively check nested objects
+        if (propSchema instanceof z.ZodObject && this.hasNestedTemplateFunctions(propSchema)) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
+  /**
+   * Collects all template parameters from nested template functions
+   * and combines them into a single schema
+   */
+  protected collectAllTemplateParams(schema: z.ZodTypeAny): z.ZodTypeAny | undefined {
+    if (!(schema instanceof z.ZodObject)) {
+      return undefined
+    }
+
+    const shape = (schema as any)._def.shape()
+    const allParams: Record<string, z.ZodTypeAny> = {}
+
+    // Collect parameters from properties
+    for (const propKey of Object.keys(shape)) {
+      const propSchema = shape[propKey]
+
+      // Check direct template parameters
+      const propParams = ZodUtils.paramsOf(propSchema)
+      if (propParams && isZodType(propParams)) {
+        if (propParams instanceof z.ZodObject) {
+          const propParamsShape = (propParams as any)._def.shape()
+          // Add all parameters from this property
+          for (const paramKey of Object.keys(propParamsShape)) {
+            // Create a field name by directly using toPythonMethodName on the combined string
+            const fieldName = this.toPythonMethodName(`${propKey} ${paramKey}`)
+            allParams[fieldName] = propParamsShape[paramKey]
+          }
+        } else {
+          // If it's not an object schema, use the whole property as a parameter
+          allParams[this.toPythonMethodName(propKey)] = propParams
+        }
+      }
+
+      // Check recursively for nested objects
+      if (propSchema instanceof z.ZodObject) {
+        const nestedParams = this.collectAllTemplateParams(propSchema)
+        if (nestedParams && nestedParams instanceof z.ZodObject) {
+          const nestedShape = (nestedParams as any)._def.shape()
+          // Add all nested parameters with prefixed keys
+          for (const nestedKey of Object.keys(nestedShape)) {
+            // Create a field name by directly using toPythonMethodName on the combined string
+            const fieldName = this.toPythonMethodName(`${propKey} ${nestedKey}`)
+            allParams[fieldName] = nestedShape[nestedKey]
+          }
+        }
+      }
+    }
+
+    // If we found any parameters, create a new object schema with them
+    if (Object.keys(allParams).length > 0) {
+      return z.object(allParams)
+    }
+
+    return undefined
+  }
+
+  /**
+   * Convert JavaScript-style method name to Python snake_case
+   * This is an additional step after ZodUtils.keyToMethodName
+   */
+  private toPythonMethodName(methodName: string): string {
+    // First, normalize the input by replacing any existing underscores or sequences
+    // of special characters with a single space
+    const normalized = methodName.replace(/[^a-zA-Z0-9]+/g, ' ').trim()
+
+    // Then split by capital letters and spaces
+    const parts = normalized
+        .split(/(?=[A-Z])|(?:\s+)/g)
+        .filter((part) => part.length > 0) // Filter out empty parts
+        .map((part) => part.toLowerCase()) // Convert all to lowercase
+
+    // Join with underscores to create snake_case
+    return parts.join('_')
+  }
+
+  /**
    * Register a method that returns a Pydantic model
    */
   registerMethod(
-    methodName: string,
-    returnSchema: z.ZodTypeAny,
-    schemaName?: string,
-    params: MethodParam[] = [],
-    docstring?: string,
-    valueType?: string,
+      methodName: string,
+      returnSchema: z.ZodTypeAny,
+      schemaName?: string,
+      params: MethodParam[] = [],
+      docstring?: string,
+      valueType?: string,
   ): void {
+    // First convert to valid identifier using standard utility
+    const validIdentifier = ZodUtils.keyToMethodName(methodName)
+
+    // Then convert to Python snake_case
+    const pythonMethodName = this.toPythonMethodName(validIdentifier)
+
     // Register the return type schema, passing along the valueType
-    const derivedSchemaName = schemaName || this.deriveSchemaNameFromMethod(methodName)
+    const derivedSchemaName = schemaName || this.deriveSchemaNameFromMethod(pythonMethodName)
     const returnType = this.registerModel(returnSchema, derivedSchemaName, valueType)
 
     // Check if this is a template function (has template parameters)
-    const templateParams = ZodUtils.paramsOf(returnSchema)
+    // or if it contains nested template functions
     let hasTemplateParams = false
     let paramClassName: string | undefined = undefined
 
+    // First check direct template parameters (for function schemas)
+    const templateParams = ZodUtils.paramsOf(returnSchema)
     if (templateParams && isZodType(templateParams)) {
       hasTemplateParams = true
       // Generate a parameter class for the template parameters
-      paramClassName = this.generateParamClass(methodName, templateParams)
+      paramClassName = this.generateParamClass(pythonMethodName, templateParams)
+    }
+    // Then check for nested template functions in object properties
+    else if (this.hasNestedTemplateFunctions(returnSchema)) {
+      hasTemplateParams = true
 
-      // Add pystache import for template rendering
+      // Get all template parameters from nested functions
+      const allParams = this.collectAllTemplateParams(returnSchema)
+      if (allParams) {
+        paramClassName = this.generateParamClass(pythonMethodName, allParams)
+      }
+    }
+
+    // Add pystache import for template rendering if needed
+    if (hasTemplateParams) {
       this.imports.addStandardImport('pystache')
     }
 
-    // Store the method spec
-    this.methods.set(methodName, {
+    // Store the method spec with the original key
+    this.methods.set(pythonMethodName, {
       returnType,
       params,
       docstring: docstring || `Get ${derivedSchemaName}`,
       valueType,
       hasTemplateParams,
       paramClassName,
+      originalKey: methodName,
     })
   }
 
@@ -390,7 +511,9 @@ export class UnifiedPythonGenerator {
       for (const [fieldName, fieldSchema] of Object.entries(shape)) {
         if (isZodType(fieldSchema)) {
           const fieldType = this.getPydanticType(fieldSchema)
-          fields.push({name: fieldName, type: fieldType})
+          // Convert field name directly to Python snake_case
+          const pythonFieldName = this.toPythonMethodName(fieldName)
+          fields.push({name: pythonFieldName, type: fieldType})
         }
       }
 
@@ -504,23 +627,24 @@ export class UnifiedPythonGenerator {
    * Generate code for a single method
    */
   public generateMethodCode(
-    methodName: string,
-    spec: {
-      returnType: string
-      params: MethodParam[]
-      docstring: string
-      valueType?: string
-      hasTemplateParams?: boolean
-      paramClassName?: string
-    },
+      methodName: string,
+      spec: {
+        returnType: string
+        params: MethodParam[]
+        docstring: string
+        valueType?: string
+        hasTemplateParams?: boolean
+        paramClassName?: string
+        originalKey: string
+      },
   ): string {
     // Build the parameter definition with properly typed context and default
     const paramsList = ['self']
     if (spec.params.length > 0) {
       paramsList.push(
-        ...spec.params.map((p) =>
-          p.default !== undefined ? `${p.name}: ${p.type} = ${p.default}` : `${p.name}: ${p.type}`,
-        ),
+          ...spec.params.map((p) =>
+              p.default !== undefined ? `${p.name}: ${p.type} = ${p.default}` : `${p.name}: ${p.type}`,
+          ),
       )
     }
 
@@ -557,17 +681,17 @@ export class UnifiedPythonGenerator {
     }
 
     // Determine if return type is a basic type
-    const isBasicType = ['str', 'int', 'float', 'bool', 'datetime.datetime', 'List[str]'].includes(spec.returnType)
+    const isBasicType = this.isBasicType(spec.returnType)
 
     // Generate value extraction with template support
     const valueExtraction = this.generateValueExtraction(
-      spec.returnType,
-      isBasicType,
-      spec.valueType,
-      spec.hasTemplateParams,
+        spec.returnType,
+        isBasicType,
+        spec.valueType,
+        spec.hasTemplateParams,
     )
 
-    // Generate the method code
+    // Generate the method code using the original key for config lookup
     return `
     def ${methodName}(${paramsDef}) -> ${spec.returnType}:
         """
@@ -580,13 +704,13 @@ ${paramsDocStr}
             ${returnTypeDocStr}
         """
         try:
-            config_value = self.get("${methodName}", context=context)
+            config_value = self.get("${spec.originalKey}", context=context)
             if config_value is None:
                 return default
 ${valueExtraction}
             return default
         except Exception as e:
-            logger.warning(f"Error getting config '${methodName}': {e}")
+            logger.warning(f"Error getting config '${spec.originalKey}': {e}")
             return default
 `
   }
@@ -595,10 +719,10 @@ ${valueExtraction}
    * Generate value extraction code based on return type and value type
    */
   public generateValueExtraction(
-    returnType: string,
-    isBasicType: boolean,
-    valueType?: string,
-    hasTemplateParams?: boolean,
+      returnType: string,
+      isBasicType: boolean,
+      valueType?: string,
+      hasTemplateParams?: boolean,
   ): string {
     // String extraction with template support
     if (returnType === 'str' || (valueType && valueType.toUpperCase() === 'STRING')) {
@@ -631,8 +755,29 @@ ${valueExtraction}
             return `            if config_value.HasField('string_list'):
                 return config_value.string_list.values`
           case 'JSON':
-            return `            if config_value.HasField('json'):
+            if (hasTemplateParams) {
+              // JSON with template parameters needs special handling
+              return `            if config_value.HasField('json'):
+                raw = json.loads(config_value.json.json)
+                if params:
+                    # Process template strings in the JSON object
+                    result = {}
+                    # Handle each field in the JSON object, rendering templates as needed
+                    for key, value in raw.items():
+                        if isinstance(value, str):
+                            # If it's a string, it might be a template
+                            result[key] = pystache.render(value, params.__dict__)
+                        else:
+                            # If it's not a string, keep it as is
+                            result[key] = value
+                    return result
+                else:
+                    # If no params provided, return the raw JSON
+                    return raw`
+            } else {
+              return `            if config_value.HasField('json'):
                 return json.loads(config_value.json.json) if returnType == 'dict' else config_value.json.json`
+            }
           case 'DURATION':
             if (returnType === 'datetime.timedelta') {
               return `            if config_value.HasField('duration'):
@@ -673,6 +818,62 @@ ${valueExtraction}
     } else {
       // For complex types, use valueType if available to determine the field
       if (valueType && valueType.toUpperCase() === 'JSON') {
+        if (hasTemplateParams) {
+          // Handle complex type with JSON containing templates
+          return `            if config_value.HasField('json'):
+                try:
+                    data = json.loads(config_value.json.json)
+                    if params:
+                        # Process template strings in the JSON object
+                        result = {}
+                        # Handle each field in the JSON object, rendering templates as needed
+                        for key, value in data.items():
+                            if isinstance(value, str):
+                                # If it's a string, it might be a template
+                                result[key] = pystache.render(value, params.__dict__)
+                            else:
+                                # If it's not a string, keep it as is
+                                result[key] = value
+                        return ${returnType}(**result)
+                    else:
+                        # If no params provided, return the raw JSON converted to the model
+                        return ${returnType}(**data)
+                except (json.JSONDecodeError, ValidationError) as e:
+                    logger.warning(f"Failed to parse JSON config value as {${returnType}.__name__}: {e}")`
+        } else {
+          return `            if config_value.HasField('json'):
+                try:
+                    data = json.loads(config_value.json.json)
+                    return ${returnType}(**data)
+                except (json.JSONDecodeError, ValidationError) as e:
+                    logger.warning(f"Failed to parse JSON config value as {${returnType}.__name__}: {e}")`
+        }
+      }
+
+      // Default to checking JSON field
+      if (hasTemplateParams) {
+        // Handle complex type with JSON containing templates (default case)
+        return `            if config_value.HasField('json'):
+                try:
+                    data = json.loads(config_value.json.json)
+                    if params:
+                        # Process template strings in the JSON object
+                        result = {}
+                        # Handle each field in the JSON object, rendering templates as needed
+                        for key, value in data.items():
+                            if isinstance(value, str):
+                                # If it's a string, it might be a template
+                                result[key] = pystache.render(value, params.__dict__)
+                            else:
+                                # If it's not a string, keep it as is
+                                result[key] = value
+                        return ${returnType}(**result)
+                    else:
+                        # If no params provided, return the raw JSON converted to the model
+                        return ${returnType}(**data)
+                except (json.JSONDecodeError, ValidationError) as e:
+                    logger.warning(f"Failed to parse JSON config value as {${returnType}.__name__}: {e}")`
+      } else {
         return `            if config_value.HasField('json'):
                 try:
                     data = json.loads(config_value.json.json)
@@ -680,14 +881,6 @@ ${valueExtraction}
                 except (json.JSONDecodeError, ValidationError) as e:
                     logger.warning(f"Failed to parse JSON config value as {${returnType}.__name__}: {e}")`
       }
-
-      // Default to checking JSON field
-      return `            if config_value.HasField('json'):
-                try:
-                    data = json.loads(config_value.json.json)
-                    return ${returnType}(**data)
-                except (json.JSONDecodeError, ValidationError) as e:
-                    logger.warning(f"Failed to parse JSON config value as {${returnType}.__name__}: {e}")`
     }
   }
 
@@ -710,7 +903,9 @@ ${valueExtraction}
       for (const [fieldName, fieldSchema] of fields) {
         if (isZodType(fieldSchema)) {
           const fieldType = this.getPydanticType(fieldSchema)
-          modelCode += `    ${fieldName}: ${fieldType}\n`
+          // Ensure field name is a valid Python identifier
+          const safeFieldName = ZodUtils.makeSafeIdentifier(fieldName)
+          modelCode += `    ${safeFieldName}: ${fieldType}\n`
         }
       }
     } else {
@@ -861,10 +1056,10 @@ ${valueExtraction}
   private generateClassName(baseName: string): string {
     // Clean the base name
     const cleanName = baseName
-      .replace(/[^\w\s]/g, '')
-      .replace(/\s+/g, '_')
-      .replace(/(^[a-z])|(_[a-z])/g, (match) => match.toUpperCase())
-      .replace(/_/g, '')
+        .replace(/[^\w\s]/g, '')
+        .replace(/\s+/g, '_')
+        .replace(/(^[a-z])|(_[a-z])/g, (match) => match.toUpperCase())
+        .replace(/_/g, '')
 
     // Add the prefix if specified
     const prefix = this.options.prefixName || ''
@@ -909,7 +1104,7 @@ ${valueExtraction}
   private deriveSchemaNameFromMethod(methodName: string): string {
     // Try to extract a meaningful name from common prefixes
     const prefixMatches = methodName.match(
-      /^(?:get|fetch|retrieve|load)([A-Z][a-zA-Z0-9]*)(?:Config|Schema|Data|Info)?$/,
+        /^(?:get|fetch|retrieve|load)([A-Z][a-zA-Z0-9]*)(?:Config|Schema|Data|Info)?$/,
     )
 
     if (prefixMatches && prefixMatches[1]) {
@@ -925,15 +1120,15 @@ ${valueExtraction}
 
     // Fallback: convert method name to PascalCase
     return methodName
-      .replace(/^[a-z]/, (match) => match.toUpperCase())
-      .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
+        .replace(/^[a-z]/, (match) => match.toUpperCase())
+        .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
   }
 
   /**
-   * Determines if a return type is a basic type
+   * Determines if a Python type is a basic type
    */
-  public isBasicType(returnType: string): boolean {
-    return ['str', 'int', 'float', 'bool', 'datetime.datetime', 'List[str]'].includes(returnType)
+  public isBasicType(typeName: string): boolean {
+    return ['str', 'int', 'float', 'bool', 'datetime.datetime', 'List[str]'].includes(typeName)
   }
 
   /**
@@ -974,10 +1169,10 @@ ${valueExtraction}
     for (const method of this.methods.values()) {
       // Check for timestamp handling methods - force datetime import
       if (
-        method.docstring &&
-        (method.docstring.toLowerCase().includes('timestamp') ||
-          method.docstring.toLowerCase().includes('date') ||
-          method.docstring.toLowerCase().includes('time'))
+          method.docstring &&
+          (method.docstring.toLowerCase().includes('timestamp') ||
+              method.docstring.toLowerCase().includes('date') ||
+              method.docstring.toLowerCase().includes('time'))
       ) {
         needsDatetime = true
       }
@@ -1067,24 +1262,24 @@ export function example(): void {
 
   // Register schemas and methods
   const connectionSchema = z
-    .object({
-      host: z.string(),
-      port: z.number().int().positive(),
-      secure: z.boolean().default(true),
-      timeout: z.string().refine((val) => /^PT\d+[HMS]$/.test(val), {
-        message: 'Must be an ISO 8601 duration',
-      }),
-      retryCount: z.number().int().min(0).max(10),
-    })
-    .describe('Connection')
+      .object({
+        host: z.string(),
+        port: z.number().int().positive(),
+        secure: z.boolean().default(true),
+        timeout: z.string().refine((val) => /^PT\d+[HMS]$/.test(val), {
+          message: 'Must be an ISO 8601 duration',
+        }),
+        retryCount: z.number().int().min(0).max(10),
+      })
+      .describe('Connection')
 
   // Register a method using the schema
   generator.registerMethod(
-    'getConnection',
-    connectionSchema,
-    undefined,
-    [{name: 'environment', type: 'str', default: '"production"'}],
-    'Get connection configuration for the specified environment',
+      'getConnection',
+      connectionSchema,
+      undefined,
+      [{name: 'environment', type: 'str', default: '"production"'}],
+      'Get connection configuration for the specified environment',
   )
 
   // Generate the file
@@ -1102,46 +1297,46 @@ export function exampleWithTemplate(): void {
 
   // Register schemas and methods
   const connectionSchema = z
-    .object({
-      host: z.string(),
-      port: z.number().int().positive(),
-      secure: z.boolean().default(true),
-      timeout: z.string().refine((val) => /^PT\d+[HMS]$/.test(val), {
-        message: 'Must be an ISO 8601 duration',
-      }),
-      retryCount: z.number().int().min(0).max(10),
-    })
-    .describe('Connection')
+      .object({
+        host: z.string(),
+        port: z.number().int().positive(),
+        secure: z.boolean().default(true),
+        timeout: z.string().refine((val) => /^PT\d+[HMS]$/.test(val), {
+          message: 'Must be an ISO 8601 duration',
+        }),
+        retryCount: z.number().int().min(0).max(10),
+      })
+      .describe('Connection')
 
   // Register a method using the schema
   generator.registerMethod(
-    'getConnection',
-    connectionSchema,
-    undefined,
-    [{name: 'environment', type: 'str', default: '"production"'}],
-    'Get connection configuration for the specified environment',
+      'getConnection',
+      connectionSchema,
+      undefined,
+      [{name: 'environment', type: 'str', default: '"production"'}],
+      'Get connection configuration for the specified environment',
   )
 
   // Register a template method using Mustache
   const templateSchema = z
-    .function()
-    .args(
-      z.object({
-        name: z.string(),
-        company: z.string(),
-      }),
-    )
-    .returns(z.string())
-    .describe('GreetingTemplate')
+      .function()
+      .args(
+          z.object({
+            name: z.string(),
+            company: z.string(),
+          }),
+      )
+      .returns(z.string())
+      .describe('GreetingTemplate')
 
   // Register the template method
   generator.registerMethod(
-    'getGreetingTemplate',
-    templateSchema,
-    undefined,
-    [],
-    'Get a greeting template that can be rendered with a name and company',
-    'STRING', // Set the valueType to STRING
+      'getGreetingTemplate',
+      templateSchema,
+      undefined,
+      [],
+      'Get a greeting template that can be rendered with a name and company',
+      'STRING', // Set the valueType to STRING
   )
 
   // Generate the file

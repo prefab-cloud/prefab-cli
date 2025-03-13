@@ -1,0 +1,8 @@
+const PrefabDurationSchema = z
+  .object({
+    seconds: z.number(),
+    ms: z.number(),
+  })
+  .describe("PrefabDurationSchema");
+
+type PrefabDuration = z.infer<typeof PrefabDurationSchema>;

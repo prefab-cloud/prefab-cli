@@ -291,7 +291,7 @@ describe('SchemaInferrer', () => {
       }
 
       const schema = inferrer.infer(jsonConfig, configFile)
-      
+
       // Verify it's an object schema with the expected properties
       expect((schema as any)._def.typeName).to.equal('ZodObject')
       const shape = (schema as z.ZodObject<any>).shape
@@ -310,7 +310,8 @@ describe('SchemaInferrer', () => {
               {
                 value: {
                   schema: {
-                    schema: 'z.object({ username: z.string(), email: z.string().optional(), age: z.number().optional() })',
+                    schema:
+                      'z.object({ username: z.string(), email: z.string().optional(), age: z.number().optional() })',
                     schemaType: 'ZOD',
                   },
                 },
@@ -346,18 +347,18 @@ describe('SchemaInferrer', () => {
       }
 
       const schema = inferrer.infer(jsonConfig, configFile)
-      
+
       // Verify the schema structure
       expect((schema as any)._def.typeName).to.equal('ZodObject')
       const shape = (schema as z.ZodObject<any>).shape
-      
+
       // Required property
       expect((shape.username as any)._def.typeName).to.equal('ZodString')
-      
+
       // Optional properties
       expect((shape.email as any)._def.typeName).to.equal('ZodOptional')
       expect((shape.email as any)._def.innerType._def.typeName).to.equal('ZodString')
-      
+
       expect((shape.age as any)._def.typeName).to.equal('ZodOptional')
       expect((shape.age as any)._def.innerType._def.typeName).to.equal('ZodNumber')
     })
@@ -388,7 +389,7 @@ describe('SchemaInferrer', () => {
       }
 
       const schema = inferrer.infer(jsonConfig, configFile)
-      
+
       // Should fall back to inference
       expect((schema as any)._def.typeName).to.equal('ZodObject')
       const shape = (schema as z.ZodObject<any>).shape
@@ -443,7 +444,7 @@ describe('SchemaInferrer', () => {
       }
 
       const schema = inferrer.infer(jsonConfig, configFile)
-      
+
       // Should fall back to inference
       expect((schema as any)._def.typeName).to.equal('ZodObject')
       const shape = (schema as z.ZodObject<any>).shape
@@ -504,21 +505,21 @@ describe('SchemaInferrer', () => {
       }
 
       const schema = inferrer.infer(jsonConfig, configFile)
-      
+
       // Verify the complex schema structure
       expect((schema as any)._def.typeName).to.equal('ZodObject')
       const shape = (schema as z.ZodObject<any>).shape
-      
+
       expect((shape.name as any)._def.typeName).to.equal('ZodString')
-      
+
       expect((shape.tags as any)._def.typeName).to.equal('ZodArray')
       expect((shape.tags as any)._def.type._def.typeName).to.equal('ZodString')
-      
+
       expect((shape.metadata as any)._def.typeName).to.equal('ZodObject')
       const metadataShape = (shape.metadata as z.ZodObject<any>).shape
       expect((metadataShape.created as any)._def.typeName).to.equal('ZodString')
       expect((metadataShape.modified as any)._def.typeName).to.equal('ZodOptional')
-      
+
       expect((shape.status as any)._def.typeName).to.equal('ZodEnum')
       expect((shape.status as any)._def.values).to.deep.equal(['active', 'inactive', 'pending'])
     })
@@ -556,7 +557,7 @@ describe('SchemaInferrer', () => {
               {
                 value: {
                   json: {
-                    json: '{"greeting":"Hello {{name}}!", "data": {"title": "Welcome to {{place}}"}}'
+                    json: '{"greeting":"Hello {{name}}!", "data": {"title": "Welcome to {{place}}"}}',
                   },
                 },
               },
@@ -571,40 +572,40 @@ describe('SchemaInferrer', () => {
       }
 
       const schema = inferrer.infer(jsonConfig, configFile)
-      
+
       // Verify the hybrid approach - structure from schema with template processing
       expect((schema as any)._def.typeName).to.equal('ZodObject')
       const shape = (schema as z.ZodObject<any>).shape
-      
+
       // The greeting should now be a function type because of the template
       expect((shape.greeting as any)._def.typeName).to.equal('ZodFunction')
-      
+
       // Check that the function has the expected argument structure
       const greetingArgs = (shape.greeting as any)._def.args
       expect(greetingArgs).to.exist
       expect(greetingArgs._def.typeName).to.equal('ZodTuple')
       expect(greetingArgs._def.items).to.exist
       expect(greetingArgs._def.items.length).to.be.at.least(1)
-      
+
       // Check that the first item in the tuple is an object with the expected shape
       const firstArg = greetingArgs._def.items[0]
       expect(firstArg._def.typeName).to.equal('ZodObject')
       expect(firstArg.shape.name).to.exist
-      
+
       // data should remain an object
       expect((shape.data as any)._def.typeName).to.equal('ZodObject')
-      
+
       // but its title should now be a function
       const dataShape = (shape.data as z.ZodObject<any>).shape
       expect((dataShape.title as any)._def.typeName).to.equal('ZodFunction')
-      
+
       // Check that the function has the expected argument structure
       const titleArgs = (dataShape.title as any)._def.args
       expect(titleArgs).to.exist
       expect(titleArgs._def.typeName).to.equal('ZodTuple')
       expect(titleArgs._def.items).to.exist
       expect(titleArgs._def.items.length).to.be.at.least(1)
-      
+
       // Check that the first item in the tuple is an object with the expected shape
       const firstTitleArg = titleArgs._def.items[0]
       expect(firstTitleArg._def.typeName).to.equal('ZodObject')
@@ -622,7 +623,7 @@ describe('SchemaInferrer', () => {
               {
                 value: {
                   json: {
-                    json: '{"url": "url is {{scheme}}://{{host}}", "timeout": 10, "retries": 10}'
+                    json: '{"url": "url is {{scheme}}://{{host}}", "timeout": 10, "retries": 10}',
                   },
                 },
               },
@@ -631,38 +632,38 @@ describe('SchemaInferrer', () => {
         ],
         valueType: 'JSON',
         schemaKey: 'url-schema',
-      };
+      }
 
       const configFile: ConfigFile = {
         configs: [config],
-      };
+      }
 
-      const schema = inferrer.infer(config, configFile);
-      
+      const schema = inferrer.infer(config, configFile)
+
       // Verify the schema is an object
-      expect((schema as any)._def.typeName).to.equal('ZodObject');
-      const shape = (schema as z.ZodObject<any>).shape;
-      
+      expect((schema as any)._def.typeName).to.equal('ZodObject')
+      const shape = (schema as z.ZodObject<any>).shape
+
       // Verify the url property is a function schema
-      expect((shape.url as any)._def.typeName).to.equal('ZodFunction');
-      
+      expect((shape.url as any)._def.typeName).to.equal('ZodFunction')
+
       // Verify the function schema has the expected arguments
-      const urlArgs = (shape.url as any)._def.args;
-      expect(urlArgs).to.exist;
-      expect(urlArgs._def.typeName).to.equal('ZodTuple');
-      expect(urlArgs._def.items).to.exist;
-      expect(urlArgs._def.items.length).to.be.at.least(1);
-      
+      const urlArgs = (shape.url as any)._def.args
+      expect(urlArgs).to.exist
+      expect(urlArgs._def.typeName).to.equal('ZodTuple')
+      expect(urlArgs._def.items).to.exist
+      expect(urlArgs._def.items.length).to.be.at.least(1)
+
       // Check that the first item in the tuple is an object with the expected shape
-      const firstArg = urlArgs._def.items[0];
-      expect(firstArg._def.typeName).to.equal('ZodObject');
-      expect(firstArg.shape.scheme).to.exist;
-      expect(firstArg.shape.host).to.exist;
-      
+      const firstArg = urlArgs._def.items[0]
+      expect(firstArg._def.typeName).to.equal('ZodObject')
+      expect(firstArg.shape.scheme).to.exist
+      expect(firstArg.shape.host).to.exist
+
       // Verify the other properties are regular number types
-      expect((shape.timeout as any)._def.typeName).to.equal('ZodNumber');
-      expect((shape.retries as any)._def.typeName).to.equal('ZodNumber');
-    });
+      expect((shape.timeout as any)._def.typeName).to.equal('ZodNumber')
+      expect((shape.retries as any)._def.typeName).to.equal('ZodNumber')
+    })
   })
 
   describe('getAllTemplateStrings', () => {

@@ -1,8 +1,6 @@
 import {expect} from '@oclif/test'
 import {z} from 'zod'
 
-import type {Config} from '../../src/codegen/types.js'
-
 import {SupportedLanguage} from '../../src/codegen/zod-generator.js'
 import {ZodUtils} from '../../src/codegen/zod-utils.js'
 
@@ -84,8 +82,8 @@ describe('ZodUtils', () => {
     })
 
     it('should convert dotted keys to method names', () => {
-      expect(ZodUtils.keyToMethodName('user.profile')).to.equal('user_profile')
-      expect(ZodUtils.keyToMethodName('app.settings.theme')).to.equal('app_settings_theme')
+      expect(ZodUtils.keyToMethodName('user.profile')).to.equal('userProfile')
+      expect(ZodUtils.keyToMethodName('app.settings.theme')).to.equal('appSettingsTheme')
     })
 
     it('should ensure method names are valid identifiers', () => {
@@ -93,23 +91,23 @@ describe('ZodUtils', () => {
       expect(ZodUtils.keyToMethodName('test-key')).to.equal('testKey')
     })
     it('should convert simple keys', () => {
-      expect(ZodUtils.keyToMethodName('flag.tidelift')).to.equal('flag_tidelift')
-      expect(ZodUtils.keyToMethodName('simple.config')).to.equal('simple_config')
+      expect(ZodUtils.keyToMethodName('flag.tidelift')).to.equal('flagTidelift')
+      expect(ZodUtils.keyToMethodName('simple.config')).to.equal('simpleConfig')
     })
 
     it('should handle hyphens', () => {
-      expect(ZodUtils.keyToMethodName('flag.tide-lift')).to.equal('flag_tideLift')
-      expect(ZodUtils.keyToMethodName('multi-word.key-name')).to.equal('multiWord_keyName')
+      expect(ZodUtils.keyToMethodName('flag.tide-lift')).to.equal('flagTideLift')
+      expect(ZodUtils.keyToMethodName('multi-word.key-name')).to.equal('multiWordKeyName')
     })
 
     it('should properly camelCase parts after the first one', () => {
-      expect(ZodUtils.keyToMethodName('first.second')).to.equal('first_second')
-      expect(ZodUtils.keyToMethodName('module.feature.enabled')).to.equal('module_feature_enabled')
+      expect(ZodUtils.keyToMethodName('first.second')).to.equal('firstSecond')
+      expect(ZodUtils.keyToMethodName('module.feature.enabled')).to.equal('moduleFeatureEnabled')
     })
 
     it('should deal with spaces', () => {
-      expect(ZodUtils.keyToMethodName('first second')).to.equal('first_second')
-      expect(ZodUtils.keyToMethodName('module feature.is-enabled')).to.equal('module_feature_isEnabled')
+      expect(ZodUtils.keyToMethodName('first second')).to.equal('firstSecond')
+      expect(ZodUtils.keyToMethodName('module feature.is-enabled')).to.equal('moduleFeatureIsEnabled')
     })
 
     it('should handle complex keys with special characters', () => {
@@ -119,15 +117,15 @@ describe('ZodUtils', () => {
       // 3. Normalizing consecutive dots: '_234nas6234._.WHY_OH_WHY'
       // 4. Splitting by dots: ['_234nas6234', '_', 'WHY_OH_WHY']
       // 5. Camel-casing parts: ['_234nas6234', '_', 'whyOhWhy']
-      // 6. Joining with underscores: '_234nas6234__whyOhWhy'
-      expect(ZodUtils.keyToMethodName('234nas6234^&#$__///WHY_OH_WHY')).to.equal('_234nas6234__whyOhWhy')
+      // 6. Joining with camelCase: '_234nas6234WhyOhWhy'
+      expect(ZodUtils.keyToMethodName('234nas6234^&#$__///WHY_OH_WHY')).to.equal('_234nas6234WhyOhWhy')
     })
   })
 
   describe('keyToSchemaName', () => {
     it('should convert keys to schema variable names', () => {
       expect(ZodUtils.keyToSchemaName('test')).to.equal('testSchema')
-      expect(ZodUtils.keyToSchemaName('app.settings')).to.equal('app_settingsSchema')
+      expect(ZodUtils.keyToSchemaName('app.settings')).to.equal('appSettingsSchema')
     })
   })
 

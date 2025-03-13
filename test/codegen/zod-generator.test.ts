@@ -142,7 +142,7 @@ describe('ZodGenerator', () => {
 
       expect(schemaLines).to.have.lengthOf(4)
       expect(schemaLines[0].key).to.equal('example.feature.flag')
-      expect(schemaLines[0].schemaName).to.equal('example_feature_flagSchema')
+      expect(schemaLines[0].schemaName).to.equal('exampleFeatureFlagSchema')
     })
   })
 
@@ -151,7 +151,7 @@ describe('ZodGenerator', () => {
       const generator = new ZodGenerator(mockConfigFile)
       const accessorMethod = generator.generateAccessorMethod(mockBoolConfig, SupportedLanguage.TypeScript)
 
-      expect(accessorMethod.methodName).to.equal('example_feature_flag')
+      expect(accessorMethod.methodName).to.equal('exampleFeatureFlag')
       expect(accessorMethod.key).to.equal('example.feature.flag')
       expect(accessorMethod.isFunctionReturn).to.be.false
       expect(accessorMethod.returnType).to.equal('boolean')
@@ -162,7 +162,7 @@ describe('ZodGenerator', () => {
       const generator = new ZodGenerator(mockConfigFile)
       const accessorMethod = generator.generateAccessorMethod(mockStringConfig, SupportedLanguage.TypeScript)
 
-      expect(accessorMethod.methodName).to.equal('example_config_string')
+      expect(accessorMethod.methodName).to.equal('exampleConfigString')
       expect(accessorMethod.key).to.equal('example.config.string')
       expect(accessorMethod.isFunctionReturn).to.be.false
       expect(accessorMethod.returnType).to.equal('string')
@@ -173,7 +173,7 @@ describe('ZodGenerator', () => {
       const generator = new ZodGenerator(mockConfigFile)
       const accessorMethod = generator.generateAccessorMethod(mockTemplateConfig, SupportedLanguage.TypeScript)
 
-      expect(accessorMethod.methodName).to.equal('example_config_function')
+      expect(accessorMethod.methodName).to.equal('exampleConfigFunction')
       expect(accessorMethod.key).to.equal('example.config.function')
       expect(accessorMethod.isFunctionReturn).to.be.true
       expect(accessorMethod.returnType).to.equal('string')
@@ -188,7 +188,7 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockBoolConfig)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `example_feature_flag(contexts?: Contexts | ContextObj): boolean {
+      const expectedOutput = `exampleFeatureFlag(contexts?: Contexts | ContextObj): boolean {
   const raw = this.get('example.feature.flag', contexts);
   return raw;
 }`
@@ -202,7 +202,7 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockTemplateConfig)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `example_config_function(contexts?: Contexts | ContextObj): (params: { name: string }) => string {
+      const expectedOutput = `exampleConfigFunction(contexts?: Contexts | ContextObj): (params: { name: string }) => string {
   const raw = this.get('example.config.function', contexts);
   return (params: { name: string }) => Mustache.render(raw, params);
 }`
@@ -216,7 +216,7 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockObjectConfig)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `example_config_object(contexts?: Contexts | ContextObj): { name: string; age: number } {
+      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { name: string; age: number } {
   const raw = this.get('example.config.object', contexts);
   return { "name": raw["name"], "age": raw["age"] };
 }`
@@ -259,7 +259,7 @@ describe('ZodGenerator', () => {
       const accessorMethod = generator.renderAccessorMethod(complexConfig)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `example_greeting_template(contexts?: Contexts | ContextObj): (params: { name: string; company: string; user.id: string }) => string {
+      const expectedOutput = `exampleGreetingTemplate(contexts?: Contexts | ContextObj): (params: { name: string; company: string; user.id: string }) => string {
   const raw = this.get('example.greeting.template', contexts);
   return (params: { name: string; company: string; user.id: string }) => Mustache.render(raw, params);
 }`
@@ -275,7 +275,7 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockBoolConfig, SupportedLanguage.Python)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `def example_feature_flag(self):
+      const expectedOutput = `def exampleFeatureFlag(self):
       raw = self.get('example.feature.flag')
       return raw`
 
@@ -287,7 +287,7 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockTemplateConfig, SupportedLanguage.Python)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `def example_config_function(self):
+      const expectedOutput = `def exampleConfigFunction(self):
       raw = self.get('example.config.function')
       return lambda params: pystache.render(raw, params)`
 
@@ -299,7 +299,7 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockObjectConfig, SupportedLanguage.Python)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `def example_config_object(self):
+      const expectedOutput = `def exampleConfigObject(self):
       raw = self.get('example.config.object')
       return { "name": raw["name"], "age": raw["age"] }`
 
@@ -314,7 +314,7 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfig)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `example_config_object(contexts?: Contexts | ContextObj): { template: (params: { placeholder: string }) => string } {
+      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { template: (params: { placeholder: string }) => string } {
   const raw = this.get('example.config.object', contexts);
   return { "template": (params: { placeholder: string }) => Mustache.render(raw["template"], params) };
 }`
@@ -328,7 +328,7 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfigMultiValue)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `example_config_object(contexts?: Contexts | ContextObj): { template: ((params: { other_placeholder: string }) => string) | ((params: { placeholder: string }) => string); num: any } {
+      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { template: ((params: { other_placeholder: string }) => string) | ((params: { placeholder: string }) => string); num: any } {
   const raw = this.get('example.config.object', contexts);
   return { "template": (params: { other_placeholder: string }) => Mustache.render(raw["template"], params), "num": raw["num"] };
 }`
@@ -344,7 +344,7 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfig, SupportedLanguage.Python)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `def example_config_object(self):
+      const expectedOutput = `def exampleConfigObject(self):
       raw = self.get('example.config.object')
       return { "template": lambda params: pystache.render(raw["template"], params) }`
 
@@ -357,7 +357,7 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfigMultiValue, SupportedLanguage.Python)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `def example_config_object(self):
+      const expectedOutput = `def exampleConfigObject(self):
       raw = self.get('example.config.object')
       return { "template": lambda params: pystache.render(raw["template"], params), "num": raw["num"] }`
 

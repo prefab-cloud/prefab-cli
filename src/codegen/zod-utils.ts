@@ -130,7 +130,7 @@ export const ZodUtils = {
    * 1. Replaces special characters with dots for word separation
    * 2. Converts snake_case and kebab-case to camelCase within parts
    * 3. Ensures the first character is valid for identifiers
-   * 4. Preserves dot separators as underscores between parts
+   * 4. Joins parts with camelCase (first part lowercase, subsequent parts capitalized)
    */
   keyToMethodName(key: string): string {
     if (!key || key.trim() === '') {
@@ -138,13 +138,13 @@ export const ZodUtils = {
     }
 
     // Step 1: Replace spaces with dots for consistent handling
-    let processedKey = key.trim().replace(/\s+/g, '.')
+    let processedKey = key.trim().replaceAll(/\s+/g, '.')
 
     // Step 2: Replace special characters with dots (except underscores and hyphens)
-    processedKey = processedKey.replace(/[^a-zA-Z0-9_\-.-]/g, '.')
+    processedKey = processedKey.replaceAll(/[^a-zA-Z0-9_\-.-]/g, '.')
 
     // Step 3: Replace consecutive dots with a single dot
-    processedKey = processedKey.replace(/\.{2,}/g, '.')
+    processedKey = processedKey.replaceAll(/\.{2,}/g, '.')
 
     // Step 4: Split by dots and process each part
     const parts = processedKey.split('.').filter((part) => part.length > 0)
@@ -154,7 +154,7 @@ export const ZodUtils = {
     }
 
     // Step 5: Process each part
-    const processedParts = parts.map((part, index) => {
+    const processedParts = parts.map((part) => {
       // Ensure part starts with an underscore if it begins with a digit
       if (/^\d/.test(part)) {
         part = '_' + part
@@ -166,24 +166,44 @@ export const ZodUtils = {
           .toLowerCase()
           .split('_')
           .filter((word) => word.length > 0)
-          .map((word, idx) => {
+          .map((word, idx) =>
             // First word lowercase, subsequent words capitalized (camelCase)
-            return idx === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)
-          })
+            idx === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1),
+          )
           .join('')
       }
 
       // Convert kebab-case to camelCase
-      part = part.replace(/-([a-z])/g, (_: string, letter: string) => letter.toUpperCase())
+      const kebabProcessed = part
+        .split('-')
+        .map((segment, idx) => {
+          // First segment stays as is, subsequent segments get capitalized
+          return idx === 0 ? segment : segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase()
+        })
+        .join('')
 
       // Convert snake_case to camelCase
-      part = part.replace(/_([a-z])/g, (_: string, letter: string) => letter.toUpperCase())
+      const finalProcessed = kebabProcessed
+        .split('_')
+        .map((segment, idx) => {
+          // First segment stays as is, subsequent segments get capitalized
+          return idx === 0 ? segment : segment.charAt(0).toUpperCase() + segment.slice(1)
+        })
+        .join('')
 
-      return part
+      return finalProcessed
     })
 
-    // Step 6: Join parts with underscores
-    const result = processedParts.join('_')
+    // Step 6: Join parts with camelCase (first part as is, subsequent parts capitalized)
+    const result = processedParts
+      .map((part, index) => {
+        if (index === 0) {
+          return part
+        }
+
+        return part.charAt(0).toUpperCase() + part.slice(1)
+      })
+      .join('')
 
     // Step 7: Ensure the result is a safe identifier
     return this.makeSafeIdentifier(result)

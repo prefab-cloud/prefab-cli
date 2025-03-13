@@ -2,14 +2,13 @@ import Mustache from 'mustache'
 import fs from 'node:fs'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
+import {ZodTypeAny} from 'zod'
 
 import type {Config, ConfigFile} from './types.js'
 
+import {doStuff} from './python/generator.js'
 import {SchemaInferrer} from './schema-inferrer.js'
 import {ZodUtils} from './zod-utils.js'
-
-import {doStuff} from './python/generator.js'
-import {ZodTypeAny} from 'zod'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -20,8 +19,8 @@ export enum SupportedLanguage {
 }
 
 export interface AccessorMethod {
-  isFunctionReturn: boolean
   isFeatureFlag: boolean
+  isFunctionReturn: boolean
   key: string
   methodName: string
   params: string
@@ -45,6 +44,7 @@ export interface TemplateData {
  */
 export class ZodGenerator {
   private configFile: ConfigFile
+  private dependencies: Set<string> = new Set()
   private schemaInferrer: SchemaInferrer
   private methods: {[key: string]: AccessorMethod} = {}
 
@@ -95,6 +95,7 @@ export class ZodGenerator {
     const result = Mustache.render(baseTemplate, {
       accessorMethods,
       schemaLines,
+      dependencies: this.renderDependencies(language),
     })
 
     return result
@@ -115,15 +116,15 @@ export class ZodGenerator {
       ? ZodUtils.zodTypeToTypescript(schemaObj._def.returns)
       : ZodUtils.zodTypeToTypescript(schemaObj)
 
-    const accessorMethod = {
+    const accessorMethod = this.massageAccessorMethodForLanguage(language, config, {
+      isFeatureFlag: config.configType === 'FEATURE_FLAG',
       isFunctionReturn: isFunction,
       key: config.key,
       methodName: ZodUtils.keyToMethodName(config.key),
-      isFeatureFlag: config.configType === 'FEATURE_FLAG',
       params,
       returnType,
       returnValue,
-    }
+    })
 
     if (this.methods[accessorMethod.methodName]) {
       throw new Error(
@@ -139,24 +140,24 @@ export class ZodGenerator {
   /**
    * Generate a schema line for a single config
    */
-  generateSchemaLine(config: Config): SchemaLine {
+  generateSchemaLine(config: Config, language: SupportedLanguage = SupportedLanguage.TypeScript): SchemaLine {
     const simplified = this.generateSimplifiedSchema(config)
     const zodType = ZodUtils.zodToString(simplified)
 
-    return {
+    return this.massageSchemaLineForLanguage(language, config, {
       key: config.key,
       schemaName: ZodUtils.keyToMethodName(config.key) + 'Schema',
       zodType,
-    }
+    })
   }
 
   /**
    * Generate schema lines for all configs
    */
-  generateSchemaLines(): SchemaLine[] {
+  generateSchemaLines(language: SupportedLanguage = SupportedLanguage.TypeScript): SchemaLine[] {
     return this.configFile.configs
       .filter((config) => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
-      .map((config) => this.generateSchemaLine(config))
+      .map((config) => this.generateSchemaLine(config, language))
   }
 
   generateSimplifiedSchema(config: Config): ZodTypeAny {
@@ -193,9 +194,24 @@ export class ZodGenerator {
     }
 
     const template = fs.readFileSync(templatePath, 'utf8')
-    const schemaLine = this.generateSchemaLine(config)
+    const schemaLine = this.generateSchemaLine(config, language)
 
     return Mustache.render(template, schemaLine)
+  }
+
+  private renderDependencies(language: SupportedLanguage): string {
+    const templateName = this.getTemplateNameForLanguage(language)
+    return Array.from(this.dependencies)
+      .map((dep) => {
+        const templatePath = path.join(__dirname, 'templates', `dependencies/${templateName}-${dep}.mustache`)
+        if (!fs.existsSync(templatePath)) {
+          throw new Error(`Dependency template for language '${language}' not found at ${templatePath}`)
+        }
+
+        const template = fs.readFileSync(templatePath, 'utf8')
+        return Mustache.render(template, {})
+      })
+      .join('\n')
   }
 
   /**
@@ -215,5 +231,81 @@ export class ZodGenerator {
     }
 
     return 'typescript'
+  }
+
+  /**
+   * Customize accessor method properties based on language requirements
+   */
+  private massageAccessorMethodForLanguage(
+    language: SupportedLanguage,
+    config: Config,
+    accessorMethod: AccessorMethod,
+  ): AccessorMethod {
+    if (accessorMethod.isFunctionReturn) {
+      this.dependencies.add('mustache')
+    }
+
+    switch (language) {
+      case SupportedLanguage.TypeScript: {
+        if (config.valueType === 'DURATION') {
+          return {
+            ...accessorMethod,
+            returnType: 'number',
+          }
+        }
+
+        break
+      }
+
+      case SupportedLanguage.React: {
+        if (config.valueType === 'DURATION') {
+          this.dependencies.add('duration')
+          return {
+            ...accessorMethod,
+            returnType: 'PrefabDuration',
+          }
+        }
+
+        break
+      }
+    }
+
+    return accessorMethod
+  }
+
+  /**
+   * Customize schema line properties based on language requirements
+   */
+  private massageSchemaLineForLanguage(
+    language: SupportedLanguage,
+    config: Config,
+    schemaLine: SchemaLine,
+  ): SchemaLine {
+    switch (language) {
+      case SupportedLanguage.TypeScript: {
+        if (config.valueType === 'DURATION') {
+          return {
+            ...schemaLine,
+            zodType: 'z.number()',
+          }
+        }
+
+        break
+      }
+
+      case SupportedLanguage.React: {
+        if (config.valueType === 'DURATION') {
+          this.dependencies.add('duration')
+          return {
+            ...schemaLine,
+            zodType: 'PrefabDurationSchema',
+          }
+        }
+
+        break
+      }
+    }
+
+    return schemaLine
   }
 }

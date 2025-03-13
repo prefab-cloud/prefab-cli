@@ -7,10 +7,10 @@ describe('SchemaEvaluator', () => {
   describe('secureEvaluateSchema', () => {
     it('should properly evaluate valid schema strings', () => {
       const result = secureEvaluateSchema('z.object({ name: z.string(), age: z.number() })')
-      
+
       expect(result.success).to.be.true
       expect(result.schema).to.exist
-      
+
       if (result.schema) {
         const def = (result.schema as any)._def
         expect(def.typeName).to.equal('ZodObject')
@@ -31,17 +31,17 @@ describe('SchemaEvaluator', () => {
           metadata: z.record(z.string(), z.any())
         })
       `
-      
+
       const result = secureEvaluateSchema(schemaStr)
-      
+
       expect(result.success).to.be.true
       expect(result.schema).to.exist
-      
+
       if (result.schema) {
         const def = (result.schema as any)._def
         expect(def.typeName).to.equal('ZodObject')
         const shape = (result.schema as z.ZodObject<any>).shape
-        
+
         expect((shape.id as any)._def.typeName).to.equal('ZodString')
         expect((shape.name as any)._def.typeName).to.equal('ZodString')
         expect((shape.email as any)._def.typeName).to.equal('ZodString')
@@ -53,7 +53,7 @@ describe('SchemaEvaluator', () => {
 
     it('should reject schema strings with syntax errors', () => {
       const result = secureEvaluateSchema('z.object({ name: z.string(, })')
-      
+
       expect(result.success).to.be.false
       expect(result.error).to.include('Evaluation error')
     })
@@ -61,7 +61,7 @@ describe('SchemaEvaluator', () => {
     it('should reject schema strings with unsupported operations', () => {
       // Trying to use a forbidden global object
       const result = secureEvaluateSchema('z.object({ test: z.string() }).refine(() => console.log("hello"))')
-      
+
       expect(result.success).to.be.false
       expect(result.error).to.include('potentially unsafe operations')
       expect(result.error).to.include('console')
@@ -70,7 +70,7 @@ describe('SchemaEvaluator', () => {
     it('should reject schema strings attempting to use unsupported properties', () => {
       // Trying to access constructor
       const result = secureEvaluateSchema('z.object({ test: z.string() }).constructor')
-      
+
       expect(result.success).to.be.false
       expect(result.error).to.include('potentially unsafe operations')
       expect(result.error).to.include('constructor')
@@ -78,11 +78,13 @@ describe('SchemaEvaluator', () => {
 
     it('should allow valid refinements with arrow functions', () => {
       // Valid refinement
-      const result = secureEvaluateSchema('z.string().refine((val) => val.length > 5, { message: "Must be more than 5 characters" })')
-      
+      const result = secureEvaluateSchema(
+        'z.string().refine((val) => val.length > 5, { message: "Must be more than 5 characters" })',
+      )
+
       expect(result.success).to.be.true
       expect(result.schema).to.exist
-      
+
       if (result.schema) {
         // Use type assertion for accessing internal _def properties
         const def = (result.schema as any)._def
@@ -98,19 +100,19 @@ describe('SchemaEvaluator', () => {
         complexSchema += `prop${i}: z.object({nested: z.string()}),`
       }
       complexSchema += '})'
-      
-      const result = secureEvaluateSchema(complexSchema, { maxAstNodes: 200 })
-      
+
+      const result = secureEvaluateSchema(complexSchema, {maxAstNodes: 200})
+
       expect(result.success).to.be.false
       expect(result.error).to.include('exceeds maximum allowed complexity')
     })
 
     it('should handle enum types properly', () => {
       const result = secureEvaluateSchema('z.enum(["pending", "active", "completed"])')
-      
+
       expect(result.success).to.be.true
       expect(result.schema).to.exist
-      
+
       if (result.schema) {
         const def = (result.schema as any)._def
         expect(def.typeName).to.equal('ZodEnum')
@@ -120,10 +122,10 @@ describe('SchemaEvaluator', () => {
 
     it('should handle union types', () => {
       const result = secureEvaluateSchema('z.union([z.string(), z.number(), z.boolean()])')
-      
+
       expect(result.success).to.be.true
       expect(result.schema).to.exist
-      
+
       if (result.schema) {
         const def = (result.schema as any)._def
         expect(def.typeName).to.equal('ZodUnion')
@@ -134,4 +136,4 @@ describe('SchemaEvaluator', () => {
       }
     })
   })
-}) 
+})

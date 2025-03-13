@@ -159,9 +159,7 @@ export class SchemaInferrer {
    * Find a schema config by key
    */
   private findSchemaConfig(configFile: ConfigFile, schemaKey: string): Config | undefined {
-    return configFile.configs.find(
-      (config) => config.configType === 'SCHEMA' && config.key === schemaKey
-    )
+    return configFile.configs.find((config) => config.configType === 'SCHEMA' && config.key === schemaKey)
   }
 
   /**
@@ -173,7 +171,7 @@ export class SchemaInferrer {
         if (valueObj.value.schema?.schema) {
           const schemaStr = valueObj.value.schema.schema
           const result = secureEvaluateSchema(schemaStr)
-          
+
           if (result.success && result.schema) {
             console.log(`Successfully parsed schema from schema config: ${config.key}`)
             return result.schema
@@ -183,7 +181,7 @@ export class SchemaInferrer {
         }
       }
     }
-    
+
     return undefined
   }
 
@@ -196,7 +194,7 @@ export class SchemaInferrer {
   private processSchemaForTemplates(schema: z.ZodTypeAny, config: Config): z.ZodTypeAny {
     // Get all template strings from the config
     const templateStrings = this.getAllTemplateStrings(config)
-    
+
     if (templateStrings.length === 0) {
       // No templates to process, return the original schema
       return schema
@@ -204,7 +202,7 @@ export class SchemaInferrer {
 
     // Create a map of template strings to their extracted schemas
     const templateSchemas = new Map<string, z.ZodObject<any>>()
-    templateStrings.forEach(str => {
+    templateStrings.forEach((str) => {
       templateSchemas.set(str, MustacheExtractor.extractSchema(str))
     })
 
@@ -218,7 +216,10 @@ export class SchemaInferrer {
    * @param templateSchemas - Map of template strings to their extracted schemas
    * @returns Transformed schema with template functions
    */
-  private transformSchemaWithTemplates(schema: z.ZodTypeAny, templateSchemas: Map<string, z.ZodObject<any>>): z.ZodTypeAny {
+  private transformSchemaWithTemplates(
+    schema: z.ZodTypeAny,
+    templateSchemas: Map<string, z.ZodObject<any>>,
+  ): z.ZodTypeAny {
     // This method is no longer used in our implementation
     // We're keeping it for now to avoid breaking existing code
     return schema
@@ -226,10 +227,10 @@ export class SchemaInferrer {
 
   // For all values and recursively for all strings in json,
   infer(config: Config, configFile: ConfigFile): z.ZodTypeAny {
-    const { schemaKey } = config
-    const schemaConfig = schemaKey ? 
-      configFile.configs.find(c => c.key === schemaKey && c.configType === 'SCHEMA') : 
-      undefined
+    const {schemaKey} = config
+    const schemaConfig = schemaKey
+      ? configFile.configs.find((c) => c.key === schemaKey && c.configType === 'SCHEMA')
+      : undefined
 
     // If we have a schema config, try to extract and use the schema
     if (schemaConfig) {
@@ -239,79 +240,82 @@ export class SchemaInferrer {
           if (valueObj.value.schema?.schema) {
             const schemaStr = valueObj.value.schema.schema
             const result = secureEvaluateSchema(schemaStr)
-            
+
             if (result.success && result.schema) {
               console.log(`Successfully parsed schema from schema config: ${schemaConfig.key}`)
-              
+
               // Get template strings from the config if any
               const templateStrings = this.getAllTemplateStrings(config)
-              
+
               // If no templates, just return the schema as is
               if (templateStrings.length === 0) {
                 return result.schema
               }
-              
+
               // Otherwise do basic template processing
               console.log(`Processing schema with ${templateStrings.length} template strings`)
-              
+
               // Parse the JSON config
               const jsonValues = this.getAllJsonValues(config)
               if (jsonValues.length === 0) {
                 return result.schema
               }
-              
+
               const jsonConfig = jsonValues[0] as Record<string, unknown>
-              
+
               // Create a function schema for each template string found in the config
               if (result.schema instanceof z.ZodObject) {
                 const shape = result.schema.shape
                 const newShape: Record<string, z.ZodTypeAny> = {}
-                
+
                 // Process each property in the schema
                 for (const key in shape) {
                   const value = shape[key]
-                  
+
                   // If the property is a string in schema and contains a template in the config
-                  if (value instanceof z.ZodString && 
-                      jsonConfig && 
-                      key in jsonConfig && 
-                      typeof jsonConfig[key] === 'string' && 
-                      (jsonConfig[key] as string).includes('{{')) {
-                    
+                  if (
+                    value instanceof z.ZodString &&
+                    jsonConfig &&
+                    key in jsonConfig &&
+                    typeof jsonConfig[key] === 'string' &&
+                    (jsonConfig[key] as string).includes('{{')
+                  ) {
                     // Extract template parameters and create a function schema
                     const templateStr = jsonConfig[key] as string
                     const schema = MustacheExtractor.extractSchema(templateStr)
-                    
+
                     // Only create a function if we found template parameters
                     if (Object.keys(schema.shape).length > 0) {
                       newShape[key] = z.function().args(schema).returns(z.string())
                     } else {
                       newShape[key] = value
                     }
-                  } 
+                  }
                   // Handle nested objects recursively
-                  else if (value instanceof z.ZodObject && 
-                           jsonConfig && 
-                           key in jsonConfig && 
-                           typeof jsonConfig[key] === 'object' &&
-                           jsonConfig[key] !== null) {
-                    
+                  else if (
+                    value instanceof z.ZodObject &&
+                    jsonConfig &&
+                    key in jsonConfig &&
+                    typeof jsonConfig[key] === 'object' &&
+                    jsonConfig[key] !== null
+                  ) {
                     const nestedShape = value.shape
                     const nestedConfig = jsonConfig[key] as Record<string, unknown>
                     const newNestedShape: Record<string, z.ZodTypeAny> = {}
-                    
+
                     for (const nestedKey in nestedShape) {
                       const nestedValue = nestedShape[nestedKey]
-                      
-                      if (nestedValue instanceof z.ZodString && 
-                          nestedConfig && 
-                          nestedKey in nestedConfig && 
-                          typeof nestedConfig[nestedKey] === 'string' && 
-                          (nestedConfig[nestedKey] as string).includes('{{')) {
-                        
+
+                      if (
+                        nestedValue instanceof z.ZodString &&
+                        nestedConfig &&
+                        nestedKey in nestedConfig &&
+                        typeof nestedConfig[nestedKey] === 'string' &&
+                        (nestedConfig[nestedKey] as string).includes('{{')
+                      ) {
                         const templateStr = nestedConfig[nestedKey] as string
                         const schema = MustacheExtractor.extractSchema(templateStr)
-                        
+
                         if (Object.keys(schema.shape).length > 0) {
                           newNestedShape[nestedKey] = z.function().args(schema).returns(z.string())
                         } else {
@@ -321,16 +325,16 @@ export class SchemaInferrer {
                         newNestedShape[nestedKey] = nestedValue
                       }
                     }
-                    
+
                     newShape[key] = z.object(newNestedShape)
                   } else {
                     newShape[key] = value
                   }
                 }
-                
+
                 return z.object(newShape)
               }
-              
+
               return result.schema
             } else if (result.error) {
               console.warn(`Failed to parse schema from schema config ${schemaConfig.key}: ${result.error}`)
@@ -339,7 +343,7 @@ export class SchemaInferrer {
         }
       }
     }
-    
+
     // Fall back to normal inference if no schema or schema parsing failed
     switch (config.valueType) {
       case 'STRING': {
@@ -506,19 +510,19 @@ export class SchemaInferrer {
     if (!config || !config.rows || config.rows.length === 0) {
       return undefined
     }
-    
+
     // Get the first row's value
     const firstRow = config.rows[0]
     if (!firstRow || !firstRow.values || firstRow.values.length === 0) {
       return undefined
     }
-    
+
     const firstValue = firstRow.values[0]
-    
+
     if (!firstValue || !firstValue.value) {
       return undefined
     }
-    
+
     // Extract JSON or string content based on value type
     if (config.valueType === 'JSON' && firstValue.value.json) {
       try {
@@ -530,7 +534,7 @@ export class SchemaInferrer {
     } else if (config.valueType === 'STRING' && firstValue.value.string) {
       return firstValue.value.string
     }
-    
+
     return undefined
   }
 }

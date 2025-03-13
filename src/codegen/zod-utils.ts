@@ -125,68 +125,68 @@ export const ZodUtils = {
 
   /**
    * Convert config key to a valid method name
-   * 
+   *
    * This function handles several transformations:
    * 1. Replaces special characters with dots for word separation
-   * 2. Converts snake_case and kebab-case to camelCase within parts 
+   * 2. Converts snake_case and kebab-case to camelCase within parts
    * 3. Ensures the first character is valid for identifiers
    * 4. Preserves dot separators as underscores between parts
    */
   keyToMethodName(key: string): string {
     if (!key || key.trim() === '') {
-      return '_empty_key';
+      return '_empty_key'
     }
-    
+
     // Step 1: Replace spaces with dots for consistent handling
-    let processedKey = key.trim().replace(/\s+/g, '.');
-    
+    let processedKey = key.trim().replace(/\s+/g, '.')
+
     // Step 2: Replace special characters with dots (except underscores and hyphens)
-    processedKey = processedKey.replace(/[^a-zA-Z0-9_\-.-]/g, '.');
-    
+    processedKey = processedKey.replace(/[^a-zA-Z0-9_\-.-]/g, '.')
+
     // Step 3: Replace consecutive dots with a single dot
-    processedKey = processedKey.replace(/\.{2,}/g, '.');
-    
+    processedKey = processedKey.replace(/\.{2,}/g, '.')
+
     // Step 4: Split by dots and process each part
-    const parts = processedKey.split('.').filter(part => part.length > 0);
-    
+    const parts = processedKey.split('.').filter((part) => part.length > 0)
+
     if (parts.length === 0) {
-      return '_empty_key';
+      return '_empty_key'
     }
-    
+
     // Step 5: Process each part
     const processedParts = parts.map((part, index) => {
       // Ensure part starts with an underscore if it begins with a digit
       if (/^\d/.test(part)) {
-        part = '_' + part;
+        part = '_' + part
       }
-      
+
       // Handle uppercase snake case patterns specifically
       if (/^[A-Z_0-9]+$/.test(part)) {
         return part
           .toLowerCase()
           .split('_')
-          .filter(word => word.length > 0)
+          .filter((word) => word.length > 0)
           .map((word, idx) => {
             // First word lowercase, subsequent words capitalized (camelCase)
-            return idx === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1);
+            return idx === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)
           })
-          .join('');
+          .join('')
       }
-      
+
       // Convert kebab-case to camelCase
-      part = part.replace(/-([a-z])/g, (_: string, letter: string) => letter.toUpperCase());
-      
+      part = part.replace(/-([a-z])/g, (_: string, letter: string) => letter.toUpperCase())
+
       // Convert snake_case to camelCase
-      part = part.replace(/_([a-z])/g, (_: string, letter: string) => letter.toUpperCase());
-      
-      return part;
-    });
-    
+      part = part.replace(/_([a-z])/g, (_: string, letter: string) => letter.toUpperCase())
+
+      return part
+    })
+
     // Step 6: Join parts with underscores
-    const result = processedParts.join('_');
-    
+    const result = processedParts.join('_')
+
     // Step 7: Ensure the result is a safe identifier
-    return this.makeSafeIdentifier(result);
+    return this.makeSafeIdentifier(result)
   },
 
   /**
@@ -213,13 +213,43 @@ export const ZodUtils = {
 
     // Avoid Python reserved keywords
     const pythonKeywords = [
-      'False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await', 
-      'break', 'class', 'continue', 'def', 'del', 'elif', 'else', 'except', 
-      'finally', 'for', 'from', 'global', 'if', 'import', 'in', 'is', 
-      'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return', 
-      'try', 'while', 'with', 'yield'
+      'False',
+      'None',
+      'True',
+      'and',
+      'as',
+      'assert',
+      'async',
+      'await',
+      'break',
+      'class',
+      'continue',
+      'def',
+      'del',
+      'elif',
+      'else',
+      'except',
+      'finally',
+      'for',
+      'from',
+      'global',
+      'if',
+      'import',
+      'in',
+      'is',
+      'lambda',
+      'nonlocal',
+      'not',
+      'or',
+      'pass',
+      'raise',
+      'return',
+      'try',
+      'while',
+      'with',
+      'yield',
     ]
-    
+
     if (pythonKeywords.includes(result)) {
       result = result + '_'
     }

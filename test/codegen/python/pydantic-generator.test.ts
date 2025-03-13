@@ -471,8 +471,8 @@ describe('UnifiedPythonGenerator', () => {
       const paramClass = (generator as any).paramClasses.get(className)
       expect(paramClass).to.exist
 
-      // Check that parameters were converted to snake_case
-      expect(paramClass.fields[0]).to.deep.include({name: 'user_id', type: 'int'})
+      // Check that parameters preserve their exact original names for mustache templates
+      expect(paramClass.fields[0]).to.deep.include({name: 'userId', type: 'int'})
       expect(paramClass.fields[1]).to.deep.include({name: 'status', type: 'str'})
     })
 

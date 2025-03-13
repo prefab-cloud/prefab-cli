@@ -241,16 +241,16 @@ export class UnifiedPythonGenerator {
   protected imports: ImportCollector = new ImportCollector()
   protected models: Map<string, string> = new Map()
   protected methods: Map<
-      string,
-      {
-        returnType: string
-        params: MethodParam[]
-        docstring: string
-        valueType?: string
-        hasTemplateParams?: boolean
-        paramClassName?: string
-        originalKey: string
-      }
+    string,
+    {
+      returnType: string
+      params: MethodParam[]
+      docstring: string
+      valueType?: string
+      hasTemplateParams?: boolean
+      paramClassName?: string
+      originalKey: string
+    }
   > = new Map()
   protected paramClasses: Map<string, {fields: Array<{name: string; type: string}>}> = new Map()
 
@@ -302,9 +302,9 @@ export class UnifiedPythonGenerator {
       if (typeDef.type && isZodType(typeDef.type)) {
         // Check if the element type is a basic type
         if (
-            typeDef.type instanceof z.ZodString ||
-            typeDef.type instanceof z.ZodNumber ||
-            typeDef.type instanceof z.ZodBoolean
+          typeDef.type instanceof z.ZodString ||
+          typeDef.type instanceof z.ZodNumber ||
+          typeDef.type instanceof z.ZodBoolean
         ) {
           const elementType = this.registerModel(typeDef.type, 'Element')
           this.imports.addTypingImport('List')
@@ -424,9 +424,9 @@ export class UnifiedPythonGenerator {
 
     // Then split by capital letters and spaces
     const parts = normalized
-        .split(/(?=[A-Z])|(?:\s+)/g)
-        .filter((part) => part.length > 0) // Filter out empty parts
-        .map((part) => part.toLowerCase()) // Convert all to lowercase
+      .split(/(?=[A-Z])|(?:\s+)/g)
+      .filter((part) => part.length > 0) // Filter out empty parts
+      .map((part) => part.toLowerCase()) // Convert all to lowercase
 
     // Join with underscores to create snake_case
     return parts.join('_')
@@ -436,12 +436,12 @@ export class UnifiedPythonGenerator {
    * Register a method that returns a Pydantic model
    */
   registerMethod(
-      methodName: string,
-      returnSchema: z.ZodTypeAny,
-      schemaName?: string,
-      params: MethodParam[] = [],
-      docstring?: string,
-      valueType?: string,
+    methodName: string,
+    returnSchema: z.ZodTypeAny,
+    schemaName?: string,
+    params: MethodParam[] = [],
+    docstring?: string,
+    valueType?: string,
   ): void {
     // First convert to valid identifier using standard utility
     const validIdentifier = ZodUtils.keyToMethodName(methodName)
@@ -627,24 +627,24 @@ export class UnifiedPythonGenerator {
    * Generate code for a single method
    */
   public generateMethodCode(
-      methodName: string,
-      spec: {
-        returnType: string
-        params: MethodParam[]
-        docstring: string
-        valueType?: string
-        hasTemplateParams?: boolean
-        paramClassName?: string
-        originalKey: string
-      },
+    methodName: string,
+    spec: {
+      returnType: string
+      params: MethodParam[]
+      docstring: string
+      valueType?: string
+      hasTemplateParams?: boolean
+      paramClassName?: string
+      originalKey: string
+    },
   ): string {
     // Build the parameter definition with properly typed context and default
     const paramsList = ['self']
     if (spec.params.length > 0) {
       paramsList.push(
-          ...spec.params.map((p) =>
-              p.default !== undefined ? `${p.name}: ${p.type} = ${p.default}` : `${p.name}: ${p.type}`,
-          ),
+        ...spec.params.map((p) =>
+          p.default !== undefined ? `${p.name}: ${p.type} = ${p.default}` : `${p.name}: ${p.type}`,
+        ),
       )
     }
 
@@ -685,10 +685,10 @@ export class UnifiedPythonGenerator {
 
     // Generate value extraction with template support
     const valueExtraction = this.generateValueExtraction(
-        spec.returnType,
-        isBasicType,
-        spec.valueType,
-        spec.hasTemplateParams,
+      spec.returnType,
+      isBasicType,
+      spec.valueType,
+      spec.hasTemplateParams,
     )
 
     // Generate the method code using the original key for config lookup
@@ -719,10 +719,10 @@ ${valueExtraction}
    * Generate value extraction code based on return type and value type
    */
   public generateValueExtraction(
-      returnType: string,
-      isBasicType: boolean,
-      valueType?: string,
-      hasTemplateParams?: boolean,
+    returnType: string,
+    isBasicType: boolean,
+    valueType?: string,
+    hasTemplateParams?: boolean,
   ): string {
     // String extraction with template support
     if (returnType === 'str' || (valueType && valueType.toUpperCase() === 'STRING')) {
@@ -1056,10 +1056,10 @@ ${valueExtraction}
   private generateClassName(baseName: string): string {
     // Clean the base name
     const cleanName = baseName
-        .replace(/[^\w\s]/g, '')
-        .replace(/\s+/g, '_')
-        .replace(/(^[a-z])|(_[a-z])/g, (match) => match.toUpperCase())
-        .replace(/_/g, '')
+      .replace(/[^\w\s]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/(^[a-z])|(_[a-z])/g, (match) => match.toUpperCase())
+      .replace(/_/g, '')
 
     // Add the prefix if specified
     const prefix = this.options.prefixName || ''
@@ -1104,7 +1104,7 @@ ${valueExtraction}
   private deriveSchemaNameFromMethod(methodName: string): string {
     // Try to extract a meaningful name from common prefixes
     const prefixMatches = methodName.match(
-        /^(?:get|fetch|retrieve|load)([A-Z][a-zA-Z0-9]*)(?:Config|Schema|Data|Info)?$/,
+      /^(?:get|fetch|retrieve|load)([A-Z][a-zA-Z0-9]*)(?:Config|Schema|Data|Info)?$/,
     )
 
     if (prefixMatches && prefixMatches[1]) {
@@ -1120,8 +1120,8 @@ ${valueExtraction}
 
     // Fallback: convert method name to PascalCase
     return methodName
-        .replace(/^[a-z]/, (match) => match.toUpperCase())
-        .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
+      .replace(/^[a-z]/, (match) => match.toUpperCase())
+      .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
   }
 
   /**
@@ -1169,10 +1169,10 @@ ${valueExtraction}
     for (const method of this.methods.values()) {
       // Check for timestamp handling methods - force datetime import
       if (
-          method.docstring &&
-          (method.docstring.toLowerCase().includes('timestamp') ||
-              method.docstring.toLowerCase().includes('date') ||
-              method.docstring.toLowerCase().includes('time'))
+        method.docstring &&
+        (method.docstring.toLowerCase().includes('timestamp') ||
+          method.docstring.toLowerCase().includes('date') ||
+          method.docstring.toLowerCase().includes('time'))
       ) {
         needsDatetime = true
       }
@@ -1262,24 +1262,24 @@ export function example(): void {
 
   // Register schemas and methods
   const connectionSchema = z
-      .object({
-        host: z.string(),
-        port: z.number().int().positive(),
-        secure: z.boolean().default(true),
-        timeout: z.string().refine((val) => /^PT\d+[HMS]$/.test(val), {
-          message: 'Must be an ISO 8601 duration',
-        }),
-        retryCount: z.number().int().min(0).max(10),
-      })
-      .describe('Connection')
+    .object({
+      host: z.string(),
+      port: z.number().int().positive(),
+      secure: z.boolean().default(true),
+      timeout: z.string().refine((val) => /^PT\d+[HMS]$/.test(val), {
+        message: 'Must be an ISO 8601 duration',
+      }),
+      retryCount: z.number().int().min(0).max(10),
+    })
+    .describe('Connection')
 
   // Register a method using the schema
   generator.registerMethod(
-      'getConnection',
-      connectionSchema,
-      undefined,
-      [{name: 'environment', type: 'str', default: '"production"'}],
-      'Get connection configuration for the specified environment',
+    'getConnection',
+    connectionSchema,
+    undefined,
+    [{name: 'environment', type: 'str', default: '"production"'}],
+    'Get connection configuration for the specified environment',
   )
 
   // Generate the file
@@ -1297,46 +1297,46 @@ export function exampleWithTemplate(): void {
 
   // Register schemas and methods
   const connectionSchema = z
-      .object({
-        host: z.string(),
-        port: z.number().int().positive(),
-        secure: z.boolean().default(true),
-        timeout: z.string().refine((val) => /^PT\d+[HMS]$/.test(val), {
-          message: 'Must be an ISO 8601 duration',
-        }),
-        retryCount: z.number().int().min(0).max(10),
-      })
-      .describe('Connection')
+    .object({
+      host: z.string(),
+      port: z.number().int().positive(),
+      secure: z.boolean().default(true),
+      timeout: z.string().refine((val) => /^PT\d+[HMS]$/.test(val), {
+        message: 'Must be an ISO 8601 duration',
+      }),
+      retryCount: z.number().int().min(0).max(10),
+    })
+    .describe('Connection')
 
   // Register a method using the schema
   generator.registerMethod(
-      'getConnection',
-      connectionSchema,
-      undefined,
-      [{name: 'environment', type: 'str', default: '"production"'}],
-      'Get connection configuration for the specified environment',
+    'getConnection',
+    connectionSchema,
+    undefined,
+    [{name: 'environment', type: 'str', default: '"production"'}],
+    'Get connection configuration for the specified environment',
   )
 
   // Register a template method using Mustache
   const templateSchema = z
-      .function()
-      .args(
-          z.object({
-            name: z.string(),
-            company: z.string(),
-          }),
-      )
-      .returns(z.string())
-      .describe('GreetingTemplate')
+    .function()
+    .args(
+      z.object({
+        name: z.string(),
+        company: z.string(),
+      }),
+    )
+    .returns(z.string())
+    .describe('GreetingTemplate')
 
   // Register the template method
   generator.registerMethod(
-      'getGreetingTemplate',
-      templateSchema,
-      undefined,
-      [],
-      'Get a greeting template that can be rendered with a name and company',
-      'STRING', // Set the valueType to STRING
+    'getGreetingTemplate',
+    templateSchema,
+    undefined,
+    [],
+    'Get a greeting template that can be rendered with a name and company',
+    'STRING', // Set the valueType to STRING
   )
 
   // Generate the file

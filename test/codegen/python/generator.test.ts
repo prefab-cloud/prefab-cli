@@ -1,6 +1,6 @@
 import {expect} from 'chai'
 import {SchemaInferrer} from '../../../src/codegen/schema-inferrer.js'
-import {doStuff} from '../../../src/codegen/python/generator.js'
+import {generatePythonClientCode} from '../../../src/codegen/python/generator.js'
 import {Config, ConfigFile} from '../../../src/codegen/types.js'
 
 describe('Python Generator Integration', () => {
@@ -103,10 +103,10 @@ describe('Python Generator Integration', () => {
     } as unknown as SchemaInferrer
 
     // Generate the Python code
-    const generatedCode = doStuff(mockConfigFile, mockSchemaInferrer)
+    const generatedCode = generatePythonClientCode(mockConfigFile, mockSchemaInferrer, 'PrefabClient')
 
     // Verify key parts of the generated code
-    expect(generatedCode).to.include('class PrefabClient(Client):')
+    expect(generatedCode).to.include('class PrefabClient:')
 
     // Check for methods
     expect(generatedCode).to.include('def feature_enabled(self')
@@ -121,17 +121,26 @@ describe('Python Generator Integration', () => {
     expect(generatedCode).to.include('-> int:')
     expect(generatedCode).to.include('-> List[str]:')
 
+    // Check for value type handling
+    expect(generatedCode).to.include('if isinstance(config_value, bool):')
+    expect(generatedCode).to.include('if isinstance(config_value, str):')
+    expect(generatedCode).to.include('if isinstance(config_value, int):')
+    expect(generatedCode).to.include(
+      'if isinstance(config_value, list) and all(isinstance(x, str) for x in config_value):',
+    )
+
     // Check for ConfigValue field handling
-    expect(generatedCode).to.include("if config_value.HasField('bool'):")
-    expect(generatedCode).to.include("if config_value.HasField('string'):")
-    expect(generatedCode).to.include("if config_value.HasField('int'):")
-    expect(generatedCode).to.include("if config_value.HasField('string_list'):")
-    expect(generatedCode).to.include('string_list.values')
+    expect(generatedCode).to.include('if isinstance(config_value, bool):')
+    expect(generatedCode).to.include('if isinstance(config_value, str):')
+    expect(generatedCode).to.include('if isinstance(config_value, int):')
+    expect(generatedCode).to.include('return config_value')
 
     // Check for appropriate imports
     expect(generatedCode).to.include('from typing import')
     expect(generatedCode).to.include('import logging')
-    expect(generatedCode).to.include('from prefab_cloud_python import Client, Context')
+    expect(generatedCode).to.include('import prefab_cloud_python')
+    expect(generatedCode).to.include('from prefab_cloud_python import')
+    expect(generatedCode).to.include('Context')
   })
 
   it('throws if method names conflict', () => {
@@ -186,8 +195,8 @@ describe('Python Generator Integration', () => {
       },
     } as unknown as SchemaInferrer
 
-    expect(() => doStuff(mockConfigFile, mockSchemaInferrer)).to.throw(
-      `Method 'feature_enabled' is already registered. Prefab key feature.enabled conflicts with feature_enabled`,
+    expect(() => generatePythonClientCode(mockConfigFile, mockSchemaInferrer)).to.throw(
+      `Unable to generate method 'feature_enabled' for config key 'feature.enabled' because it has already been generated for config key 'feature_enabled'.`,
     )
   })
 })

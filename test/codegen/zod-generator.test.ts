@@ -135,6 +135,42 @@ describe('ZodGenerator', () => {
     }
   })
 
+  describe('generate', () => {
+    it('should generate a output for configs', () => {
+      const generator = new ZodGenerator(mockConfigFile)
+      const output = generator.generate(SupportedLanguage.TypeScript)
+
+      expect(output).to.include('PrefabConfig')
+    })
+
+    it('should throw if method names conflict', () => {
+      mockConfigFile.configs = [
+        ...mockConfigFile.configs,
+        {
+          configType: 'FEATURE_FLAG',
+          key: 'example-feature-flag',
+          rows: [
+            {
+              values: [
+                {
+                  value: {
+                    bool: true,
+                  },
+                },
+              ],
+            },
+          ],
+          valueType: 'BOOL',
+        },
+      ]
+      const generator = new ZodGenerator(mockConfigFile)
+
+      expect(() => generator.generate(SupportedLanguage.TypeScript)).to.throw(
+        `Method 'exampleFeatureFlag' is already registered. Prefab key example-feature-flag conflicts with example.feature.flag`,
+      )
+    })
+  })
+
   describe('generateSchemaLines', () => {
     it('should generate schema lines for configs', () => {
       const generator = new ZodGenerator(mockConfigFile)

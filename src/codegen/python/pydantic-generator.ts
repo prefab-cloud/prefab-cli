@@ -481,6 +481,12 @@ export class UnifiedPythonGenerator {
       this.imports.addStandardImport('pystache')
     }
 
+    if (this.methods.get(pythonMethodName)) {
+      throw new Error(
+        `Method '${pythonMethodName}' is already registered. Prefab key ${methodName} conflicts with ${this.methods.get(pythonMethodName)?.originalKey}`,
+      )
+    }
+
     // Store the method spec with the original key
     this.methods.set(pythonMethodName, {
       returnType,

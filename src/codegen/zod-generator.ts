@@ -76,6 +76,7 @@ export class ZodGenerator {
     // Filter configs based on type and sendToClientSdk for React
     const filteredConfigs = this.configFile.configs
       .filter((config) => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
+      .filter((config) => config.rows.length > 0)
       .filter(
         (config) =>
           language !== SupportedLanguage.React ||

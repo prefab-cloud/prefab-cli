@@ -14,6 +14,7 @@ export function generatePythonClientCode(
 
   configFile.configs
     .filter((config) => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
+    .filter((config) => config.rows.length > 0)
     // eslint-disable-next-line unicorn/no-array-for-each
     .forEach((config) => {
       const inferredSchema = schemaInferrer.infer(config, configFile)
@@ -24,6 +25,7 @@ export function generatePythonClientCode(
         [],
         `Get ${config.key} configuration`,
         config.valueType,
+        config.key,
       )
     })
 

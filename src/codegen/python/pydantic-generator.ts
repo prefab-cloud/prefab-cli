@@ -501,7 +501,7 @@ export class UnifiedPythonGenerator {
 
     if (this.methods.get(pythonMethodName)) {
       throw new Error(
-        `Method '${pythonMethodName}' is already registered. Prefab key ${methodName} conflicts with ${this.methods.get(pythonMethodName)?.originalKey}`,
+        `Unable to generate method '${pythonMethodName}' for config key '${originalKey}' because it has already been generated for config key '${this.methods.get(pythonMethodName)?.originalKey}'.`,
       )
     }
 

@@ -196,7 +196,7 @@ describe('Python Generator Integration', () => {
     } as unknown as SchemaInferrer
 
     expect(() => generatePythonClientCode(mockConfigFile, mockSchemaInferrer)).to.throw(
-      `Method 'feature_enabled' is already registered. Prefab key feature.enabled conflicts with feature_enabled`,
+      `Unable to generate method 'feature_enabled' for config key 'feature.enabled' because it has already been generated for config key 'feature_enabled'.`,
     )
   })
 })

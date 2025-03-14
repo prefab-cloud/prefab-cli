@@ -133,4 +133,61 @@ describe('Python Generator Integration', () => {
     expect(generatedCode).to.include('import logging')
     expect(generatedCode).to.include('from prefab_cloud_python import Client, Context')
   })
+
+  it('throws if method names conflict', () => {
+    // Create a mock config file with different types of configs
+    const mockConfigFile: ConfigFile = {
+      configs: [
+        {
+          key: 'feature_enabled',
+          configType: 'FEATURE_FLAG',
+          valueType: 'BOOL',
+          rows: [
+            {
+              values: [{value: {bool: true}}],
+            },
+          ],
+        },
+        {
+          key: 'api_url',
+          configType: 'CONFIG',
+          valueType: 'STRING',
+          rows: [
+            {
+              values: [{value: {string: 'https://api.example.com'}}],
+            },
+          ],
+        },
+        {
+          key: 'feature.enabled',
+          configType: 'CONFIG',
+          valueType: 'INT',
+          rows: [
+            {
+              values: [{value: {int: 30}}],
+            },
+          ],
+        },
+      ],
+    }
+
+    const mockSchemaInferrer = {
+      infer: (config: Config) => {
+        if (config.key === 'feature_enabled') {
+          return {_def: {typeName: 'ZodBoolean'}} // Mock boolean schema
+        }
+        if (config.key === 'api_url') {
+          return {_def: {typeName: 'ZodString'}} // Mock string schema
+        }
+        if (config.key === 'feature.enabled') {
+          return {_def: {typeName: 'ZodNumber', checks: [{kind: 'int'}]}} // Mock integer schema
+        }
+        return {_def: {typeName: 'ZodUnknown'}}
+      },
+    } as unknown as SchemaInferrer
+
+    expect(() => doStuff(mockConfigFile, mockSchemaInferrer)).to.throw(
+      `Method 'feature_enabled' is already registered. Prefab key feature.enabled conflicts with feature_enabled`,
+    )
+  })
 })

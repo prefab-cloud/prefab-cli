@@ -46,6 +46,7 @@ export interface TemplateData {
 export class ZodGenerator {
   private configFile: ConfigFile
   private schemaInferrer: SchemaInferrer
+  private methods: {[key: string]: AccessorMethod} = {}
 
   constructor(configFile: ConfigFile) {
     this.configFile = configFile
@@ -114,7 +115,7 @@ export class ZodGenerator {
       ? ZodUtils.zodTypeToTypescript(schemaObj._def.returns)
       : ZodUtils.zodTypeToTypescript(schemaObj)
 
-    return {
+    const accessorMethod = {
       isFunctionReturn: isFunction,
       key: config.key,
       methodName: ZodUtils.keyToMethodName(config.key),
@@ -123,6 +124,16 @@ export class ZodGenerator {
       returnType,
       returnValue,
     }
+
+    if (this.methods[accessorMethod.methodName]) {
+      throw new Error(
+        `Method '${accessorMethod.methodName}' is already registered. Prefab key ${config.key} conflicts with ${this.methods[accessorMethod.methodName].key}`,
+      )
+    }
+
+    this.methods[accessorMethod.methodName] = accessorMethod
+
+    return accessorMethod
   }
 
   /**

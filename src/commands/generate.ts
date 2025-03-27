@@ -14,15 +14,16 @@ export default class Generate extends APICommand {
   static description = 'Generate type definitions for your Prefab configuration'
 
   static examples = [
-    '<%= config.bin %> <%= command.id %> --lang typescript',
-    '<%= config.bin %> <%= command.id %> --lang typescript --output-dir custom/path',
-    '<%= config.bin %> <%= command.id %> --lang python',
+    '<%= config.bin %> <%= command.id %> --target node-ts',
+    '<%= config.bin %> <%= command.id %> --target react-ts --output-dir custom/path',
+    '<%= config.bin %> <%= command.id %> --target python',
   ]
 
   static flags = {
-    lang: Flags.string({
-      default: 'typescript',
-      description: 'language to generate code for (typescript or python)',
+    target: Flags.string({
+      default: 'node-ts',
+      options: ['node-ts', 'react-ts', 'python-pydantic'],
+      description: 'language/framework to generate code for',
     }),
     'output-dir': Flags.string({
       default: 'generated-sources',
@@ -37,23 +38,23 @@ export default class Generate extends APICommand {
     this.verboseLog('API Key:', this.rawApiClient ? 'Set (hidden)' : 'Not set')
     this.verboseLog('Environment:', this.currentEnvironment)
     this.verboseLog('Base API URL:', process.env.PREFAB_API_URL || 'Default')
-    this.verboseLog('Language:', flags.lang)
+    this.verboseLog('Language:', flags.target)
     this.verboseLog('Output directory:', flags['output-dir'])
 
-    // Get the language from the flag, using lowercase to ensure consistency
-    const langInput = flags.lang?.toLowerCase()
+    // Get the target from the flag, using lowercase to ensure consistency
+    const langInput = flags.target?.toLowerCase()
 
     // Map the input string to the appropriate enum value
     let language: SupportedLanguage
 
-    if (langInput === 'python') {
+    if (langInput === 'python-pydantic') {
       language = SupportedLanguage.Python
-    } else if (langInput === 'react') {
+    } else if (langInput === 'react-ts') {
       language = SupportedLanguage.React
-    } else if (langInput === 'typescript') {
+    } else if (langInput === 'node-ts') {
       language = SupportedLanguage.TypeScript
     } else {
-      throw new Error(`Unsupported language: ${langInput}. Supported languages are: typescript, python`)
+      throw new Error(`Unsupported target: ${langInput}`)
     }
 
     // Download the configuration using the APICommand's client
@@ -65,7 +66,7 @@ export default class Generate extends APICommand {
 
       this.verboseLog('Creating generator...')
       const generator = new ZodGenerator(configFile, this.verboseLog.bind(this))
-      console.log(`Generating ${language} code for configs...`)
+      console.log(`Generating ${flags.target} code for configs...`)
 
       // Determine the class name based on the language
       const className = language === SupportedLanguage.Python ? 'PrefabTypedClient' : undefined

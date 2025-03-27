@@ -14,7 +14,7 @@ $ npm install -g @prefab-cloud/prefab
 $ prefab COMMAND
 running command...
 $ prefab (--version)
-@prefab-cloud/prefab/0.5.0-pre4 darwin-arm64 node-v23.6.0
+@prefab-cloud/prefab/0.5.0-pre4 darwin-arm64 node-v22.12.0
 $ prefab --help [COMMAND]
 USAGE
   $ prefab COMMAND
@@ -123,12 +123,13 @@ Generate type definitions for your Prefab configuration
 
 ```
 USAGE
-  $ prefab gen --api-key <value> [--json] [--interactive] [--no-color] [--verbose] [--lang <value>]
-    [--output-file <value>]
+  $ prefab gen --api-key <value> [--json] [--interactive] [--no-color] [--verbose] [--target
+    node-ts|react-ts|python-pydantic] [--output-dir <value>]
 
 FLAGS
-  --lang=<value>         [default: typescript] language to generate code for (typescript or python)
-  --output-file=<value>  [default: src/prefab/prefab.ts] output file path for generated code
+  --output-dir=<value>  [default: generated-sources] output directory for generated code
+  --target=<option>     [default: node-ts] language/framework to generate code for
+                        <options: node-ts|react-ts|python-pydantic>
 
 GLOBAL FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
@@ -144,11 +145,11 @@ ALIASES
   $ prefab gen
 
 EXAMPLES
-  $ prefab gen --lang typescript
+  $ prefab gen --target node-ts
 
-  $ prefab gen --lang typescript --output-file src/custom/path/types.ts
+  $ prefab gen --target react-ts --output-dir custom/path
 
-  $ prefab gen --lang python
+  $ prefab gen --target python
 ```
 
 ## `prefab generate`
@@ -157,12 +158,13 @@ Generate type definitions for your Prefab configuration
 
 ```
 USAGE
-  $ prefab generate --api-key <value> [--json] [--interactive] [--no-color] [--verbose] [--lang <value>]
-    [--output-file <value>]
+  $ prefab generate --api-key <value> [--json] [--interactive] [--no-color] [--verbose] [--target
+    node-ts|react-ts|python-pydantic] [--output-dir <value>]
 
 FLAGS
-  --lang=<value>         [default: typescript] language to generate code for (typescript or python)
-  --output-file=<value>  [default: src/prefab/prefab.ts] output file path for generated code
+  --output-dir=<value>  [default: generated-sources] output directory for generated code
+  --target=<option>     [default: node-ts] language/framework to generate code for
+                        <options: node-ts|react-ts|python-pydantic>
 
 GLOBAL FLAGS
   --api-key=<value>   (required) Prefab API KEY (defaults to ENV var PREFAB_API_KEY)
@@ -178,11 +180,11 @@ ALIASES
   $ prefab gen
 
 EXAMPLES
-  $ prefab generate --lang typescript
+  $ prefab generate --target node-ts
 
-  $ prefab generate --lang typescript --output-file src/custom/path/types.ts
+  $ prefab generate --target react-ts --output-dir custom/path
 
-  $ prefab generate --lang python
+  $ prefab generate --target python
 ```
 
 _See code: [src/commands/generate.ts](https://github.com/prefab-cloud/prefab-cli/blob/v0.5.0-pre4/src/commands/generate.ts)_

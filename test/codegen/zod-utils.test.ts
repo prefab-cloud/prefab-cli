@@ -8,22 +8,22 @@ describe('ZodUtils', () => {
   describe('zodToString', () => {
     it('should convert a ZodString to string representation', () => {
       const schema = z.string()
-      expect(ZodUtils.zodToString(schema)).to.equal('z.string()')
+      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.string()')
     })
 
     it('should convert a ZodBoolean to string representation', () => {
       const schema = z.boolean()
-      expect(ZodUtils.zodToString(schema)).to.equal('z.boolean()')
+      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.boolean()')
     })
 
     it('should convert a Zod integer to string representation', () => {
       const schema = z.number().int()
-      expect(ZodUtils.zodToString(schema)).to.equal('z.number().int()')
+      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.number().int()')
     })
 
     it('should convert a regular Zod number to string representation', () => {
       const schema = z.number()
-      const result = ZodUtils.zodToString(schema)
+      const result = ZodUtils.zodToString(schema, 'test')
       expect(result).to.equal('z.number()')
     })
 
@@ -32,7 +32,7 @@ describe('ZodUtils', () => {
         age: z.string(),
         name: z.string(),
       })
-      const result = ZodUtils.zodToString(schema)
+      const result = ZodUtils.zodToString(schema, 'test')
       expect(result).to.contain('z.object({')
       expect(result).to.contain('name: z.string()')
       expect(result).to.contain('age: z.string()')
@@ -40,17 +40,17 @@ describe('ZodUtils', () => {
 
     it('should convert a ZodArray to string representation', () => {
       const schema = z.array(z.string())
-      expect(ZodUtils.zodToString(schema)).to.equal('z.array(z.string())')
+      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.array(z.string())')
     })
 
     it('should convert a ZodOptional to string representation', () => {
       const schema = z.string().optional()
-      expect(ZodUtils.zodToString(schema)).to.equal('z.string().optional()')
+      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.string().optional()')
     })
 
     it('should convert a union to string representation', () => {
       const schema = z.union([z.string(), z.number()])
-      expect(ZodUtils.zodToString(schema)).to.equal('z.union([z.string(), z.number()])')
+      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.union([z.string(), z.number()])')
     })
   })
 

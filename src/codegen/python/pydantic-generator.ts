@@ -260,7 +260,10 @@ export class UnifiedPythonGenerator {
   protected paramClasses: Map<string, {fields: Array<{name: string; type: string}>}> = new Map()
   protected schemaModels: Map<z.ZodTypeAny, string> = new Map() // Track schemas to model names
 
-  constructor(private options: UnifiedGeneratorOptions = {}) {
+  constructor(
+    private options: UnifiedGeneratorOptions = {},
+    private log: (category: string | unknown, message?: unknown) => void = console.log,
+  ) {
     // Add base imports for the client
     this.imports.addStandardImport('os')
     this.imports.addTypingImport('Optional')
@@ -1213,7 +1216,7 @@ ${spec.hasTemplateParams ? '        params: Parameters for template rendering\n'
     const pythonCode = this.generatePythonFile()
     fs.writeFileSync(filePath, pythonCode)
 
-    console.log(`Generated Python client written to ${filePath}`)
+    this.log(`Generated Python client written to ${filePath}`)
 
     return filePath
   }

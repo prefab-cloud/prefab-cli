@@ -18,7 +18,7 @@ export class ConfigDownloader {
       const configData = response.json as unknown as ConfigFile
 
       // Print out each config key
-      console.log('\nFound configurations:', configData.configs?.length || 0)
+      this.command.verboseLog('\nFound configurations:', configData.configs?.length || 0)
 
       if (!configData.configs) {
         throw new Error('Invalid response format')

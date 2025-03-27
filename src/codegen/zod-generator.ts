@@ -47,18 +47,18 @@ export class ZodGenerator {
   private dependencies: Set<string> = new Set()
   private schemaInferrer: SchemaInferrer
   private methods: {[key: string]: AccessorMethod} = {}
+  private log: (category: string | unknown, message?: unknown) => void
 
-  constructor(configFile: ConfigFile) {
+  constructor(configFile: ConfigFile, log: (category: string | unknown, message?: unknown) => void) {
     this.configFile = configFile
-    this.schemaInferrer = new SchemaInferrer()
+    this.schemaInferrer = new SchemaInferrer(log)
+    this.log = log
   }
 
   /**
    * Generate code for the specified language
    */
   generate(language: SupportedLanguage = SupportedLanguage.TypeScript, className?: string): string {
-    console.log(`Generating ${language} code for configs...`)
-
     if (language === SupportedLanguage.Python) {
       return generatePythonClientCode(this.configFile, this.schemaInferrer, className || 'PrefabTypedClient')
     }
@@ -84,7 +84,7 @@ export class ZodGenerator {
           config.sendToClientSdk === true,
       )
 
-    console.log('Exportable configs:', filteredConfigs.length)
+    this.log('Exportable configs:', filteredConfigs.length)
 
     // Generate individual accessor methods
     const accessorMethods = filteredConfigs.map((config) => this.renderAccessorMethod(config, language)).join('\n')
@@ -143,7 +143,7 @@ export class ZodGenerator {
    */
   generateSchemaLine(config: Config, language: SupportedLanguage = SupportedLanguage.TypeScript): SchemaLine {
     const simplified = this.generateSimplifiedSchema(config)
-    const zodType = ZodUtils.zodToString(simplified)
+    const zodType = ZodUtils.zodToString(simplified, config.key)
 
     return this.massageSchemaLineForLanguage(language, config, {
       key: config.key,

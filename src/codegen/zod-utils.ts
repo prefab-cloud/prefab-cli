@@ -355,7 +355,7 @@ export const ZodUtils = {
   /**
    * Convert a Zod schema to its string representation
    */
-  zodToString(schema: z.ZodType): string {
+  zodToString(schema: z.ZodType, key: string): string {
     // Keep using any for internal properties that aren't exposed in the type definitions
     const def = schema._def as any
 
@@ -389,19 +389,19 @@ export const ZodUtils = {
     }
 
     if (def.typeName === 'ZodArray') {
-      const innerType = this.zodToString(def.type)
+      const innerType = this.zodToString(def.type, key)
       return `z.array(${innerType})`
     }
 
     // Handle ZodOptional
     if (def.typeName === 'ZodOptional') {
-      const innerType = this.zodToString(def.innerType)
+      const innerType = this.zodToString(def.innerType, key)
       return `${innerType}.optional()`
     }
 
     // Handle ZodUnion
     if (def.typeName === 'ZodUnion') {
-      const options = def.options.map((option: z.ZodType) => this.zodToString(option))
+      const options = def.options.map((option: z.ZodType) => this.zodToString(option, key))
       return `z.union([${options.join(', ')}])`
     }
 
@@ -411,29 +411,29 @@ export const ZodUtils = {
       const argsSchema = def.args
       const returnsSchema = def.returns
 
-      return `z.function().args(${this.zodToString(argsSchema)}).returns(${this.zodToString(returnsSchema)})`
+      return `z.function().args(${this.zodToString(argsSchema, key)}).returns(${this.zodToString(returnsSchema, key)})`
     }
 
     // Handle ZodTuple (used for function args)
     if (def.typeName === 'ZodTuple') {
       if (def.items && def.items.length === 1) {
-        return this.zodToString(def.items[0])
+        return this.zodToString(def.items[0], key)
       }
 
-      return this.zodToString(def.items[0]) // Just take the first item for simplicity
+      return this.zodToString(def.items[0], key) // Just take the first item for simplicity
     }
 
     // Handle ZodObject
     if (def.typeName === 'ZodObject') {
       const shape = def.shape()
       const props = Object.entries(shape)
-        .map(([key, value]) => `${key}: ${this.zodToString(value as z.ZodTypeAny)}`)
+        .map(([key, value]) => `${key}: ${this.zodToString(value as z.ZodTypeAny, key)}`)
         .join(', ')
 
       return `z.object({${props}})`
     }
 
-    console.warn('Unknown zod type:', schema)
+    console.warn(`Unknown zod type for ${key}:`, schema)
     return 'z.any()'
   },
 

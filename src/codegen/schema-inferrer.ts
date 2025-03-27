@@ -9,6 +9,8 @@ import {secureEvaluateSchema} from './schema-evaluator.js'
 import {ZodUtils} from './zod-utils.js'
 
 export class SchemaInferrer {
+  constructor(private log: (category: string | unknown, message?: unknown) => void) {}
+
   private jsonToInferredZod = (data: unknown): ZodTypeAny => {
     if (Array.isArray(data)) {
       // If it's an array, infer the type of its first element (assuming homogenous arrays)
@@ -34,7 +36,7 @@ export class SchemaInferrer {
 
     if (typeof data === 'string') {
       // Check if the string contains mustache templates
-      const schema = MustacheExtractor.extractSchema(data)
+      const schema = MustacheExtractor.extractSchema(data, this.log)
 
       // If the schema has properties, it's a template string
       if (Object.keys(schema._def.shape()).length > 0) {
@@ -101,7 +103,7 @@ export class SchemaInferrer {
             }
           } catch (error) {
             // If there's any error in merging function args, fall back to using a union
-            console.log(`Error merging function arguments for key ${key}:`, error)
+            this.log(`Error merging function arguments for key ${key}:`, error)
             mergedShape[key] = z.union([typeA, typeB])
           }
         } else if (typeA._def.typeName === typeB._def.typeName) {
@@ -173,7 +175,7 @@ export class SchemaInferrer {
           const result = secureEvaluateSchema(schemaStr)
 
           if (result.success && result.schema) {
-            console.log(`Successfully parsed schema from schema config: ${config.key}`)
+            this.log(`Successfully parsed schema from schema config: ${config.key}`)
             return result.schema
           } else if (result.error) {
             console.warn(`Failed to parse schema from schema config ${config.key}: ${result.error}`)
@@ -203,7 +205,7 @@ export class SchemaInferrer {
     // Create a map of template strings to their extracted schemas
     const templateSchemas = new Map<string, z.ZodObject<any>>()
     templateStrings.forEach((str) => {
-      templateSchemas.set(str, MustacheExtractor.extractSchema(str))
+      templateSchemas.set(str, MustacheExtractor.extractSchema(str, this.log))
     })
 
     // Process the schema recursively to transform string fields with templates
@@ -242,7 +244,7 @@ export class SchemaInferrer {
             const result = secureEvaluateSchema(schemaStr)
 
             if (result.success && result.schema) {
-              console.log(`Successfully parsed schema from schema config: ${schemaConfig.key}`)
+              this.log(`Successfully parsed schema from schema config: ${schemaConfig.key}`)
 
               // Get template strings from the config if any
               const templateStrings = this.getAllTemplateStrings(config)
@@ -253,7 +255,7 @@ export class SchemaInferrer {
               }
 
               // Otherwise do basic template processing
-              console.log(`Processing schema with ${templateStrings.length} template strings`)
+              this.log(`Processing schema with ${templateStrings.length} template strings`)
 
               // Parse the JSON config
               const jsonValues = this.getAllJsonValues(config)
@@ -282,7 +284,7 @@ export class SchemaInferrer {
                   ) {
                     // Extract template parameters and create a function schema
                     const templateStr = jsonConfig[key] as string
-                    const schema = MustacheExtractor.extractSchema(templateStr)
+                    const schema = MustacheExtractor.extractSchema(templateStr, this.log)
 
                     // Only create a function if we found template parameters
                     if (Object.keys(schema.shape).length > 0) {
@@ -314,7 +316,7 @@ export class SchemaInferrer {
                         (nestedConfig[nestedKey] as string).includes('{{')
                       ) {
                         const templateStr = nestedConfig[nestedKey] as string
-                        const schema = MustacheExtractor.extractSchema(templateStr)
+                        const schema = MustacheExtractor.extractSchema(templateStr, this.log)
 
                         if (Object.keys(schema.shape).length > 0) {
                           newNestedShape[nestedKey] = z.function().args(schema).returns(z.string())
@@ -355,7 +357,7 @@ export class SchemaInferrer {
 
         // If multiple template strings, merge their schemas
         if (templateStrings.length > 1) {
-          const schemas = templateStrings.map((str) => MustacheExtractor.extractSchema(str))
+          const schemas = templateStrings.map((str) => MustacheExtractor.extractSchema(str, this.log))
 
           // Replace reduce with a loop
           let mergedSchema: ZodObject<ZodRawShape> | null = null
@@ -376,7 +378,7 @@ export class SchemaInferrer {
             : z.function().args(schemas[0]).returns(z.string())
         }
 
-        const schema = MustacheExtractor.extractSchema(templateStrings[0])
+        const schema = MustacheExtractor.extractSchema(templateStrings[0], this.log)
 
         // If the schema is empty (no properties), just return basic string
         if (Object.keys(schema._def.shape()).length === 0) {
@@ -409,33 +411,33 @@ export class SchemaInferrer {
       case 'JSON': {
         // Get all JSON values
         const jsonValues = this.getAllJsonValues(config)
-        console.log('JSON values:', JSON.stringify(jsonValues, null, 2))
+        this.log('JSON values:', JSON.stringify(jsonValues, null, 2))
 
         if (jsonValues.length > 0) {
           try {
             // Infer schemas for all JSON values
             const schemas = jsonValues.map((json) => {
               const schema = this.jsonToInferredZod(json)
-              console.log('Inferred schema for:', JSON.stringify(json))
-              console.log('Schema:', ZodUtils.zodToString(schema))
+              this.log('Inferred schema for:', JSON.stringify(json))
+              this.log('Schema:', ZodUtils.zodToString(schema, config.key))
               return schema
             })
 
             // Process each schema
             let mergedSchema: ZodTypeAny | null = null
             for (const [i, schema] of schemas.entries()) {
-              console.log(`Processing schema ${i}:`, ZodUtils.zodToString(schema))
+              this.log(`Processing schema ${i}:`, ZodUtils.zodToString(schema, config.key))
 
               if (mergedSchema === null) {
                 mergedSchema = schema
               } else if (mergedSchema instanceof z.ZodObject && schema instanceof z.ZodObject) {
                 mergedSchema = this.mergeSchemas(mergedSchema, schema)
-                console.log('Merged result:', ZodUtils.zodToString(mergedSchema))
+                this.log('Merged result:', ZodUtils.zodToString(mergedSchema, config.key))
               }
             }
 
             if (mergedSchema) {
-              console.log('Final merged schema:', ZodUtils.zodToString(mergedSchema))
+              this.log('Final merged schema:', ZodUtils.zodToString(mergedSchema, config.key))
               return mergedSchema
             }
           } catch (error) {

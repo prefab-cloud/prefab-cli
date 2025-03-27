@@ -10,12 +10,15 @@ interface MustacheNode {
 // Extracts a zod schema from a mustache template.
 // eg "Hello {{name}}!" -> z.object({ name: z.string() })
 export class MustacheExtractor {
-  static extractSchema(template: string): z.ZodObject<Record<string, z.ZodTypeAny>> {
+  static extractSchema(
+    template: string,
+    log: (category: string | unknown, message?: unknown) => void,
+  ): z.ZodObject<Record<string, z.ZodTypeAny>> {
     if (!template) {
       return z.object({})
     }
 
-    const nodes = this.parseMustacheTemplate(template)
+    const nodes = this.parseMustacheTemplate(template, log)
     return this.generateZodSchema(nodes)
   }
 
@@ -38,7 +41,10 @@ export class MustacheExtractor {
     return z.object(properties)
   }
 
-  private static parseMustacheTemplate(template: string): MustacheNode[] {
+  private static parseMustacheTemplate(
+    template: string,
+    log: (category: string | unknown, message?: unknown) => void,
+  ): MustacheNode[] {
     const tokens = template.match(/{{[^}]+}}|[^{}]+/g) || []
     const root: MustacheNode[] = []
     const stack: MustacheNode[][] = [root]
@@ -50,7 +56,7 @@ export class MustacheExtractor {
 
       // Add check for partials
       if (content.startsWith('>')) {
-        console.log(`Found Mustache partial: ${content.slice(1)}`)
+        log(`Found Mustache partial: ${content.slice(1)}`)
         continue
       }
 

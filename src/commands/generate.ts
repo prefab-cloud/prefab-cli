@@ -33,12 +33,12 @@ export default class Generate extends APICommand {
   public async run(): Promise<JsonObj | void> {
     const {flags} = await this.parse(Generate)
 
-    console.log('=== GENERATE COMMAND START ===')
-    console.log('API Key:', this.rawApiClient ? 'Set (hidden)' : 'Not set')
-    console.log('Environment:', this.currentEnvironment)
-    console.log('Base API URL:', process.env.PREFAB_API_URL || 'Default')
-    console.log('Language:', flags.lang)
-    console.log('Output directory:', flags['output-dir'])
+    this.verboseLog('=== GENERATE COMMAND START ===')
+    this.verboseLog('API Key:', this.rawApiClient ? 'Set (hidden)' : 'Not set')
+    this.verboseLog('Environment:', this.currentEnvironment)
+    this.verboseLog('Base API URL:', process.env.PREFAB_API_URL || 'Default')
+    this.verboseLog('Language:', flags.lang)
+    this.verboseLog('Output directory:', flags['output-dir'])
 
     // Get the language from the flag, using lowercase to ensure consistency
     const langInput = flags.lang?.toLowerCase()
@@ -59,39 +59,39 @@ export default class Generate extends APICommand {
     // Download the configuration using the APICommand's client
     const downloader = new ConfigDownloader(this)
     try {
-      console.log('Downloading config...')
+      this.verboseLog('Downloading config...')
       const configFile = await downloader.downloadConfig()
-      console.log('Config download complete.')
+      this.verboseLog('Config download complete.')
 
-      console.log('Creating generator...')
-      const generator = new ZodGenerator(configFile)
-      console.log('Generating code...')
+      this.verboseLog('Creating generator...')
+      const generator = new ZodGenerator(configFile, this.verboseLog.bind(this))
+      console.log(`Generating ${language} code for configs...`)
 
       // Determine the class name based on the language
       const className = language === SupportedLanguage.Python ? 'PrefabTypedClient' : undefined
 
       const generatedCode = generator.generate(language, className)
-      console.log('Code generation complete. Size:', generatedCode.length)
+      this.verboseLog('Code generation complete. Size:', generatedCode.length)
 
       // Set filename based on language
       const filename = language === SupportedLanguage.Python ? 'prefab.py' : 'prefab.ts'
       const outputDir = flags['output-dir']
 
       // Ensure the directory exists
-      console.log('Creating directory:', outputDir)
+      this.verboseLog('Creating directory:', outputDir)
       await fs.promises.mkdir(outputDir, {recursive: true})
 
       // Write the generated code to the file
       const outputFile = path.join(outputDir, filename)
-      console.log('Writing file:', outputFile)
+      this.verboseLog('Writing file:', outputFile)
       await fs.promises.writeFile(outputFile, generatedCode)
-      console.log(`Generated ${langInput} code at ${outputFile}`)
+      this.verboseLog(`Generated ${langInput} code at ${outputFile}`)
     } catch (error) {
       console.error('ERROR:', error)
       this.error(error as Error)
     }
 
-    console.log('=== GENERATE COMMAND END ===')
+    this.verboseLog('=== GENERATE COMMAND END ===')
     return {success: true}
   }
 }

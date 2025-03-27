@@ -7,10 +7,14 @@ import {SchemaInferrer} from '../../src/codegen/schema-inferrer.js'
 import {ZodUtils} from '../../src/codegen/zod-utils.js'
 
 describe('SchemaInferrer', () => {
+  const logger = (category: string | unknown, message?: unknown) => {
+    console.log(category, message)
+  }
+
   let inferrer: SchemaInferrer
 
   beforeEach(() => {
-    inferrer = new SchemaInferrer()
+    inferrer = new SchemaInferrer(logger)
   })
 
   describe('infer', () => {
@@ -27,7 +31,7 @@ describe('SchemaInferrer', () => {
 
       const result = inferrer.infer(config, configFile)
       expect(result).to.be.instanceOf(z.ZodNumber)
-      expect(ZodUtils.zodToString(result)).to.equal('z.number().int()')
+      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.number().int()')
     })
 
     it('should infer from a double', () => {
@@ -43,7 +47,7 @@ describe('SchemaInferrer', () => {
 
       const result = inferrer.infer(config, configFile)
       expect(result).to.be.instanceOf(z.ZodNumber)
-      expect(ZodUtils.zodToString(result)).to.equal('z.number()')
+      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.number()')
     })
 
     it('should infer from a simple string', () => {
@@ -59,7 +63,7 @@ describe('SchemaInferrer', () => {
 
       const result = inferrer.infer(config, configFile)
       expect(result).to.be.instanceOf(z.ZodString)
-      expect(ZodUtils.zodToString(result)).to.equal('z.string()')
+      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.string()')
     })
 
     it('should infer from a template string', () => {
@@ -75,7 +79,7 @@ describe('SchemaInferrer', () => {
 
       const result = inferrer.infer(config, configFile)
       expect(result._def.typeName).to.equal('ZodFunction')
-      expect(ZodUtils.zodToString(result)).to.equal(
+      expect(ZodUtils.zodToString(result, 'test')).to.equal(
         'z.function().args(z.object({name: z.string()})).returns(z.string())',
       )
     })
@@ -93,7 +97,7 @@ describe('SchemaInferrer', () => {
 
       const result = inferrer.infer(config, configFile)
       expect(result._def.typeName).to.equal('ZodObject')
-      expect(ZodUtils.zodToString(result)).to.equal('z.object({name: z.string(), age: z.number()})')
+      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.object({name: z.string(), age: z.number()})')
     })
 
     it('should infer from a json with placeholders', () => {
@@ -109,7 +113,7 @@ describe('SchemaInferrer', () => {
 
       const result = inferrer.infer(config, configFile)
       expect(result._def.typeName).to.equal('ZodObject')
-      expect(ZodUtils.zodToString(result)).to.equal(
+      expect(ZodUtils.zodToString(result, 'test')).to.equal(
         'z.object({name: z.function().args(z.object({name: z.string()})).returns(z.string()), age: z.number()})',
       )
     })
@@ -138,7 +142,7 @@ describe('SchemaInferrer', () => {
 
       const result = inferrer.infer(config, configFile)
       expect(result._def.typeName).to.equal('ZodObject')
-      expect(ZodUtils.zodToString(result)).to.equal(
+      expect(ZodUtils.zodToString(result, 'test')).to.equal(
         'z.object({systemMessage: z.function().args(z.object({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()), nested: z.object({stuff: z.array(z.object({name: z.string()}))})})',
       )
     })
@@ -156,7 +160,7 @@ describe('SchemaInferrer', () => {
 
       const result = inferrer.infer(config, configFile)
       expect(result._def.typeName).to.equal('ZodFunction')
-      expect(ZodUtils.zodToString(result)).to.equal(
+      expect(ZodUtils.zodToString(result, 'test')).to.equal(
         'z.function().args(z.object({name: z.string().optional(), baz: z.string().optional()})).returns(z.string())',
       )
     })
@@ -177,7 +181,7 @@ describe('SchemaInferrer', () => {
 
       const result = inferrer.infer(config, configFile)
       expect(result._def.typeName).to.equal('ZodObject')
-      expect(ZodUtils.zodToString(result)).to.equal(
+      expect(ZodUtils.zodToString(result, 'test')).to.equal(
         'z.object({name: z.string(), age: z.number().optional(), conflict: z.union([z.string(), z.number()]), otherNum: z.number().optional()})',
       )
     })
@@ -216,7 +220,7 @@ describe('SchemaInferrer', () => {
 
       const result = inferrer.infer(config, configFile)
       expect(result._def.typeName).to.equal('ZodObject')
-      expect(ZodUtils.zodToString(result)).to.equal(
+      expect(ZodUtils.zodToString(result, 'test')).to.equal(
         'z.object({systemMessage: z.union([z.function().args(z.object({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()), z.function().args(z.object({placeholder: z.string()})).returns(z.string())]), nested: z.object({stuff: z.array(z.object({name: z.string()})).optional(), otherStuff: z.function().args(z.object({placeholder2: z.string()})).returns(z.string()).optional()})})',
       )
     })
@@ -671,7 +675,7 @@ describe('SchemaInferrer', () => {
 
     beforeEach(() => {
       // Initialize SchemaInferrer
-      inferrer = new SchemaInferrer()
+      inferrer = new SchemaInferrer(logger)
     })
 
     it('should extract strings from direct string values', () => {

@@ -17,7 +17,7 @@ export function generatePythonClientCode(
     .filter((config) => config.rows.length > 0)
     // eslint-disable-next-line unicorn/no-array-for-each
     .forEach((config) => {
-      const inferredSchema = schemaInferrer.infer(config, configFile)
+      const inferredSchema = schemaInferrer.zodForConfig(config, configFile)
       generator.registerMethod(
         config.key,
         inferredSchema,

@@ -11,13 +11,9 @@ describe('SchemaInferrer', () => {
     console.log(category, message)
   }
 
-  let inferrer: SchemaInferrer
+  const inferrer = new SchemaInferrer(logger)
 
-  beforeEach(() => {
-    inferrer = new SchemaInferrer(logger)
-  })
-
-  describe('infer', () => {
+  describe('zodForConfig', () => {
     it('should infer from a number', () => {
       const config: Config = {
         configType: 'CONFIG',
@@ -29,9 +25,8 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.infer(config, configFile)
-      expect(result).to.be.instanceOf(z.ZodNumber)
-      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.number().int()')
+      const result = inferrer.zodForConfig(config, configFile)
+      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.number().int().optional()')
     })
 
     it('should infer from a double', () => {
@@ -45,9 +40,8 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.infer(config, configFile)
-      expect(result).to.be.instanceOf(z.ZodNumber)
-      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.number()')
+      const result = inferrer.zodForConfig(config, configFile)
+      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.number().optional()')
     })
 
     it('should infer from a simple string', () => {
@@ -61,9 +55,8 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.infer(config, configFile)
-      expect(result).to.be.instanceOf(z.ZodString)
-      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.string()')
+      const result = inferrer.zodForConfig(config, configFile)
+      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.string().optional()')
     })
 
     it('should infer from a template string', () => {
@@ -77,10 +70,9 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.infer(config, configFile)
-      expect(result._def.typeName).to.equal('ZodFunction')
+      const result = inferrer.zodForConfig(config, configFile)
       expect(ZodUtils.zodToString(result, 'test')).to.equal(
-        'z.function().args(z.object({name: z.string()})).returns(z.string())',
+        'z.function().args(z.object({name: z.string()})).returns(z.string()).optional()',
       )
     })
 
@@ -95,9 +87,11 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.infer(config, configFile)
+      const result = inferrer.zodForConfig(config, configFile)
       expect(result._def.typeName).to.equal('ZodObject')
-      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.object({name: z.string(), age: z.number()})')
+      expect(ZodUtils.zodToString(result, 'test')).to.equal(
+        'z.object({name: z.string().optional(), age: z.number().optional()})',
+      )
     })
 
     it('should infer from a json with placeholders', () => {
@@ -111,16 +105,42 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.infer(config, configFile)
+      const result = inferrer.zodForConfig(config, configFile)
       expect(result._def.typeName).to.equal('ZodObject')
       expect(ZodUtils.zodToString(result, 'test')).to.equal(
-        'z.object({name: z.function().args(z.object({name: z.string()})).returns(z.string()), age: z.number()})',
+        'z.object({name: z.function().args(z.object({name: z.string()})).returns(z.string()).optional(), age: z.number().optional()})',
       )
+    })
+
+    it('should infer non-optionals from a json with schema', () => {
+      const config: Config = {
+        configType: 'CONFIG',
+        key: 'test',
+        rows: [{values: [{value: {string: '{"name": "foo", "age": 10}'}}]}],
+        schemaKey: 'schemaConfig',
+        valueType: 'JSON',
+      }
+      const schemaConfig: Config = {
+        configType: 'SCHEMA',
+        key: 'schemaConfig',
+        rows: [
+          {values: [{value: {schema: {schema: 'z.object({name: z.string(), age: z.number()})', schemaType: 'ZOD'}}}]},
+        ],
+        valueType: 'JSON',
+      }
+      const configFile: ConfigFile = {
+        configs: [config, schemaConfig],
+      }
+
+      const result = inferrer.zodForConfig(config, configFile)
+      expect(result._def.typeName).to.equal('ZodObject')
+      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.object({name: z.string(), age: z.number()})')
     })
 
     it('torture test', () => {
       const config: Config = {
         configType: 'CONFIG',
+
         key: 'test',
         rows: [
           {
@@ -140,10 +160,10 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.infer(config, configFile)
+      const result = inferrer.zodForConfig(config, configFile)
       expect(result._def.typeName).to.equal('ZodObject')
       expect(ZodUtils.zodToString(result, 'test')).to.equal(
-        'z.object({systemMessage: z.function().args(z.object({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()), nested: z.object({stuff: z.array(z.object({name: z.string()}))})})',
+        'z.object({systemMessage: z.function().args(z.object({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()).optional(), nested: z.object({stuff: z.array(z.object({name: z.string().optional()})).optional()}).optional()})',
       )
     })
 
@@ -158,10 +178,9 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.infer(config, configFile)
-      expect(result._def.typeName).to.equal('ZodFunction')
+      const result = inferrer.zodForConfig(config, configFile)
       expect(ZodUtils.zodToString(result, 'test')).to.equal(
-        'z.function().args(z.object({name: z.string().optional(), baz: z.string().optional()})).returns(z.string())',
+        'z.function().args(z.object({name: z.string().optional(), baz: z.string().optional()})).returns(z.string()).optional()',
       )
     })
 
@@ -179,10 +198,9 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.infer(config, configFile)
-      expect(result._def.typeName).to.equal('ZodObject')
+      const result = inferrer.zodForConfig(config, configFile)
       expect(ZodUtils.zodToString(result, 'test')).to.equal(
-        'z.object({name: z.string(), age: z.number().optional(), conflict: z.union([z.string(), z.number()]), otherNum: z.number().optional()})',
+        'z.object({name: z.string().optional(), age: z.number().optional(), conflict: z.union([z.string(), z.number()]).optional(), otherNum: z.number().optional()})',
       )
     })
 
@@ -218,10 +236,10 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.infer(config, configFile)
+      const result = inferrer.zodForConfig(config, configFile)
       expect(result._def.typeName).to.equal('ZodObject')
       expect(ZodUtils.zodToString(result, 'test')).to.equal(
-        'z.object({systemMessage: z.union([z.function().args(z.object({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()), z.function().args(z.object({placeholder: z.string()})).returns(z.string())]), nested: z.object({stuff: z.array(z.object({name: z.string()})).optional(), otherStuff: z.function().args(z.object({placeholder2: z.string()})).returns(z.string()).optional()})})',
+        'z.object({systemMessage: z.function().args(z.object({user: z.array(z.object({name: z.string()})).optional(), admin: z.array(z.object({name: z.string()})).optional(), placeholder: z.string().optional()})).returns(z.string()).optional(), nested: z.object({stuff: z.array(z.object({name: z.string().optional()})).optional(), otherStuff: z.string().optional()}).optional()})',
       )
     })
 
@@ -243,8 +261,8 @@ describe('SchemaInferrer', () => {
         valueType: 'STRING',
       }
 
-      const schema = inferrer.infer(config, {configs: []})
-      expect((schema as any)._def.typeName).to.equal('ZodString')
+      const schema = inferrer.zodForConfig(config, {configs: []})
+      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.string().optional()')
     })
 
     it('should use schema from referenced schema config', () => {
@@ -273,7 +291,6 @@ describe('SchemaInferrer', () => {
       const jsonConfig: Config = {
         configType: 'CONFIG',
         key: 'test.person',
-        schemaKey: 'schemas.person', // Reference to the schema config
         rows: [
           {
             values: [
@@ -287,6 +304,7 @@ describe('SchemaInferrer', () => {
             ],
           },
         ],
+        schemaKey: 'schemas.person', // Reference to the schema config
         valueType: 'JSON',
       }
 
@@ -294,11 +312,11 @@ describe('SchemaInferrer', () => {
         configs: [schemaConfig, jsonConfig],
       }
 
-      const schema = inferrer.infer(jsonConfig, configFile)
+      const schema = inferrer.zodForConfig(jsonConfig, configFile)
 
       // Verify it's an object schema with the expected properties
       expect((schema as any)._def.typeName).to.equal('ZodObject')
-      const shape = (schema as z.ZodObject<any>).shape
+      const {shape} = schema as z.ZodObject<any>
       expect((shape.name as any)._def.typeName).to.equal('ZodString')
       expect((shape.age as any)._def.typeName).to.equal('ZodNumber')
     })
@@ -329,20 +347,20 @@ describe('SchemaInferrer', () => {
       const jsonConfig: Config = {
         configType: 'CONFIG',
         key: 'test.user',
-        schemaKey: 'schemas.user',
         rows: [
           {
             values: [
               {
                 value: {
                   json: {
-                    json: '{"username":"johndoe"}',
+                    json: '{"username":"johndoe", "email": "foo"}',
                   },
                 },
               },
             ],
           },
         ],
+        schemaKey: 'schemas.user',
         valueType: 'JSON',
       }
 
@@ -350,28 +368,19 @@ describe('SchemaInferrer', () => {
         configs: [schemaConfig, jsonConfig],
       }
 
-      const schema = inferrer.infer(jsonConfig, configFile)
+      const schema = inferrer.zodForConfig(jsonConfig, configFile)
 
-      // Verify the schema structure
-      expect((schema as any)._def.typeName).to.equal('ZodObject')
-      const shape = (schema as z.ZodObject<any>).shape
-
-      // Required property
-      expect((shape.username as any)._def.typeName).to.equal('ZodString')
-
-      // Optional properties
-      expect((shape.email as any)._def.typeName).to.equal('ZodOptional')
-      expect((shape.email as any)._def.innerType._def.typeName).to.equal('ZodString')
-
-      expect((shape.age as any)._def.typeName).to.equal('ZodOptional')
-      expect((shape.age as any)._def.innerType._def.typeName).to.equal('ZodNumber')
+      // we do inference on the json config, then trust server to have the non-optional
+      // optional doesn't carry over to the zod
+      expect(ZodUtils.zodToString(schema, 'test')).to.equal(
+        'z.object({username: z.string(), email: z.string().optional(), age: z.number().optional()})',
+      )
     })
 
     it('should fall back to inference when schema config is not found', () => {
       const jsonConfig: Config = {
         configType: 'CONFIG',
         key: 'test.product',
-        schemaKey: 'non.existent.schema', // This schema key doesn't exist
         rows: [
           {
             values: [
@@ -385,6 +394,7 @@ describe('SchemaInferrer', () => {
             ],
           },
         ],
+        schemaKey: 'non.existent.schema', // This schema key doesn't exist
         valueType: 'JSON',
       }
 
@@ -392,13 +402,11 @@ describe('SchemaInferrer', () => {
         configs: [jsonConfig], // No schema config exists
       }
 
-      const schema = inferrer.infer(jsonConfig, configFile)
+      const schema = inferrer.zodForConfig(jsonConfig, configFile)
 
-      // Should fall back to inference
-      expect((schema as any)._def.typeName).to.equal('ZodObject')
-      const shape = (schema as z.ZodObject<any>).shape
-      expect((shape.name as any)._def.typeName).to.equal('ZodString')
-      expect((shape.price as any)._def.typeName).to.equal('ZodNumber')
+      expect(ZodUtils.zodToString(schema, 'test')).to.equal(
+        'z.object({name: z.string().optional(), price: z.number().optional()})',
+      )
     })
 
     it('should fall back to inference when schema cannot be evaluated', () => {
@@ -426,7 +434,6 @@ describe('SchemaInferrer', () => {
       const jsonConfig: Config = {
         configType: 'CONFIG',
         key: 'test.invalid',
-        schemaKey: 'schemas.invalid',
         rows: [
           {
             values: [
@@ -440,6 +447,7 @@ describe('SchemaInferrer', () => {
             ],
           },
         ],
+        schemaKey: 'schemas.invalid',
         valueType: 'JSON',
       }
 
@@ -447,12 +455,9 @@ describe('SchemaInferrer', () => {
         configs: [schemaConfig, jsonConfig],
       }
 
-      const schema = inferrer.infer(jsonConfig, configFile)
+      const schema = inferrer.zodForConfig(jsonConfig, configFile)
 
-      // Should fall back to inference
-      expect((schema as any)._def.typeName).to.equal('ZodObject')
-      const shape = (schema as z.ZodObject<any>).shape
-      expect((shape.value as any)._def.typeName).to.equal('ZodString')
+      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.object({value: z.string().optional()})')
     })
 
     it('should handle complex schemas with nested objects and arrays', () => {
@@ -472,7 +477,7 @@ describe('SchemaInferrer', () => {
                         created: z.string(),
                         modified: z.string().optional()
                       }),
-                      status: z.enum(["active", "inactive", "pending"])
+                      status: z.enum(["active","inactive","pending"])
                     })`,
                     schemaType: 'ZOD',
                   },
@@ -487,7 +492,6 @@ describe('SchemaInferrer', () => {
       const jsonConfig: Config = {
         configType: 'CONFIG',
         key: 'test.complex',
-        schemaKey: 'schemas.complex',
         rows: [
           {
             values: [
@@ -501,6 +505,7 @@ describe('SchemaInferrer', () => {
             ],
           },
         ],
+        schemaKey: 'schemas.complex',
         valueType: 'JSON',
       }
 
@@ -508,24 +513,10 @@ describe('SchemaInferrer', () => {
         configs: [schemaConfig, jsonConfig],
       }
 
-      const schema = inferrer.infer(jsonConfig, configFile)
-
-      // Verify the complex schema structure
-      expect((schema as any)._def.typeName).to.equal('ZodObject')
-      const shape = (schema as z.ZodObject<any>).shape
-
-      expect((shape.name as any)._def.typeName).to.equal('ZodString')
-
-      expect((shape.tags as any)._def.typeName).to.equal('ZodArray')
-      expect((shape.tags as any)._def.type._def.typeName).to.equal('ZodString')
-
-      expect((shape.metadata as any)._def.typeName).to.equal('ZodObject')
-      const metadataShape = (shape.metadata as z.ZodObject<any>).shape
-      expect((metadataShape.created as any)._def.typeName).to.equal('ZodString')
-      expect((metadataShape.modified as any)._def.typeName).to.equal('ZodOptional')
-
-      expect((shape.status as any)._def.typeName).to.equal('ZodEnum')
-      expect((shape.status as any)._def.values).to.deep.equal(['active', 'inactive', 'pending'])
+      const schema = inferrer.zodForConfig(jsonConfig, configFile)
+      expect(ZodUtils.zodToString(schema, 'test')).to.equal(
+        'z.object({name: z.string(), tags: z.array(z.string()), metadata: z.object({created: z.string(), modified: z.string().optional()}), status: z.enum(["active","inactive","pending"])})',
+      )
     })
 
     it('should combine schema with template processing', () => {
@@ -554,7 +545,6 @@ describe('SchemaInferrer', () => {
       const jsonConfig: Config = {
         configType: 'CONFIG',
         key: 'test.template',
-        schemaKey: 'schemas.template',
         rows: [
           {
             values: [
@@ -568,6 +558,7 @@ describe('SchemaInferrer', () => {
             ],
           },
         ],
+        schemaKey: 'schemas.template',
         valueType: 'JSON',
       }
 
@@ -575,11 +566,11 @@ describe('SchemaInferrer', () => {
         configs: [schemaConfig, jsonConfig],
       }
 
-      const schema = inferrer.infer(jsonConfig, configFile)
+      const schema = inferrer.zodForConfig(jsonConfig, configFile)
 
       // Verify the hybrid approach - structure from schema with template processing
       expect((schema as any)._def.typeName).to.equal('ZodObject')
-      const shape = (schema as z.ZodObject<any>).shape
+      const {shape} = schema as z.ZodObject<any>
 
       // The greeting should now be a function type because of the template
       expect((shape.greeting as any)._def.typeName).to.equal('ZodFunction')
@@ -634,51 +625,158 @@ describe('SchemaInferrer', () => {
             ],
           },
         ],
-        valueType: 'JSON',
         schemaKey: 'url-schema',
+        valueType: 'JSON',
       }
 
       const configFile: ConfigFile = {
         configs: [config],
       }
 
-      const schema = inferrer.infer(config, configFile)
-
-      // Verify the schema is an object
-      expect((schema as any)._def.typeName).to.equal('ZodObject')
-      const shape = (schema as z.ZodObject<any>).shape
-
-      // Verify the url property is a function schema
-      expect((shape.url as any)._def.typeName).to.equal('ZodFunction')
-
-      // Verify the function schema has the expected arguments
-      const urlArgs = (shape.url as any)._def.args
-      expect(urlArgs).to.exist
-      expect(urlArgs._def.typeName).to.equal('ZodTuple')
-      expect(urlArgs._def.items).to.exist
-      expect(urlArgs._def.items.length).to.be.at.least(1)
-
-      // Check that the first item in the tuple is an object with the expected shape
-      const firstArg = urlArgs._def.items[0]
-      expect(firstArg._def.typeName).to.equal('ZodObject')
-      expect(firstArg.shape.scheme).to.exist
-      expect(firstArg.shape.host).to.exist
-
-      // Verify the other properties are regular number types
-      expect((shape.timeout as any)._def.typeName).to.equal('ZodNumber')
-      expect((shape.retries as any)._def.typeName).to.equal('ZodNumber')
+      const schema = inferrer.zodForConfig(config, configFile)
+      expect(ZodUtils.zodToString(schema, 'test')).to.equal(
+        'z.object({url: z.function().args(z.object({scheme: z.string(), host: z.string()})).returns(z.string()).optional(), timeout: z.number().optional(), retries: z.number().optional()})',
+      )
     })
   })
 
-  describe('getAllTemplateStrings', () => {
+  // describe('getAllTemplateStrings', () => {
+  //   let inferrer: SchemaInferrer
+
+  //   beforeEach(() => {
+  //     // Initialize SchemaInferrer
+  //     inferrer = new SchemaInferrer(logger)
+  //   })
+
+  //   it('should extract strings from direct string values', () => {
+  //     const config: Config = {
+  //       configType: 'CONFIG',
+  //       key: 'test-config',
+  //       rows: [
+  //         {
+  //           values: [
+  //             {
+  //               value: {
+  //                 string: 'Hello {{name}}!',
+  //               },
+  //             },
+  //           ],
+  //         },
+  //       ],
+  //       valueType: 'STRING',
+  //     }
+
+  //     const result = inferrer.getAllTemplateStrings(config)
+
+  //     expect(result).to.have.length(1)
+  //     expect(result).to.contain('Hello {{name}}!')
+  //   })
+
+  //   it('should extract strings from JSON values', () => {
+  //     const config: Config = {
+  //       configType: 'CONFIG',
+  //       key: 'test-json-config',
+  //       rows: [
+  //         {
+  //           values: [
+  //             {
+  //               value: {
+  //                 json: {
+  //                   json: JSON.stringify({
+  //                     farewell: 'Goodbye {{name}}!',
+  //                     greeting: 'Hello {{name}}!',
+  //                     nested: {
+  //                       message: 'Welcome to {{place}}!',
+  //                     },
+  //                   }),
+  //                 },
+  //               },
+  //             },
+  //           ],
+  //         },
+  //       ],
+  //       schemaKey: '',
+  //       valueType: 'JSON',
+  //     }
+
+  //     const result = inferrer.getAllTemplateStrings(config)
+
+  //     expect(result).to.have.length(3)
+  //     expect(result).to.contain('Hello {{name}}!')
+  //     expect(result).to.contain('Goodbye {{name}}!')
+  //     expect(result).to.contain('Welcome to {{place}}!')
+  //   })
+
+  //   it('should handle mixed string and JSON values', () => {
+  //     const config: Config = {
+  //       configType: 'CONFIG',
+  //       key: 'mixed-config',
+  //       rows: [
+  //         {
+  //           values: [
+  //             {
+  //               value: {
+  //                 string: 'Direct {{variable}}',
+  //               },
+  //             },
+  //           ],
+  //         },
+  //         {
+  //           values: [
+  //             {
+  //               value: {
+  //                 json: {
+  //                   json: JSON.stringify({
+  //                     text: 'JSON {{variable}}',
+  //                   }),
+  //                 },
+  //               },
+  //             },
+  //           ],
+  //         },
+  //       ],
+  //       schemaKey: '',
+  //       valueType: 'STRING',
+  //     }
+
+  //     const result = inferrer.getAllTemplateStrings(config)
+
+  //     expect(result).to.have.length(2)
+  //     expect(result).to.contain('Direct {{variable}}')
+  //     expect(result).to.contain('JSON {{variable}}')
+  //   })
+
+  //   it('should handle empty values gracefully', () => {
+  //     const config: Config = {
+  //       configType: 'CONFIG',
+  //       key: 'empty-config',
+  //       rows: [
+  //         {
+  //           values: [
+  //             {
+  //               value: {}, // Empty value object
+  //             },
+  //           ],
+  //         },
+  //       ],
+  //       schemaKey: '',
+  //       valueType: 'STRING',
+  //     }
+
+  //     const result = inferrer.getAllTemplateStrings(config)
+
+  //     expect(result).to.have.length(0)
+  //   })
+  // })
+
+  describe('getAllStringsAtLocation', () => {
     let inferrer: SchemaInferrer
 
     beforeEach(() => {
-      // Initialize SchemaInferrer
       inferrer = new SchemaInferrer(logger)
     })
 
-    it('should extract strings from direct string values', () => {
+    it('should get direct string values when location is empty', () => {
       const config: Config = {
         configType: 'CONFIG',
         key: 'test-config',
@@ -692,17 +790,28 @@ describe('SchemaInferrer', () => {
               },
             ],
           },
+          {
+            values: [
+              {
+                value: {
+                  string: 'Goodbye {{name}}!',
+                },
+              },
+            ],
+          },
         ],
         valueType: 'STRING',
       }
 
-      const result = inferrer.getAllTemplateStrings(config)
+      // Using TypeScript's type system to access private method for testing
+      const result = (inferrer as any).getAllStringsAtLocation(config, [])
 
-      expect(result).to.have.length(1)
+      expect(result).to.have.length(2)
       expect(result).to.contain('Hello {{name}}!')
+      expect(result).to.contain('Goodbye {{name}}!')
     })
 
-    it('should extract strings from JSON values', () => {
+    it('should get nested string values from JSON when location is provided', () => {
       const config: Config = {
         configType: 'CONFIG',
         key: 'test-json-config',
@@ -713,40 +822,13 @@ describe('SchemaInferrer', () => {
                 value: {
                   json: {
                     json: JSON.stringify({
-                      farewell: 'Goodbye {{name}}!',
-                      greeting: 'Hello {{name}}!',
                       nested: {
-                        message: 'Welcome to {{place}}!',
+                        deeply: {
+                          message: 'Hello from deep inside!',
+                        },
                       },
                     }),
                   },
-                },
-              },
-            ],
-          },
-        ],
-        schemaKey: '',
-        valueType: 'JSON',
-      }
-
-      const result = inferrer.getAllTemplateStrings(config)
-
-      expect(result).to.have.length(3)
-      expect(result).to.contain('Hello {{name}}!')
-      expect(result).to.contain('Goodbye {{name}}!')
-      expect(result).to.contain('Welcome to {{place}}!')
-    })
-
-    it('should handle mixed string and JSON values', () => {
-      const config: Config = {
-        configType: 'CONFIG',
-        key: 'mixed-config',
-        rows: [
-          {
-            values: [
-              {
-                value: {
-                  string: 'Direct {{variable}}',
                 },
               },
             ],
@@ -757,7 +839,11 @@ describe('SchemaInferrer', () => {
                 value: {
                   json: {
                     json: JSON.stringify({
-                      text: 'JSON {{variable}}',
+                      nested: {
+                        deeply: {
+                          message: 'Another deep message!',
+                        },
+                      },
                     }),
                   },
                 },
@@ -765,37 +851,88 @@ describe('SchemaInferrer', () => {
             ],
           },
         ],
-        schemaKey: '',
-        valueType: 'STRING',
+        valueType: 'JSON',
       }
 
-      const result = inferrer.getAllTemplateStrings(config)
+      // Using TypeScript's type system to access private method for testing
+      const result = (inferrer as any).getAllStringsAtLocation(config, ['nested', 'deeply', 'message'])
 
       expect(result).to.have.length(2)
-      expect(result).to.contain('Direct {{variable}}')
-      expect(result).to.contain('JSON {{variable}}')
+      expect(result).to.contain('Hello from deep inside!')
+      expect(result).to.contain('Another deep message!')
+    })
+  })
+
+  it('should merge two schemas with the same string property', () => {
+    const inferrer = new SchemaInferrer(logger)
+    // @ts-expect-error accessing private method for testing
+    const mergeSchemas = inferrer.mergeSchemas.bind(inferrer)
+
+    const schemaA = z.object({
+      name: z.string().optional(),
     })
 
-    it('should handle empty values gracefully', () => {
-      const config: Config = {
-        configType: 'CONFIG',
-        key: 'empty-config',
-        rows: [
-          {
-            values: [
-              {
-                value: {}, // Empty value object
-              },
-            ],
-          },
-        ],
-        schemaKey: '',
-        valueType: 'STRING',
-      }
-
-      const result = inferrer.getAllTemplateStrings(config)
-
-      expect(result).to.have.length(0)
+    const schemaB = z.object({
+      name: z.string().optional(),
     })
+
+    const result = mergeSchemas(schemaA, schemaB)
+    expect(result._def.typeName).to.equal('ZodObject')
+    expect(ZodUtils.zodToString(result, 'test')).to.equal('z.object({name: z.string().optional()})')
+  })
+
+  it('should merge two schemas with the same string property that are not optional', () => {
+    const inferrer = new SchemaInferrer(logger)
+    // @ts-expect-error accessing private method for testing
+    const mergeSchemas = inferrer.mergeSchemas.bind(inferrer)
+
+    const schemaA = z.object({
+      name: z.string(),
+    })
+
+    const schemaB = z.object({
+      name: z.string(),
+    })
+
+    const result = mergeSchemas(schemaA, schemaB)
+    expect(result._def.typeName).to.equal('ZodObject')
+    expect(ZodUtils.zodToString(result, 'test')).to.equal('z.object({name: z.string()})')
+  })
+
+  it('should merge two schemas with conflict', () => {
+    const inferrer = new SchemaInferrer(logger)
+    // @ts-expect-error accessing private method for testing
+    const mergeSchemas = inferrer.mergeSchemas.bind(inferrer)
+
+    const schemaA = z.object({
+      conflict: z.string(),
+    })
+
+    const schemaB = z.object({
+      conflict: z.number(),
+    })
+
+    const result = mergeSchemas(schemaA, schemaB)
+    expect(result._def.typeName).to.equal('ZodObject')
+    expect(ZodUtils.zodToString(result, 'test')).to.equal('z.object({conflict: z.union([z.string(), z.number()])})')
+  })
+  it('should merge two schemas with conflict and optional', () => {
+    const inferrer = new SchemaInferrer(logger)
+    // @ts-expect-error accessing private method for testing
+    const mergeSchemas = inferrer.mergeSchemas.bind(inferrer)
+
+    const schemaA = z.object({
+      conflict: z.string().optional(),
+    })
+
+    const schemaB = z.object({
+      conflict: z.number().optional(),
+    })
+
+    const result = mergeSchemas(schemaA, schemaB)
+    expect(result._def.typeName).to.equal('ZodObject')
+    expect(ZodUtils.zodToString(result, 'test')).to.equal(
+      'z.object({conflict: z.union([z.string(), z.number()]).optional()})',
+    )
   })
 })

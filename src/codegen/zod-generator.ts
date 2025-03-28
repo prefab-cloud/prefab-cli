@@ -106,7 +106,7 @@ export class ZodGenerator {
    * Generate an accessor method for a single config
    */
   generateAccessorMethod(config: Config, language: SupportedLanguage): AccessorMethod {
-    const schemaObj = this.schemaInferrer.infer(config, this.configFile)
+    const schemaObj = this.schemaInferrer.zodForConfig(config, this.configFile)
     const returnValue = ZodUtils.generateReturnValueCode(schemaObj, '', language)
 
     const paramsSchema = ZodUtils.paramsOf(schemaObj)
@@ -162,7 +162,7 @@ export class ZodGenerator {
   }
 
   generateSimplifiedSchema(config: Config): ZodTypeAny {
-    const schemaObj = this.schemaInferrer.infer(config, this.configFile)
+    const schemaObj = this.schemaInferrer.zodForConfig(config, this.configFile)
     return ZodUtils.simplifyFunctions(schemaObj)
   }
 

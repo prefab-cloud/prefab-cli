@@ -1,5 +1,5 @@
-import {camelCase} from 'change-case'
 import {z} from 'zod'
+
 import {SupportedLanguage} from './zod-generator.js'
 
 export const ZodUtils = {
@@ -91,9 +91,9 @@ export const ZodUtils = {
         const paramsType = paramsSchema ? this.zodTypeToTypescript(paramsSchema) : '{}'
         if (language === SupportedLanguage.TypeScript || language === SupportedLanguage.React) {
           return `(params: ${paramsType}) => Mustache.render(raw${propertyPath}, params)`
-        } else {
-          return `lambda params: pystache.render(raw${propertyPath}, params)`
         }
+
+        return `lambda params: pystache.render(raw${propertyPath}, params)`
       }
 
       case 'ZodUnion': {
@@ -141,7 +141,7 @@ export const ZodUtils = {
     let processedKey = key.trim().replaceAll(/\s+/g, '.')
 
     // Step 2: Replace special characters with dots (except underscores and hyphens)
-    processedKey = processedKey.replaceAll(/[^a-zA-Z0-9_\-.-]/g, '.')
+    processedKey = processedKey.replaceAll(/[^\w.\--]/g, '.')
 
     // Step 3: Replace consecutive dots with a single dot
     processedKey = processedKey.replaceAll(/\.{2,}/g, '.')
@@ -161,7 +161,7 @@ export const ZodUtils = {
       }
 
       // Handle uppercase snake case patterns specifically
-      if (/^[A-Z_0-9]+$/.test(part)) {
+      if (/^[\dA-Z_]+$/.test(part)) {
         return part
           .toLowerCase()
           .split('_')
@@ -176,19 +176,19 @@ export const ZodUtils = {
       // Convert kebab-case to camelCase
       const kebabProcessed = part
         .split('-')
-        .map((segment, idx) => {
+        .map((segment, idx) =>
           // First segment stays as is, subsequent segments get capitalized
-          return idx === 0 ? segment : segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase()
-        })
+          idx === 0 ? segment : segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase(),
+        )
         .join('')
 
       // Convert snake_case to camelCase
       const finalProcessed = kebabProcessed
         .split('_')
-        .map((segment, idx) => {
+        .map((segment, idx) =>
           // First segment stays as is, subsequent segments get capitalized
-          return idx === 0 ? segment : segment.charAt(0).toUpperCase() + segment.slice(1)
-        })
+          idx === 0 ? segment : segment.charAt(0).toUpperCase() + segment.slice(1),
+        )
         .join('')
 
       return finalProcessed
@@ -229,7 +229,7 @@ export const ZodUtils = {
 
     // Replace invalid characters with underscores
     // Note: $ is allowed in JavaScript but not in Python, so we explicitly replace it
-    result = result.replaceAll(/[^\w]|[$]/g, '_')
+    result = result.replaceAll(/\W/g, '_')
 
     // Avoid Python reserved keywords
     const pythonKeywords = [
@@ -271,7 +271,7 @@ export const ZodUtils = {
     ]
 
     if (pythonKeywords.includes(result)) {
-      result = result + '_'
+      result += '_'
     }
 
     return result
@@ -433,6 +433,11 @@ export const ZodUtils = {
       return `z.object({${props}})`
     }
 
+    if (def.typeName === 'ZodEnum') {
+      const values = def.values.map((v: string) => `"${v}"`).join(',')
+      return `z.enum([${values}])`
+    }
+
     console.warn(`Unknown zod type for ${key}:`, schema)
     return 'z.any()'
   },
@@ -531,7 +536,7 @@ export const ZodUtils = {
 
       case 'ZodEnum': {
         const options = zodType._def.values
-        return options.map((o: string) => `'${o}'`).join(' | ')
+        return options.map((o: string) => `"${o}"`).join(' | ')
       }
 
       case 'ZodUnion': {

@@ -434,7 +434,7 @@ export const ZodUtils = {
     }
 
     if (def.typeName === 'ZodEnum') {
-      const values = def.values.map((v: string) => `"${v}"`).join(',')
+      const values = def.values.map((v: string) => `'${v}'`).join(',')
       return `z.enum([${values}])`
     }
 
@@ -484,7 +484,7 @@ export const ZodUtils = {
     if (zodType instanceof z.ZodEnum) {
       // Handle enum types
       const {values} = zodType._def
-      return values.map((v: string) => `"${v}"`).join(' | ')
+      return values.map((v: string) => `'${v}'`).join(' | ')
     }
 
     // Default fallback
@@ -536,7 +536,7 @@ export const ZodUtils = {
 
       case 'ZodEnum': {
         const options = zodType._def.values
-        return options.map((o: string) => `"${o}"`).join(' | ')
+        return options.map((o: string) => `'${o}'`).join(' | ')
       }
 
       case 'ZodUnion': {

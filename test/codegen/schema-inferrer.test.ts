@@ -515,7 +515,7 @@ describe('SchemaInferrer', () => {
 
       const schema = inferrer.zodForConfig(jsonConfig, configFile)
       expect(ZodUtils.zodToString(schema, 'test')).to.equal(
-        'z.object({name: z.string(), tags: z.array(z.string()), metadata: z.object({created: z.string(), modified: z.string().optional()}), status: z.enum(["active","inactive","pending"])})',
+        "z.object({name: z.string(), tags: z.array(z.string()), metadata: z.object({created: z.string(), modified: z.string().optional()}), status: z.enum(['active','inactive','pending'])})",
       )
     })
 

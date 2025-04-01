@@ -1,6 +1,7 @@
 import {expect} from 'chai'
-import {SchemaInferrer} from '../../../src/codegen/schema-inferrer.js'
+
 import {generatePythonClientCode} from '../../../src/codegen/python/generator.js'
+import {SchemaInferrer} from '../../../src/codegen/schema-inferrer.js'
 import {Config, ConfigFile} from '../../../src/codegen/types.js'
 
 describe('Python Generator Integration', () => {
@@ -9,39 +10,38 @@ describe('Python Generator Integration', () => {
     const mockConfigFile: ConfigFile = {
       configs: [
         {
-          key: 'feature_enabled',
           configType: 'FEATURE_FLAG',
-          valueType: 'BOOL',
+          key: 'feature_enabled',
           rows: [
             {
               values: [{value: {bool: true}}],
             },
           ],
+          valueType: 'BOOL',
         },
         {
-          key: 'api_url',
           configType: 'CONFIG',
-          valueType: 'STRING',
+          key: 'api_url',
           rows: [
             {
               values: [{value: {string: 'https://api.example.com'}}],
             },
           ],
+          valueType: 'STRING',
         },
         {
-          key: 'timeout_seconds',
           configType: 'CONFIG',
-          valueType: 'INT',
+          key: 'timeout_seconds',
           rows: [
             {
               values: [{value: {int: 30}}],
             },
           ],
+          valueType: 'INT',
         },
         {
-          key: 'rate_limits',
           configType: 'CONFIG',
-          valueType: 'JSON',
+          key: 'rate_limits',
           rows: [
             {
               values: [
@@ -49,9 +49,9 @@ describe('Python Generator Integration', () => {
                   value: {
                     json: {
                       json: JSON.stringify({
-                        standard: 100,
-                        premium: 500,
                         enterprise: 5000,
+                        premium: 500,
+                        standard: 100,
                       }),
                     },
                   },
@@ -59,11 +59,11 @@ describe('Python Generator Integration', () => {
               ],
             },
           ],
+          valueType: 'JSON',
         },
         {
-          key: 'allowed_origins',
           configType: 'CONFIG',
-          valueType: 'STRING_LIST',
+          key: 'allowed_origins',
           rows: [
             {
               values: [
@@ -76,28 +76,34 @@ describe('Python Generator Integration', () => {
               ],
             },
           ],
+          valueType: 'STRING_LIST',
         },
       ],
     }
 
     // Mock SchemaInferrer - use a simple implementation that returns appropriate schemas
     const mockSchemaInferrer = {
-      infer: (config: Config) => {
+      zodForConfig(config: Config, _configFile: ConfigFile) {
         if (config.key === 'feature_enabled') {
           return {_def: {typeName: 'ZodBoolean'}} // Mock boolean schema
         }
+
         if (config.key === 'api_url') {
           return {_def: {typeName: 'ZodString'}} // Mock string schema
         }
+
         if (config.key === 'timeout_seconds') {
-          return {_def: {typeName: 'ZodNumber', checks: [{kind: 'int'}]}} // Mock integer schema
+          return {_def: {checks: [{kind: 'int'}], typeName: 'ZodNumber'}} // Mock integer schema
         }
+
         if (config.key === 'rate_limits') {
           return {_def: {typeName: 'ZodObject'}} // Mock object schema
         }
+
         if (config.key === 'allowed_origins') {
-          return {_def: {typeName: 'ZodArray', element: {_def: {typeName: 'ZodString'}}}} // Mock string array schema
+          return {_def: {element: {_def: {typeName: 'ZodString'}}, typeName: 'ZodArray'}} // Mock string array schema
         }
+
         return {_def: {typeName: 'ZodUnknown'}}
       },
     } as unknown as SchemaInferrer
@@ -148,49 +154,52 @@ describe('Python Generator Integration', () => {
     const mockConfigFile: ConfigFile = {
       configs: [
         {
-          key: 'feature_enabled',
           configType: 'FEATURE_FLAG',
-          valueType: 'BOOL',
+          key: 'feature_enabled',
           rows: [
             {
               values: [{value: {bool: true}}],
             },
           ],
+          valueType: 'BOOL',
         },
         {
-          key: 'api_url',
           configType: 'CONFIG',
-          valueType: 'STRING',
+          key: 'api_url',
           rows: [
             {
               values: [{value: {string: 'https://api.example.com'}}],
             },
           ],
+          valueType: 'STRING',
         },
         {
-          key: 'feature.enabled',
           configType: 'CONFIG',
-          valueType: 'INT',
+          key: 'feature.enabled',
           rows: [
             {
               values: [{value: {int: 30}}],
             },
           ],
+          valueType: 'INT',
         },
       ],
     }
 
     const mockSchemaInferrer = {
-      infer: (config: Config) => {
+      zodForConfig(config: Config, _configFile: ConfigFile) {
         if (config.key === 'feature_enabled') {
           return {_def: {typeName: 'ZodBoolean'}} // Mock boolean schema
         }
+
         if (config.key === 'api_url') {
           return {_def: {typeName: 'ZodString'}} // Mock string schema
         }
+
         if (config.key === 'feature.enabled') {
-          return {_def: {typeName: 'ZodNumber', checks: [{kind: 'int'}]}} // Mock integer schema
+          return {_def: {checks: [{kind: 'int'}], typeName: 'ZodNumber'}} // Mock integer schema
         }
+
         return {_def: {typeName: 'ZodUnknown'}}
       },
     } as unknown as SchemaInferrer

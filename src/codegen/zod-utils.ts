@@ -508,6 +508,10 @@ export const ZodUtils = {
         return 'boolean'
       }
 
+      case 'ZodOptional': {
+        return `${this.zodTypeToTypescript(zodType._def.innerType)}?`
+      }
+
       case 'ZodNull': {
         return 'null'
       }

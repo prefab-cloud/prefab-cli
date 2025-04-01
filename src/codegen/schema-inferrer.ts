@@ -265,27 +265,27 @@ export class SchemaInferrer {
     const {key, valueType} = config
     switch (valueType) {
       case 'STRING': {
-        return z.string().optional()
+        return z.string()
       }
 
       case 'BOOL': {
-        return z.boolean().optional()
+        return z.boolean()
       }
 
       case 'INT': {
-        return z.number().int().optional()
+        return z.number().int()
       }
 
       case 'DOUBLE': {
-        return z.number().optional()
+        return z.number()
       }
 
       case 'STRING_LIST': {
-        return z.array(z.string()).optional()
+        return z.array(z.string())
       }
 
       case 'DURATION': {
-        return z.string().duration().optional()
+        return z.string().duration()
       }
 
       case 'JSON': {
@@ -324,7 +324,7 @@ export class SchemaInferrer {
           }
         }
 
-        return z.union([z.array(z.any()), z.record(z.any())]).optional()
+        return z.union([z.array(z.any()), z.record(z.any())])
       }
 
       case 'LOG_LEVEL': {

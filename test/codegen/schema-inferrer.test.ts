@@ -26,7 +26,7 @@ describe('SchemaInferrer', () => {
       }
 
       const result = inferrer.zodForConfig(config, configFile)
-      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.number().int().optional()')
+      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.number().int()')
     })
 
     it('should infer from a double', () => {
@@ -41,7 +41,7 @@ describe('SchemaInferrer', () => {
       }
 
       const result = inferrer.zodForConfig(config, configFile)
-      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.number().optional()')
+      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.number()')
     })
 
     it('should infer from a simple string', () => {
@@ -56,7 +56,7 @@ describe('SchemaInferrer', () => {
       }
 
       const result = inferrer.zodForConfig(config, configFile)
-      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.string().optional()')
+      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.string()')
     })
 
     it('should infer from a template string', () => {
@@ -72,7 +72,7 @@ describe('SchemaInferrer', () => {
 
       const result = inferrer.zodForConfig(config, configFile)
       expect(ZodUtils.zodToString(result, 'test')).to.equal(
-        'z.function().args(z.object({name: z.string()})).returns(z.string()).optional()',
+        'z.function().args(z.object({name: z.string()})).returns(z.string())',
       )
     })
 
@@ -180,7 +180,7 @@ describe('SchemaInferrer', () => {
 
       const result = inferrer.zodForConfig(config, configFile)
       expect(ZodUtils.zodToString(result, 'test')).to.equal(
-        'z.function().args(z.object({name: z.string().optional(), baz: z.string().optional()})).returns(z.string()).optional()',
+        'z.function().args(z.object({name: z.string().optional(), baz: z.string().optional()})).returns(z.string())',
       )
     })
 
@@ -262,7 +262,7 @@ describe('SchemaInferrer', () => {
       }
 
       const schema = inferrer.zodForConfig(config, {configs: []})
-      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.string().optional()')
+      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.string()')
     })
 
     it('should use schema from referenced schema config', () => {

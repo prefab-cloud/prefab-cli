@@ -113,8 +113,8 @@ export class ZodGenerator {
     const params = paramsSchema ? ZodUtils.zodTypeToTypescript(paramsSchema) : ''
     // For function return types, they should return a function taking params
     const isFunction = schemaObj._def.typeName === 'ZodFunction'
-    console.log(schemaObj)
-    console.log(ZodUtils.zodTypeToTypescript(schemaObj))
+    this.log(schemaObj)
+    this.log(ZodUtils.zodTypeToTypescript(schemaObj))
     const returnType = isFunction
       ? ZodUtils.zodTypeToTypescript(schemaObj._def.returns)
       : ZodUtils.zodTypeToTypescript(schemaObj)

@@ -256,7 +256,7 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockObjectConfig)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { name: string?; age: number? } {
+      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { name?: string; age?: number } {
   const raw = this.get('example.config.object', contexts);
   return { "name": raw["name"], "age": raw["age"] };
 }`
@@ -354,7 +354,7 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfig)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { template: (params: { placeholder: string }) => string? } {
+      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { template?: (params: { placeholder: string }) => string } {
   const raw = this.get('example.config.object', contexts);
   return { "template": raw["template"] === undefined ? undefined : (params: { placeholder: string }) => Mustache.render(raw["template"], params) };
 }`
@@ -368,9 +368,9 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfigMultiValue)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { template: (params: { other_placeholder: string?; placeholder: string? }) => string?; num: number? } {
+      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { template?: (params: { other_placeholder?: string; placeholder?: string }) => string; num?: number } {
   const raw = this.get('example.config.object', contexts);
-  return { "template": raw["template"] === undefined ? undefined : (params: { other_placeholder: string?; placeholder: string? }) => Mustache.render(raw["template"], params), "num": raw["num"] };
+  return { "template": raw["template"] === undefined ? undefined : (params: { other_placeholder?: string; placeholder?: string }) => Mustache.render(raw["template"], params), "num": raw["num"] };
 }`
 
       // Normalize line endings before comparison

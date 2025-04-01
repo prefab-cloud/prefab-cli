@@ -530,8 +530,12 @@ export const ZodUtils = {
         const props = []
         for (const key in shape) {
           if (Object.hasOwn(shape, key)) {
-            const propType = this.zodTypeToTypescript(shape[key])
-            props.push(`${key}: ${propType}`)
+            const propType = shape[key]
+            const isOptional = propType._def.typeName === 'ZodOptional'
+            const typeStr = isOptional
+              ? this.zodTypeToTypescript(propType._def.innerType)
+              : this.zodTypeToTypescript(propType)
+            props.push(`${key}${isOptional ? '?' : ''}: ${typeStr}`)
           }
         }
 

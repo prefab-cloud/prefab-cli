@@ -2,13 +2,13 @@ import Mustache from 'mustache'
 import fs from 'node:fs'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
+import {ZodTypeAny} from 'zod'
+
 import type {Config, ConfigFile} from './types.js'
 
+import {generatePythonClientCode} from './python/generator.js'
 import {SchemaInferrer} from './schema-inferrer.js'
 import {ZodUtils} from './zod-utils.js'
-
-import {generatePythonClientCode} from './python/generator.js'
-import {ZodTypeAny} from 'zod'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -45,9 +45,9 @@ export interface TemplateData {
 export class ZodGenerator {
   private configFile: ConfigFile
   private dependencies: Set<string> = new Set()
-  private schemaInferrer: SchemaInferrer
-  private methods: {[key: string]: AccessorMethod} = {}
   private log: (category: string | unknown, message?: unknown) => void
+  private methods: {[key: string]: AccessorMethod} = {}
+  private schemaInferrer: SchemaInferrer
 
   constructor(configFile: ConfigFile, log: (category: string | unknown, message?: unknown) => void) {
     this.configFile = configFile
@@ -95,8 +95,8 @@ export class ZodGenerator {
     // Render the base template with the generated content
     const result = Mustache.render(baseTemplate, {
       accessorMethods,
-      schemaLines,
       dependencies: this.renderDependencies(language),
+      schemaLines,
     })
 
     return result
@@ -106,13 +106,15 @@ export class ZodGenerator {
    * Generate an accessor method for a single config
    */
   generateAccessorMethod(config: Config, language: SupportedLanguage): AccessorMethod {
-    const schemaObj = this.schemaInferrer.infer(config, this.configFile)
+    const schemaObj = this.schemaInferrer.zodForConfig(config, this.configFile)
     const returnValue = ZodUtils.generateReturnValueCode(schemaObj, '', language)
 
     const paramsSchema = ZodUtils.paramsOf(schemaObj)
     const params = paramsSchema ? ZodUtils.zodTypeToTypescript(paramsSchema) : ''
     // For function return types, they should return a function taking params
     const isFunction = schemaObj._def.typeName === 'ZodFunction'
+    this.log(schemaObj)
+    this.log(ZodUtils.zodTypeToTypescript(schemaObj))
     const returnType = isFunction
       ? ZodUtils.zodTypeToTypescript(schemaObj._def.returns)
       : ZodUtils.zodTypeToTypescript(schemaObj)
@@ -129,7 +131,9 @@ export class ZodGenerator {
 
     if (this.methods[accessorMethod.methodName]) {
       throw new Error(
-        `Method '${accessorMethod.methodName}' is already registered. Prefab key ${config.key} conflicts with ${this.methods[accessorMethod.methodName].key}`,
+        `Method '${accessorMethod.methodName}' is already registered. Prefab key ${config.key} conflicts with ${
+          this.methods[accessorMethod.methodName].key
+        }`,
       )
     }
 
@@ -162,7 +166,7 @@ export class ZodGenerator {
   }
 
   generateSimplifiedSchema(config: Config): ZodTypeAny {
-    const schemaObj = this.schemaInferrer.infer(config, this.configFile)
+    const schemaObj = this.schemaInferrer.zodForConfig(config, this.configFile)
     return ZodUtils.simplifyFunctions(schemaObj)
   }
 
@@ -198,21 +202,6 @@ export class ZodGenerator {
     const schemaLine = this.generateSchemaLine(config, language)
 
     return Mustache.render(template, schemaLine)
-  }
-
-  private renderDependencies(language: SupportedLanguage): string {
-    const templateName = this.getTemplateNameForLanguage(language)
-    return Array.from(this.dependencies)
-      .map((dep) => {
-        const templatePath = path.join(__dirname, 'templates', `dependencies/${templateName}-${dep}.mustache`)
-        if (!fs.existsSync(templatePath)) {
-          throw new Error(`Dependency template for language '${language}' not found at ${templatePath}`)
-        }
-
-        const template = fs.readFileSync(templatePath, 'utf8')
-        return Mustache.render(template, {})
-      })
-      .join('\n')
   }
 
   /**
@@ -308,5 +297,20 @@ export class ZodGenerator {
     }
 
     return schemaLine
+  }
+
+  private renderDependencies(language: SupportedLanguage): string {
+    const templateName = this.getTemplateNameForLanguage(language)
+    return [...this.dependencies]
+      .map((dep) => {
+        const templatePath = path.join(__dirname, 'templates', `dependencies/${templateName}-${dep}.mustache`)
+        if (!fs.existsSync(templatePath)) {
+          throw new Error(`Dependency template for language '${language}' not found at ${templatePath}`)
+        }
+
+        const template = fs.readFileSync(templatePath, 'utf8')
+        return Mustache.render(template, {})
+      })
+      .join('\n')
   }
 }

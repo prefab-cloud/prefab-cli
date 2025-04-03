@@ -173,7 +173,7 @@ describe('ZodUtils', () => {
 
     it('should convert ZodEnum to TypeScript union type', () => {
       const schema = z.enum(['red', 'green', 'blue'])
-      expect(ZodUtils.zodTypeToTsType(schema)).to.equal('"red" | "green" | "blue"')
+      expect(ZodUtils.zodTypeToTsType(schema)).to.equal("'red' | 'green' | 'blue'")
     })
 
     it('should handle unknown Zod types', () => {

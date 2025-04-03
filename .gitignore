@@ -15,3 +15,4 @@ prefab.*.config.json
 tsconfig.tsbuildinfo
 .oprc
 generated-sources/*
+src/prefab

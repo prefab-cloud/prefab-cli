@@ -7,18 +7,33 @@ import type {Config, ConfigFile} from './types.js'
 import {MustacheExtractor} from './mustache-extractor.js'
 import {secureEvaluateSchema} from './schema-evaluator.js'
 import {ZodUtils} from './zod-utils.js'
+import {SupportedLanguage} from './zod-generator.js'
+
+export type SchemaWithProvidence = {
+  providence: 'inferred' | 'user'
+  schema: z.ZodTypeAny
+}
 
 /* eslint-disable max-depth */
 
 export class SchemaInferrer {
   private jsonToInferredZod = (data: unknown): ZodTypeAny => {
     if (Array.isArray(data)) {
-      // If it's an array, infer the type of its first element (assuming homogenous arrays)
       if (data.length > 0) {
-        return z.array(this.jsonToInferredZod(data[0]))
+        // Check if all elements in the array have the same type
+        const firstItemType = typeof data[0]
+        const isHomogeneous = data.every((item) => typeof item === firstItemType)
+
+        // For homogeneous arrays with non-object elements, use the first element's type
+        if (isHomogeneous && firstItemType !== 'object') {
+          return z.array(this.jsonToInferredZod(data[0]))
+        }
+
+        // eslint-disable-next-line no-warning-comments
+        // TODO: we could handle mixed arrays here with a union type AND handle object types but we prefer the user to upload a schema
       }
 
-      return z.array(z.string()) // Empty arrays default to z.any()
+      return z.array(z.unknown())
     }
 
     if (typeof data === 'object' && data !== null) {
@@ -27,7 +42,7 @@ export class SchemaInferrer {
       const dataRecord = data as Record<string, unknown>
       for (const key in dataRecord) {
         if (Object.hasOwn(dataRecord, key)) {
-          shape[key] = this.jsonToInferredZod(dataRecord[key]).optional()
+          shape[key] = this.jsonToInferredZod(dataRecord[key])
         }
       }
 
@@ -67,9 +82,8 @@ export class SchemaInferrer {
         // Both schemas have the key
         mergedShape[key] = this.mergeTypes(typeA, typeB)
       } else {
-        // Only one schema has the key, make it optional if it isn't already
         const existingType = typeA || typeB
-        mergedShape[key] = this.isOptional(existingType) ? existingType : existingType.optional()
+        mergedShape[key] = existingType
       }
     }
 
@@ -78,7 +92,7 @@ export class SchemaInferrer {
 
   constructor(private log: (category: string | unknown, message?: unknown) => void) {}
 
-  zodForConfig(config: Config, configFile: ConfigFile): z.ZodTypeAny {
+  zodForConfig(config: Config, configFile: ConfigFile, language: SupportedLanguage): SchemaWithProvidence {
     const {schemaKey} = config
     const schemaConfig = schemaKey
       ? configFile.configs.find((c) => c.key === schemaKey && c.configType === 'SCHEMA')
@@ -86,8 +100,11 @@ export class SchemaInferrer {
 
     const userDefinedSchema = schemaConfig ? this.schemaToZod(config, schemaConfig) : undefined
 
-    const schemaWithoutMustache = userDefinedSchema ?? this.inferFromConfig(config)
-    return this.replaceStringsWithMustache(schemaWithoutMustache, config)
+    const schemaWithoutMustache = userDefinedSchema ?? this.inferFromConfig(config, language)
+    return {
+      providence: userDefinedSchema ? 'user' : 'inferred',
+      schema: this.replaceStringsWithMustache(schemaWithoutMustache, config),
+    }
   }
 
   private areArgumentShapesDifferent(argsA: Record<string, ZodTypeAny>, argsB: Record<string, ZodTypeAny>): boolean {
@@ -143,31 +160,6 @@ export class SchemaInferrer {
     }
 
     return z.function().args(schema).returns(z.string())
-  }
-
-  /**
-   * Extract schema from a schema config
-   */
-  private extractSchemaFromConfig(config: Config): undefined | z.ZodTypeAny {
-    for (const row of config.rows) {
-      for (const valueObj of row.values) {
-        if (valueObj.value.schema?.schema) {
-          const schemaStr = valueObj.value.schema.schema
-          const result = secureEvaluateSchema(schemaStr)
-
-          if (result.success && result.schema) {
-            this.log(`Successfully parsed schema from schema config: ${config.key}`)
-            return result.schema
-          }
-
-          if (result.error) {
-            console.warn(`Failed to parse schema from schema config ${config.key}: ${result.error}`)
-          }
-        }
-      }
-    }
-
-    return undefined
   }
 
   // Get all JSON values from the config
@@ -261,7 +253,7 @@ export class SchemaInferrer {
     return typeName === 'ZodEnum' ? z.enum(values) : type
   }
 
-  private inferFromConfig(config: Config): z.ZodTypeAny {
+  private inferFromConfig(config: Config, language: SupportedLanguage): z.ZodTypeAny {
     const {key, valueType} = config
     switch (valueType) {
       case 'STRING': {
@@ -298,25 +290,25 @@ export class SchemaInferrer {
             const schemas = jsonValues.map((json) => {
               const schema = this.jsonToInferredZod(json)
               this.log('Inferred schema for:', JSON.stringify(json))
-              this.log('Schema:', ZodUtils.zodToString(schema, key))
+              this.log('Schema:', ZodUtils.zodToString(schema, key, 'inferred', language))
               return schema
             })
 
             // Process each schema
             let mergedSchema: ZodTypeAny | null = null
             for (const [i, schema] of schemas.entries()) {
-              this.log(`Processing schema ${i}:`, ZodUtils.zodToString(schema, key))
+              this.log(`Processing schema ${i}:`, ZodUtils.zodToString(schema, key, 'inferred', language))
 
               if (mergedSchema === null) {
                 mergedSchema = schema
               } else if (mergedSchema instanceof z.ZodObject && schema instanceof z.ZodObject) {
                 mergedSchema = this.mergeSchemas(mergedSchema, schema)
-                this.log('Merged result:', ZodUtils.zodToString(mergedSchema, key))
+                this.log('Merged result:', ZodUtils.zodToString(mergedSchema, key, 'inferred', language))
               }
             }
 
             if (mergedSchema) {
-              this.log('Final merged schema:', ZodUtils.zodToString(mergedSchema, key))
+              this.log('Final merged schema:', ZodUtils.zodToString(mergedSchema, key, 'inferred', language))
               return mergedSchema
             }
           } catch (error) {

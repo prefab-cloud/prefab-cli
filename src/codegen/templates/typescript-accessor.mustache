@@ -1,4 +1,4 @@
-{{methodName}}(contexts?: Contexts | ContextObj){{#isFunctionReturn}}{{#params}}: (params: {{params}}) => {{/params}}{{/isFunctionReturn}}{{^isFunctionReturn}}: {{/isFunctionReturn}}{{{returnType}}} {
-  const raw = this.get('{{key}}', contexts);
-  return {{{returnValue}}};
-} 
+  {{methodName}}(contexts?: Contexts | ContextObj){{#isFunctionReturn}}{{#params}}: (params: {{params}}) => {{/params}}{{/isFunctionReturn}}{{^isFunctionReturn}}: {{/isFunctionReturn}}{{{returnType}}} {
+    const raw = this.get('{{key}}', contexts);
+    return {{{returnValue}}};
+  }

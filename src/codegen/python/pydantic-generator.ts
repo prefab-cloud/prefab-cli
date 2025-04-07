@@ -850,7 +850,9 @@ ${extractionCode
 
     if (this.methods.get(pythonMethodName)) {
       throw new Error(
-        `Unable to generate method '${pythonMethodName}' for config key '${originalKey || methodName}' because it has already been generated for config key '${this.methods.get(pythonMethodName)?.originalKey}'.`,
+        `Unable to generate method '${pythonMethodName}' for config key '${
+          originalKey || methodName
+        }' because it has already been generated for config key '${this.methods.get(pythonMethodName)?.originalKey}'.`,
       )
     }
 
@@ -1156,7 +1158,9 @@ def ${fallbackMethodName}(${paramList.join(', ')}) -> ${returnTypeStr}:
 
     Args:
         ${paramName}: Required fallback value to return if config lookup fails or doesn't match expected type
-${spec.hasTemplateParams ? '        params: Parameters for template rendering\n' : ''}${spec.params.map((param) => `        ${param.name}: Description of ${param.name}`).join('\n')}
+${spec.hasTemplateParams ? '        params: Parameters for template rendering\n' : ''}${spec.params
+      .map((param) => `        ${param.name}: Description of ${param.name}`)
+      .join('\n')}
         context: Optional context for the config lookup
         
     Returns:
@@ -1164,7 +1168,9 @@ ${spec.hasTemplateParams ? '        params: Parameters for template rendering\n'
     """
     # Call the regular method and return the result
     # The main method will handle the fallback value appropriately
-    return self.${methodName}(${spec.hasTemplateParams ? 'params, ' : ''}${spec.params.map((p) => p.name).join(', ')}${spec.params.length > 0 ? ', ' : ''}context, ${paramName})
+    return self.${methodName}(${spec.hasTemplateParams ? 'params, ' : ''}${spec.params.map((p) => p.name).join(', ')}${
+      spec.params.length > 0 ? ', ' : ''
+    }context, ${paramName})
     `
   }
 

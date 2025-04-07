@@ -1,5 +1,6 @@
 import {z} from 'zod'
 
+import {SchemaWithProvidence} from './schema-inferrer.js'
 import {SupportedLanguage} from './zod-generator.js'
 
 export const ZodUtils = {
@@ -82,7 +83,7 @@ export const ZodUtils = {
           return innerCode
         }
 
-        return `raw${propertyPath} === undefined ? undefined : ${innerCode}`
+        return innerCode
       }
 
       case 'ZodFunction': {
@@ -90,7 +91,7 @@ export const ZodUtils = {
         const paramsSchema = this.paramsOf(zodType)
         const paramsType = paramsSchema ? this.zodTypeToTypescript(paramsSchema) : '{}'
         if (language === SupportedLanguage.TypeScript || language === SupportedLanguage.React) {
-          return `(params: ${paramsType}) => Mustache.render(raw${propertyPath}, params)`
+          return `(params: ${paramsType}) => Mustache.render(raw${propertyPath} ?? "", params)`
         }
 
         return `lambda params: pystache.render(raw${propertyPath}, params)`
@@ -277,6 +278,18 @@ export const ZodUtils = {
     return result
   },
 
+  objectTypeForLanguage(
+    language: SupportedLanguage,
+    providence: SchemaWithProvidence['providence'],
+    props: string,
+  ): string {
+    if (language === SupportedLanguage.TypeScript && providence === 'inferred') {
+      return `optionalRequiredAccess({${props}})`
+    }
+
+    return `z.object({${props}})`
+  },
+
   /**
    * Extract parameter schema from a Zod function schema
    * @param schema The Zod schema
@@ -355,7 +368,12 @@ export const ZodUtils = {
   /**
    * Convert a Zod schema to its string representation
    */
-  zodToString(schema: z.ZodType, key: string): string {
+  zodToString(
+    schema: z.ZodType,
+    key: string,
+    providence: SchemaWithProvidence['providence'],
+    language: SupportedLanguage,
+  ): string {
     // Keep using any for internal properties that aren't exposed in the type definitions
     const def = schema._def as any
 
@@ -389,19 +407,19 @@ export const ZodUtils = {
     }
 
     if (def.typeName === 'ZodArray') {
-      const innerType = this.zodToString(def.type, key)
+      const innerType = this.zodToString(def.type, key, providence, language)
       return `z.array(${innerType})`
     }
 
     // Handle ZodOptional
     if (def.typeName === 'ZodOptional') {
-      const innerType = this.zodToString(def.innerType, key)
+      const innerType = this.zodToString(def.innerType, key, providence, language)
       return `${innerType}.optional()`
     }
 
     // Handle ZodUnion
     if (def.typeName === 'ZodUnion') {
-      const options = def.options.map((option: z.ZodType) => this.zodToString(option, key))
+      const options = def.options.map((option: z.ZodType) => this.zodToString(option, key, providence, language))
       return `z.union([${options.join(', ')}])`
     }
 
@@ -411,31 +429,35 @@ export const ZodUtils = {
       const argsSchema = def.args
       const returnsSchema = def.returns
 
-      return `z.function().args(${this.zodToString(argsSchema, key)}).returns(${this.zodToString(returnsSchema, key)})`
+      return `z.function().args(${this.zodToString(argsSchema, key, providence, language)}).returns(${this.zodToString(returnsSchema, key, providence, language)})`
     }
 
     // Handle ZodTuple (used for function args)
     if (def.typeName === 'ZodTuple') {
       if (def.items && def.items.length === 1) {
-        return this.zodToString(def.items[0], key)
+        return this.zodToString(def.items[0], key, providence, language)
       }
 
-      return this.zodToString(def.items[0], key) // Just take the first item for simplicity
+      return this.zodToString(def.items[0], key, providence, language) // Just take the first item for simplicity
     }
 
     // Handle ZodObject
     if (def.typeName === 'ZodObject') {
       const shape = def.shape()
       const props = Object.entries(shape)
-        .map(([key, value]) => `${key}: ${this.zodToString(value as z.ZodTypeAny, key)}`)
+        .map(([key, value]) => `${key}: ${this.zodToString(value as z.ZodTypeAny, key, providence, language)}`)
         .join(', ')
 
-      return `z.object({${props}})`
+      return this.objectTypeForLanguage(language, providence, props)
     }
 
     if (def.typeName === 'ZodEnum') {
       const values = def.values.map((v: string) => `'${v}'`).join(',')
       return `z.enum([${values}])`
+    }
+
+    if (def.typeName === 'ZodUnknown') {
+      return 'z.unknown()'
     }
 
     console.warn(`Unknown zod type for ${key}:`, schema)
@@ -467,9 +489,8 @@ export const ZodUtils = {
       const shape = zodType._def.shape()
       const innerProps = Object.entries(shape)
         .map(([k, v]) => {
-          const isOptional = v instanceof z.ZodOptional
           const typeString = this.zodTypeToTsType(v as z.ZodTypeAny)
-          return `${k}${isOptional ? '?' : ''}: ${typeString}`
+          return `${k}: ${typeString}`
         })
         .join('; ')
       return `{ ${innerProps} }`
@@ -509,7 +530,7 @@ export const ZodUtils = {
       }
 
       case 'ZodOptional': {
-        return `${this.zodTypeToTypescript(zodType._def.innerType)}?`
+        return `${this.zodTypeToTypescript(zodType._def.innerType)}`
       }
 
       case 'ZodNull': {
@@ -535,7 +556,7 @@ export const ZodUtils = {
             const typeStr = isOptional
               ? this.zodTypeToTypescript(propType._def.innerType)
               : this.zodTypeToTypescript(propType)
-            props.push(`${key}${isOptional ? '?' : ''}: ${typeStr}`)
+            props.push(`${key}: ${typeStr}`)
           }
         }
 
@@ -565,6 +586,10 @@ export const ZodUtils = {
         const paramsType = paramsSchema ? this.zodTypeToTypescript(paramsSchema) : '{}'
         const returnType = this.zodTypeToTypescript(zodType._def.returns)
         return `(params: ${paramsType}) => ${returnType}`
+      }
+
+      case 'ZodUnknown': {
+        return 'unknown'
       }
 
       default: {

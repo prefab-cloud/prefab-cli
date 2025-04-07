@@ -4,6 +4,7 @@ import {z} from 'zod'
 import type {Config, ConfigFile} from '../../src/codegen/types.js'
 
 import {SchemaInferrer} from '../../src/codegen/schema-inferrer.js'
+import {SupportedLanguage} from '../../src/codegen/zod-generator.js'
 import {ZodUtils} from '../../src/codegen/zod-utils.js'
 
 describe('SchemaInferrer', () => {
@@ -25,8 +26,10 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.zodForConfig(config, configFile)
-      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.number().int()')
+      const {schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.TypeScript)
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+        'z.number().int()',
+      )
     })
 
     it('should infer from a double', () => {
@@ -40,8 +43,8 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.zodForConfig(config, configFile)
-      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.number()')
+      const {schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.TypeScript)
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal('z.number()')
     })
 
     it('should infer from a simple string', () => {
@@ -55,8 +58,8 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.zodForConfig(config, configFile)
-      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.string()')
+      const {schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.TypeScript)
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal('z.string()')
     })
 
     it('should infer from a template string', () => {
@@ -70,8 +73,13 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.zodForConfig(config, configFile)
-      expect(ZodUtils.zodToString(result, 'test')).to.equal(
+      const {schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.TypeScript)
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+        'z.function().args(optionalRequiredAccess({name: z.string()})).returns(z.string())',
+      )
+
+      const {schema: resultPython} = inferrer.zodForConfig(config, configFile, SupportedLanguage.Python)
+      expect(ZodUtils.zodToString(resultPython, 'test', 'inferred', SupportedLanguage.Python)).to.equal(
         'z.function().args(z.object({name: z.string()})).returns(z.string())',
       )
     })
@@ -87,10 +95,15 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.zodForConfig(config, configFile)
+      const {schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.TypeScript)
       expect(result._def.typeName).to.equal('ZodObject')
-      expect(ZodUtils.zodToString(result, 'test')).to.equal(
-        'z.object({name: z.string().optional(), age: z.number().optional()})',
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+        'optionalRequiredAccess({name: z.string(), age: z.number()})',
+      )
+
+      const {schema: resultPython} = inferrer.zodForConfig(config, configFile, SupportedLanguage.Python)
+      expect(ZodUtils.zodToString(resultPython, 'test', 'inferred', SupportedLanguage.Python)).to.equal(
+        'z.object({name: z.string(), age: z.number()})',
       )
     })
 
@@ -105,10 +118,15 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.zodForConfig(config, configFile)
+      const {schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.TypeScript)
       expect(result._def.typeName).to.equal('ZodObject')
-      expect(ZodUtils.zodToString(result, 'test')).to.equal(
-        'z.object({name: z.function().args(z.object({name: z.string()})).returns(z.string()).optional(), age: z.number().optional()})',
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+        'optionalRequiredAccess({name: z.function().args(optionalRequiredAccess({name: z.string()})).returns(z.string()), age: z.number()})',
+      )
+
+      const {schema: resultPython} = inferrer.zodForConfig(config, configFile, SupportedLanguage.Python)
+      expect(ZodUtils.zodToString(resultPython, 'test', 'inferred', SupportedLanguage.Python)).to.equal(
+        'z.object({name: z.function().args(z.object({name: z.string()})).returns(z.string()), age: z.number()})',
       )
     })
 
@@ -132,9 +150,17 @@ describe('SchemaInferrer', () => {
         configs: [config, schemaConfig],
       }
 
-      const result = inferrer.zodForConfig(config, configFile)
+      const {providence, schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.TypeScript)
+      expect(providence).to.equal('user')
       expect(result._def.typeName).to.equal('ZodObject')
-      expect(ZodUtils.zodToString(result, 'test')).to.equal('z.object({name: z.string(), age: z.number()})')
+      expect(ZodUtils.zodToString(result, 'test', 'user', SupportedLanguage.TypeScript)).to.equal(
+        'z.object({name: z.string(), age: z.number()})',
+      )
+
+      const {schema: resultPython} = inferrer.zodForConfig(config, configFile, SupportedLanguage.Python)
+      expect(ZodUtils.zodToString(resultPython, 'test', 'user', SupportedLanguage.Python)).to.equal(
+        'z.object({name: z.string(), age: z.number()})',
+      )
     })
 
     it('torture test', () => {
@@ -160,10 +186,15 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.zodForConfig(config, configFile)
+      const {schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.TypeScript)
       expect(result._def.typeName).to.equal('ZodObject')
-      expect(ZodUtils.zodToString(result, 'test')).to.equal(
-        'z.object({systemMessage: z.function().args(z.object({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()).optional(), nested: z.object({stuff: z.array(z.object({name: z.string().optional()})).optional()}).optional()})',
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+        'optionalRequiredAccess({systemMessage: z.function().args(optionalRequiredAccess({user: z.array(optionalRequiredAccess({name: z.string()})), admin: z.array(optionalRequiredAccess({name: z.string()}))})).returns(z.string()), nested: optionalRequiredAccess({stuff: z.array(z.unknown())})})',
+      )
+
+      const {schema: resultPython} = inferrer.zodForConfig(config, configFile, SupportedLanguage.Python)
+      expect(ZodUtils.zodToString(resultPython, 'test', 'inferred', SupportedLanguage.Python)).to.equal(
+        'z.object({systemMessage: z.function().args(z.object({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()), nested: z.object({stuff: z.array(z.unknown())})})',
       )
     })
 
@@ -178,9 +209,9 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.zodForConfig(config, configFile)
-      expect(ZodUtils.zodToString(result, 'test')).to.equal(
-        'z.function().args(z.object({name: z.string().optional(), baz: z.string().optional()})).returns(z.string())',
+      const {schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.Python)
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.Python)).to.equal(
+        'z.function().args(z.object({name: z.string(), baz: z.string()})).returns(z.string())',
       )
     })
 
@@ -198,9 +229,14 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.zodForConfig(config, configFile)
-      expect(ZodUtils.zodToString(result, 'test')).to.equal(
-        'z.object({name: z.string().optional(), age: z.number().optional(), conflict: z.union([z.string(), z.number()]).optional(), otherNum: z.number().optional()})',
+      const {schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.TypeScript)
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+        'optionalRequiredAccess({name: z.string(), age: z.number(), conflict: z.union([z.string(), z.number()]), otherNum: z.number()})',
+      )
+
+      const {schema: resultPython} = inferrer.zodForConfig(config, configFile, SupportedLanguage.Python)
+      expect(ZodUtils.zodToString(resultPython, 'test', 'inferred', SupportedLanguage.Python)).to.equal(
+        'z.object({name: z.string(), age: z.number(), conflict: z.union([z.string(), z.number()]), otherNum: z.number()})',
       )
     })
 
@@ -236,10 +272,10 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const result = inferrer.zodForConfig(config, configFile)
+      const {schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.TypeScript)
       expect(result._def.typeName).to.equal('ZodObject')
-      expect(ZodUtils.zodToString(result, 'test')).to.equal(
-        'z.object({systemMessage: z.function().args(z.object({user: z.array(z.object({name: z.string()})).optional(), admin: z.array(z.object({name: z.string()})).optional(), placeholder: z.string().optional()})).returns(z.string()).optional(), nested: z.object({stuff: z.array(z.object({name: z.string().optional()})).optional(), otherStuff: z.string().optional()}).optional()})',
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+        'optionalRequiredAccess({systemMessage: z.function().args(optionalRequiredAccess({user: z.array(optionalRequiredAccess({name: z.string()})), admin: z.array(optionalRequiredAccess({name: z.string()})), placeholder: z.string()})).returns(z.string()), nested: optionalRequiredAccess({stuff: z.array(z.unknown()), otherStuff: z.function().args(optionalRequiredAccess({placeholder2: z.string()})).returns(z.string())})})',
       )
     })
 
@@ -261,8 +297,8 @@ describe('SchemaInferrer', () => {
         valueType: 'STRING',
       }
 
-      const schema = inferrer.zodForConfig(config, {configs: []})
-      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.string()')
+      const {schema: result} = inferrer.zodForConfig(config, {configs: []}, SupportedLanguage.TypeScript)
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal('z.string()')
     })
 
     it('should use schema from referenced schema config', () => {
@@ -312,11 +348,11 @@ describe('SchemaInferrer', () => {
         configs: [schemaConfig, jsonConfig],
       }
 
-      const schema = inferrer.zodForConfig(jsonConfig, configFile)
+      const {schema: result} = inferrer.zodForConfig(jsonConfig, configFile, SupportedLanguage.TypeScript)
 
       // Verify it's an object schema with the expected properties
-      expect((schema as any)._def.typeName).to.equal('ZodObject')
-      const {shape} = schema as z.ZodObject<any>
+      expect(result._def.typeName).to.equal('ZodObject')
+      const {shape} = result as z.ZodObject<any>
       expect((shape.name as any)._def.typeName).to.equal('ZodString')
       expect((shape.age as any)._def.typeName).to.equal('ZodNumber')
     })
@@ -368,11 +404,16 @@ describe('SchemaInferrer', () => {
         configs: [schemaConfig, jsonConfig],
       }
 
-      const schema = inferrer.zodForConfig(jsonConfig, configFile)
-
+      const {providence, schema: result} = inferrer.zodForConfig(jsonConfig, configFile, SupportedLanguage.TypeScript)
+      expect(providence).to.equal('user')
       // we do inference on the json config, then trust server to have the non-optional
       // optional doesn't carry over to the zod
-      expect(ZodUtils.zodToString(schema, 'test')).to.equal(
+      expect(ZodUtils.zodToString(result, 'test', 'user', SupportedLanguage.TypeScript)).to.equal(
+        'z.object({username: z.string(), email: z.string().optional(), age: z.number().optional()})',
+      )
+
+      const {schema: resultPython} = inferrer.zodForConfig(jsonConfig, configFile, SupportedLanguage.Python)
+      expect(ZodUtils.zodToString(resultPython, 'test', 'user', SupportedLanguage.Python)).to.equal(
         'z.object({username: z.string(), email: z.string().optional(), age: z.number().optional()})',
       )
     })
@@ -402,10 +443,10 @@ describe('SchemaInferrer', () => {
         configs: [jsonConfig], // No schema config exists
       }
 
-      const schema = inferrer.zodForConfig(jsonConfig, configFile)
+      const {schema: result} = inferrer.zodForConfig(jsonConfig, configFile, SupportedLanguage.TypeScript)
 
-      expect(ZodUtils.zodToString(schema, 'test')).to.equal(
-        'z.object({name: z.string().optional(), price: z.number().optional()})',
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+        'optionalRequiredAccess({name: z.string(), price: z.number()})',
       )
     })
 
@@ -455,9 +496,15 @@ describe('SchemaInferrer', () => {
         configs: [schemaConfig, jsonConfig],
       }
 
-      const schema = inferrer.zodForConfig(jsonConfig, configFile)
+      const {schema: result} = inferrer.zodForConfig(jsonConfig, configFile, SupportedLanguage.TypeScript)
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+        'optionalRequiredAccess({value: z.string()})',
+      )
 
-      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.object({value: z.string().optional()})')
+      const {schema: resultPython} = inferrer.zodForConfig(jsonConfig, configFile, SupportedLanguage.Python)
+      expect(ZodUtils.zodToString(resultPython, 'test', 'inferred', SupportedLanguage.Python)).to.equal(
+        'z.object({value: z.string()})',
+      )
     })
 
     it('should handle complex schemas with nested objects and arrays', () => {
@@ -513,8 +560,8 @@ describe('SchemaInferrer', () => {
         configs: [schemaConfig, jsonConfig],
       }
 
-      const schema = inferrer.zodForConfig(jsonConfig, configFile)
-      expect(ZodUtils.zodToString(schema, 'test')).to.equal(
+      const {schema: result} = inferrer.zodForConfig(jsonConfig, configFile, SupportedLanguage.Python)
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.Python)).to.equal(
         "z.object({name: z.string(), tags: z.array(z.string()), metadata: z.object({created: z.string(), modified: z.string().optional()}), status: z.enum(['active','inactive','pending'])})",
       )
     })
@@ -566,11 +613,13 @@ describe('SchemaInferrer', () => {
         configs: [schemaConfig, jsonConfig],
       }
 
-      const schema = inferrer.zodForConfig(jsonConfig, configFile)
+      const {providence, schema: result} = inferrer.zodForConfig(jsonConfig, configFile, SupportedLanguage.TypeScript)
+
+      expect(providence).to.equal('user')
 
       // Verify the hybrid approach - structure from schema with template processing
-      expect((schema as any)._def.typeName).to.equal('ZodObject')
-      const {shape} = schema as z.ZodObject<any>
+      expect(result._def.typeName).to.equal('ZodObject')
+      const {shape} = result as z.ZodObject<any>
 
       // The greeting should now be a function type because of the template
       expect((shape.greeting as any)._def.typeName).to.equal('ZodFunction')
@@ -633,9 +682,15 @@ describe('SchemaInferrer', () => {
         configs: [config],
       }
 
-      const schema = inferrer.zodForConfig(config, configFile)
-      expect(ZodUtils.zodToString(schema, 'test')).to.equal(
-        'z.object({url: z.function().args(z.object({scheme: z.string(), host: z.string()})).returns(z.string()).optional(), timeout: z.number().optional(), retries: z.number().optional()})',
+      const {providence, schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.TypeScript)
+      expect(providence).to.equal('inferred')
+      expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+        'optionalRequiredAccess({url: z.function().args(optionalRequiredAccess({scheme: z.string(), host: z.string()})).returns(z.string()), timeout: z.number(), retries: z.number()})',
+      )
+
+      const {schema: resultPython} = inferrer.zodForConfig(config, configFile, SupportedLanguage.Python)
+      expect(ZodUtils.zodToString(resultPython, 'test', 'inferred', SupportedLanguage.Python)).to.equal(
+        'z.object({url: z.function().args(z.object({scheme: z.string(), host: z.string()})).returns(z.string()), timeout: z.number(), retries: z.number()})',
       )
     })
   })
@@ -878,7 +933,9 @@ describe('SchemaInferrer', () => {
 
     const result = mergeSchemas(schemaA, schemaB)
     expect(result._def.typeName).to.equal('ZodObject')
-    expect(ZodUtils.zodToString(result, 'test')).to.equal('z.object({name: z.string().optional()})')
+    expect(ZodUtils.zodToString(result, 'test', 'user', SupportedLanguage.TypeScript)).to.equal(
+      'z.object({name: z.string().optional()})',
+    )
   })
 
   it('should merge two schemas with the same string property that are not optional', () => {
@@ -896,7 +953,9 @@ describe('SchemaInferrer', () => {
 
     const result = mergeSchemas(schemaA, schemaB)
     expect(result._def.typeName).to.equal('ZodObject')
-    expect(ZodUtils.zodToString(result, 'test')).to.equal('z.object({name: z.string()})')
+    expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+      'optionalRequiredAccess({name: z.string()})',
+    )
   })
 
   it('should merge two schemas with conflict', () => {
@@ -914,7 +973,9 @@ describe('SchemaInferrer', () => {
 
     const result = mergeSchemas(schemaA, schemaB)
     expect(result._def.typeName).to.equal('ZodObject')
-    expect(ZodUtils.zodToString(result, 'test')).to.equal('z.object({conflict: z.union([z.string(), z.number()])})')
+    expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+      'optionalRequiredAccess({conflict: z.union([z.string(), z.number()])})',
+    )
   })
   it('should merge two schemas with conflict and optional', () => {
     const inferrer = new SchemaInferrer(logger)
@@ -931,8 +992,8 @@ describe('SchemaInferrer', () => {
 
     const result = mergeSchemas(schemaA, schemaB)
     expect(result._def.typeName).to.equal('ZodObject')
-    expect(ZodUtils.zodToString(result, 'test')).to.equal(
-      'z.object({conflict: z.union([z.string(), z.number()]).optional()})',
+    expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+      'optionalRequiredAccess({conflict: z.union([z.string(), z.number()]).optional()})',
     )
   })
 })

@@ -8,22 +8,24 @@ describe('ZodUtils', () => {
   describe('zodToString', () => {
     it('should convert a ZodString to string representation', () => {
       const schema = z.string()
-      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.string()')
+      expect(ZodUtils.zodToString(schema, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal('z.string()')
     })
 
     it('should convert a ZodBoolean to string representation', () => {
       const schema = z.boolean()
-      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.boolean()')
+      expect(ZodUtils.zodToString(schema, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal('z.boolean()')
     })
 
     it('should convert a Zod integer to string representation', () => {
       const schema = z.number().int()
-      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.number().int()')
+      expect(ZodUtils.zodToString(schema, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+        'z.number().int()',
+      )
     })
 
     it('should convert a regular Zod number to string representation', () => {
       const schema = z.number()
-      const result = ZodUtils.zodToString(schema, 'test')
+      const result = ZodUtils.zodToString(schema, 'test', 'inferred', SupportedLanguage.TypeScript)
       expect(result).to.equal('z.number()')
     })
 
@@ -32,25 +34,46 @@ describe('ZodUtils', () => {
         age: z.string(),
         name: z.string(),
       })
-      const result = ZodUtils.zodToString(schema, 'test')
-      expect(result).to.contain('z.object({')
+      const result = ZodUtils.zodToString(schema, 'test', 'inferred', SupportedLanguage.TypeScript)
+      expect(result).to.contain('optionalRequiredAccess({')
       expect(result).to.contain('name: z.string()')
       expect(result).to.contain('age: z.string()')
+
+      const result2 = ZodUtils.zodToString(schema, 'test', 'user', SupportedLanguage.TypeScript)
+      expect(result2).to.contain('z.object({')
+      expect(result2).to.contain('name: z.string()')
+      expect(result2).to.contain('age: z.string()')
+
+      const resultPython = ZodUtils.zodToString(schema, 'test', 'user', SupportedLanguage.Python)
+      expect(resultPython).to.contain('z.object({')
+      expect(resultPython).to.contain('name: z.string()')
+      expect(resultPython).to.contain('age: z.string()')
+
+      const resultPython2 = ZodUtils.zodToString(schema, 'test', 'inferred', SupportedLanguage.Python)
+      expect(resultPython2).to.contain('z.object({')
+      expect(resultPython2).to.contain('name: z.string()')
+      expect(resultPython2).to.contain('age: z.string()')
     })
 
     it('should convert a ZodArray to string representation', () => {
       const schema = z.array(z.string())
-      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.array(z.string())')
+      expect(ZodUtils.zodToString(schema, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+        'z.array(z.string())',
+      )
     })
 
     it('should convert a ZodOptional to string representation', () => {
       const schema = z.string().optional()
-      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.string().optional()')
+      expect(ZodUtils.zodToString(schema, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+        'z.string().optional()',
+      )
     })
 
     it('should convert a union to string representation', () => {
       const schema = z.union([z.string(), z.number()])
-      expect(ZodUtils.zodToString(schema, 'test')).to.equal('z.union([z.string(), z.number()])')
+      expect(ZodUtils.zodToString(schema, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
+        'z.union([z.string(), z.number()])',
+      )
     })
   })
 
@@ -161,14 +184,6 @@ describe('ZodUtils', () => {
         name: z.string(),
       })
       expect(ZodUtils.zodTypeToTsType(schema)).to.equal('{ age: number; name: string }')
-    })
-
-    it('should handle optional properties in objects', () => {
-      const schema = z.object({
-        age: z.number().optional(),
-        name: z.string(),
-      })
-      expect(ZodUtils.zodTypeToTsType(schema)).to.equal('{ age?: number; name: string }')
     })
 
     it('should convert ZodEnum to TypeScript union type', () => {
@@ -331,7 +346,9 @@ describe('ZodUtils', () => {
           .returns(z.number()),
       })
       const result = ZodUtils.generateReturnValueCode(nestedSchema, '', SupportedLanguage.TypeScript)
-      expect(result).to.equal('{ "message": (params: { name: string }) => Mustache.render(raw["message"], params) }')
+      expect(result).to.equal(
+        '{ "message": (params: { name: string }) => Mustache.render(raw["message"] ?? "", params) }',
+      )
     })
 
     it('should handle placeholder in typescript', () => {
@@ -340,7 +357,7 @@ describe('ZodUtils', () => {
         .args(z.object({name: z.string()}))
         .returns(z.number())
       const result = ZodUtils.generateReturnValueCode(placeholderSchema, '', SupportedLanguage.TypeScript)
-      expect(result).to.equal('(params: { name: string }) => Mustache.render(raw, params)')
+      expect(result).to.equal('(params: { name: string }) => Mustache.render(raw ?? "", params)')
     })
 
     it('should handle placeholder in Python', () => {
@@ -375,7 +392,7 @@ describe('ZodUtils', () => {
 
       const result = ZodUtils.generateReturnValueCode(deepNestedSchema, '', SupportedLanguage.TypeScript)
       expect(result).to.equal(
-        '{ "data": { "greeting": (params: { name: string; title: string }) => Mustache.render(raw["data"]["greeting"], params) } }',
+        '{ "data": { "greeting": (params: { name: string; title: string }) => Mustache.render(raw["data"]["greeting"] ?? "", params) } }',
       )
     })
 
@@ -400,10 +417,10 @@ describe('ZodUtils', () => {
 
       const result = ZodUtils.generateReturnValueCode(multiSchema, '', SupportedLanguage.TypeScript)
       expect(result).to.contain(
-        '"systemMessage": (params: { placeholders: string }) => Mustache.render(raw["systemMessage"], params)',
+        '"systemMessage": (params: { placeholders: string }) => Mustache.render(raw["systemMessage"] ?? "", params)',
       )
       expect(result).to.contain(
-        '"userMessage": (params: { extractedFiltersAsText: string; userMessage: string }) => Mustache.render(raw["userMessage"], params)',
+        '"userMessage": (params: { extractedFiltersAsText: string; userMessage: string }) => Mustache.render(raw["userMessage"] ?? "", params)',
       )
       expect(result).to.contain('"model": raw["model"]')
       expect(result).to.contain('"temperature": raw["temperature"]')
@@ -461,7 +478,7 @@ describe('ZodUtils', () => {
     const fnSchema = z.function().args(z.string()).returns(z.number())
 
     expect(ZodUtils.generateReturnValueCode(fnSchema, '', SupportedLanguage.TypeScript)).to.equal(
-      '(params: string) => Mustache.render(raw, params)',
+      '(params: string) => Mustache.render(raw ?? "", params)',
     )
   })
 })

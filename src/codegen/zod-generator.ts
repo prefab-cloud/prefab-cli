@@ -7,7 +7,7 @@ import {ZodTypeAny} from 'zod'
 import type {Config, ConfigFile} from './types.js'
 
 import {generatePythonClientCode} from './python/generator.js'
-import {SchemaInferrer} from './schema-inferrer.js'
+import {SchemaInferrer, SchemaWithProvidence} from './schema-inferrer.js'
 import {ZodUtils} from './zod-utils.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -83,6 +83,7 @@ export class ZodGenerator {
           config.configType === 'FEATURE_FLAG' ||
           config.sendToClientSdk === true,
       )
+      .sort((a, b) => a.key.localeCompare(b.key))
 
     this.log('Exportable configs:', filteredConfigs.length)
 
@@ -106,7 +107,7 @@ export class ZodGenerator {
    * Generate an accessor method for a single config
    */
   generateAccessorMethod(config: Config, language: SupportedLanguage): AccessorMethod {
-    const schemaObj = this.schemaInferrer.zodForConfig(config, this.configFile)
+    const {schema: schemaObj} = this.schemaInferrer.zodForConfig(config, this.configFile, language)
     const returnValue = ZodUtils.generateReturnValueCode(schemaObj, '', language)
 
     const paramsSchema = ZodUtils.paramsOf(schemaObj)
@@ -146,8 +147,8 @@ export class ZodGenerator {
    * Generate a schema line for a single config
    */
   generateSchemaLine(config: Config, language: SupportedLanguage = SupportedLanguage.TypeScript): SchemaLine {
-    const simplified = this.generateSimplifiedSchema(config)
-    const zodType = ZodUtils.zodToString(simplified, config.key)
+    const {schema: simplified, providence} = this.generateSimplifiedSchema(config, language)
+    const zodType = ZodUtils.zodToString(simplified, config.key, providence, language)
 
     return this.massageSchemaLineForLanguage(language, config, {
       key: config.key,
@@ -165,9 +166,15 @@ export class ZodGenerator {
       .map((config) => this.generateSchemaLine(config, language))
   }
 
-  generateSimplifiedSchema(config: Config): ZodTypeAny {
-    const schemaObj = this.schemaInferrer.zodForConfig(config, this.configFile)
-    return ZodUtils.simplifyFunctions(schemaObj)
+  generateSimplifiedSchema(
+    config: Config,
+    language: SupportedLanguage = SupportedLanguage.TypeScript,
+  ): SchemaWithProvidence {
+    const schemaObj = this.schemaInferrer.zodForConfig(config, this.configFile, language)
+    return {
+      providence: schemaObj.providence,
+      schema: ZodUtils.simplifyFunctions(schemaObj.schema),
+    }
   }
 
   /**

@@ -170,7 +170,7 @@ describe('ZodGenerator', () => {
       const generator = new ZodGenerator(mockConfigFile, logger)
 
       expect(() => generator.generate(SupportedLanguage.TypeScript)).to.throw(
-        `Method 'exampleFeatureFlag' is already registered. Prefab key example-feature-flag conflicts with example.feature.flag`,
+        `Method 'exampleFeatureFlag' is already registered. Prefab key example.feature.flag conflicts with example-feature-flag`,
       )
     })
   })
@@ -217,7 +217,7 @@ describe('ZodGenerator', () => {
       expect(accessorMethod.key).to.equal('example.config.function')
       expect(accessorMethod.isFunctionReturn).to.be.true
       expect(accessorMethod.returnType).to.equal('string')
-      expect(accessorMethod.returnValue).to.equal('(params: { name: string }) => Mustache.render(raw, params)')
+      expect(accessorMethod.returnValue).to.equal('(params: { name: string }) => Mustache.render(raw ?? "", params)')
       expect(accessorMethod.params).to.equal('{ name: string }')
     })
   })
@@ -229,9 +229,9 @@ describe('ZodGenerator', () => {
 
       // Use a single multiline string assertion for better readability
       const expectedOutput = `exampleFeatureFlag(contexts?: Contexts | ContextObj): boolean {
-  const raw = this.get('example.feature.flag', contexts);
-  return raw;
-}`
+    const raw = this.get('example.feature.flag', contexts);
+    return raw;
+  }`
 
       // Normalize line endings before comparison
       expectToEqualWithNormalizedLineEndings(result, expectedOutput)
@@ -243,9 +243,9 @@ describe('ZodGenerator', () => {
 
       // Use a single multiline string assertion for better readability
       const expectedOutput = `exampleConfigFunction(contexts?: Contexts | ContextObj): (params: { name: string }) => string {
-  const raw = this.get('example.config.function', contexts);
-  return (params: { name: string }) => Mustache.render(raw, params);
-}`
+    const raw = this.get('example.config.function', contexts);
+    return (params: { name: string }) => Mustache.render(raw ?? "", params);
+  }`
 
       // Normalize line endings before comparison
       expectToEqualWithNormalizedLineEndings(result, expectedOutput)
@@ -256,10 +256,10 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockObjectConfig)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { name?: string; age?: number } {
-  const raw = this.get('example.config.object', contexts);
-  return { "name": raw["name"], "age": raw["age"] };
-}`
+      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { name: string; age: number } {
+    const raw = this.get('example.config.object', contexts);
+    return { "name": raw["name"], "age": raw["age"] };
+  }`
 
       // Normalize line endings before comparison
       expectToEqualWithNormalizedLineEndings(result, expectedOutput)
@@ -300,9 +300,9 @@ describe('ZodGenerator', () => {
 
       // Use a single multiline string assertion for better readability
       const expectedOutput = `exampleGreetingTemplate(contexts?: Contexts | ContextObj): (params: { name: string; company: string; user.id: string }) => string {
-  const raw = this.get('example.greeting.template', contexts);
-  return (params: { name: string; company: string; user.id: string }) => Mustache.render(raw, params);
-}`
+    const raw = this.get('example.greeting.template', contexts);
+    return (params: { name: string; company: string; user.id: string }) => Mustache.render(raw ?? "", params);
+  }`
 
       // Normalize line endings before comparison
       expectToEqualWithNormalizedLineEndings(accessorMethod, expectedOutput)
@@ -354,10 +354,10 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfig)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { template?: (params: { placeholder: string }) => string } {
-  const raw = this.get('example.config.object', contexts);
-  return { "template": raw["template"] === undefined ? undefined : (params: { placeholder: string }) => Mustache.render(raw["template"], params) };
-}`
+      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { template: (params: { placeholder: string }) => string } {
+    const raw = this.get('example.config.object', contexts);
+    return { "template": (params: { placeholder: string }) => Mustache.render(raw["template"] ?? "", params) };
+  }`
 
       // Normalize line endings before comparison
       expectToEqualWithNormalizedLineEndings(result, expectedOutput)
@@ -368,10 +368,10 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfigMultiValue)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { template?: (params: { other_placeholder?: string; placeholder?: string }) => string; num?: number } {
-  const raw = this.get('example.config.object', contexts);
-  return { "template": raw["template"] === undefined ? undefined : (params: { other_placeholder?: string; placeholder?: string }) => Mustache.render(raw["template"], params), "num": raw["num"] };
-}`
+      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { template: (params: { other_placeholder: string; placeholder: string }) => string; num: number } {
+    const raw = this.get('example.config.object', contexts);
+    return { "template": (params: { other_placeholder: string; placeholder: string }) => Mustache.render(raw["template"] ?? "", params), "num": raw["num"] };
+  }`
 
       // Normalize line endings before comparison
       expectToEqualWithNormalizedLineEndings(result, expectedOutput)
@@ -386,7 +386,7 @@ describe('ZodGenerator', () => {
       // Use a single multiline string assertion for better readability
       const expectedOutput = `def exampleConfigObject(self):
       raw = self.get('example.config.object')
-      return { "template": raw["template"] === undefined ? undefined : lambda params: pystache.render(raw["template"], params) }`
+      return { "template": lambda params: pystache.render(raw["template"], params) }`
 
       // Normalize line endings before comparison
       expectToEqualWithNormalizedLineEndings(result, expectedOutput)
@@ -399,7 +399,7 @@ describe('ZodGenerator', () => {
       // Use a single multiline string assertion for better readability
       const expectedOutput = `def exampleConfigObject(self):
       raw = self.get('example.config.object')
-      return { "template": raw["template"] === undefined ? undefined : lambda params: pystache.render(raw["template"], params), "num": raw["num"] }`
+      return { "template": lambda params: pystache.render(raw["template"], params), "num": raw["num"] }`
 
       // Normalize line endings before comparison
       expectToEqualWithNormalizedLineEndings(result, expectedOutput)

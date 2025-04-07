@@ -3,6 +3,7 @@ import {expect} from 'chai'
 import {generatePythonClientCode} from '../../../src/codegen/python/generator.js'
 import {SchemaInferrer} from '../../../src/codegen/schema-inferrer.js'
 import {Config, ConfigFile} from '../../../src/codegen/types.js'
+import {SupportedLanguage} from '../../../src/codegen/zod-generator.js'
 
 describe('Python Generator Integration', () => {
   it('should generate Python code from config files', () => {
@@ -83,28 +84,35 @@ describe('Python Generator Integration', () => {
 
     // Mock SchemaInferrer - use a simple implementation that returns appropriate schemas
     const mockSchemaInferrer = {
-      zodForConfig(config: Config, _configFile: ConfigFile) {
+      zodForConfig(config: Config, _configFile: ConfigFile, _language: SupportedLanguage) {
         if (config.key === 'feature_enabled') {
-          return {_def: {typeName: 'ZodBoolean'}} // Mock boolean schema
+          return {providence: 'inferred', schema: {_def: {typeName: 'ZodBoolean'}}} // Mock boolean schema
         }
 
         if (config.key === 'api_url') {
-          return {_def: {typeName: 'ZodString'}} // Mock string schema
+          return {providence: 'inferred', schema: {_def: {typeName: 'ZodString'}}} // Mock string schema
         }
 
         if (config.key === 'timeout_seconds') {
-          return {_def: {checks: [{kind: 'int'}], typeName: 'ZodNumber'}} // Mock integer schema
+          return {providence: 'inferred', schema: {_def: {checks: [{kind: 'int'}], typeName: 'ZodNumber'}}} // Mock integer schema
         }
 
         if (config.key === 'rate_limits') {
-          return {_def: {typeName: 'ZodObject'}} // Mock object schema
+          return {providence: 'inferred', schema: {_def: {typeName: 'ZodObject'}}} // Mock object schema
         }
 
         if (config.key === 'allowed_origins') {
-          return {_def: {element: {_def: {typeName: 'ZodString'}}, typeName: 'ZodArray'}} // Mock string array schema
+          return {
+            providence: 'inferred',
+            schema: {_def: {element: {_def: {typeName: 'ZodString'}}, typeName: 'ZodArray'}},
+          } // Mock string array schema
         }
 
-        return {_def: {typeName: 'ZodUnknown'}}
+        if (config.key === 'feature.enabled') {
+          return {providence: 'inferred', schema: {_def: {checks: [{kind: 'int'}], typeName: 'ZodNumber'}}} // Mock integer schema
+        }
+
+        return {providence: 'inferred', schema: {_def: {typeName: 'ZodUnknown'}}}
       },
     } as unknown as SchemaInferrer
 
@@ -187,20 +195,20 @@ describe('Python Generator Integration', () => {
     }
 
     const mockSchemaInferrer = {
-      zodForConfig(config: Config, _configFile: ConfigFile) {
+      zodForConfig(config: Config, _configFile: ConfigFile, _language: SupportedLanguage) {
         if (config.key === 'feature_enabled') {
-          return {_def: {typeName: 'ZodBoolean'}} // Mock boolean schema
+          return {providence: 'inferred', schema: {_def: {typeName: 'ZodBoolean'}}} // Mock boolean schema
         }
 
         if (config.key === 'api_url') {
-          return {_def: {typeName: 'ZodString'}} // Mock string schema
+          return {providence: 'inferred', schema: {_def: {typeName: 'ZodString'}}} // Mock string schema
         }
 
         if (config.key === 'feature.enabled') {
-          return {_def: {checks: [{kind: 'int'}], typeName: 'ZodNumber'}} // Mock integer schema
+          return {providence: 'inferred', schema: {_def: {checks: [{kind: 'int'}], typeName: 'ZodNumber'}}} // Mock integer schema
         }
 
-        return {_def: {typeName: 'ZodUnknown'}}
+        return {providence: 'inferred', schema: {_def: {typeName: 'ZodUnknown'}}}
       },
     } as unknown as SchemaInferrer
 

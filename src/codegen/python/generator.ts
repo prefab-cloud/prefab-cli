@@ -1,5 +1,6 @@
 import {SchemaInferrer} from '../schema-inferrer.js'
 import {type ConfigFile} from '../types.js'
+import {SupportedLanguage} from '../zod-generator.js'
 import {UnifiedPythonGenerator} from './pydantic-generator.js'
 
 export function generatePythonClientCode(
@@ -17,7 +18,7 @@ export function generatePythonClientCode(
     .filter((config) => config.rows.length > 0)
     // eslint-disable-next-line unicorn/no-array-for-each
     .forEach((config) => {
-      const inferredSchema = schemaInferrer.zodForConfig(config, configFile)
+      const {schema: inferredSchema} = schemaInferrer.zodForConfig(config, configFile, SupportedLanguage.Python)
       generator.registerMethod(
         config.key,
         inferredSchema,

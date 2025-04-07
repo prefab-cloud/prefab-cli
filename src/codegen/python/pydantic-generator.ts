@@ -614,6 +614,8 @@ ${extractionCode
 
     pythonCode += 'logger = logging.getLogger(__name__)\n\n'
 
+    pythonCode += 'class ObjectModel(BaseModel):\n    pass\n\n'
+
     // Add the client class with nested types
     const className = this.options.className || 'PrefabTypedClient'
     pythonCode += `class ${className}:\n    """Client for accessing Prefab configuration with type-safe methods"""\n`
@@ -1183,46 +1185,55 @@ ${spec.hasTemplateParams ? '        params: Parameters for template rendering\n'
     if (schema instanceof z.ZodString) {
       return 'str'
     }
+
     if (schema instanceof z.ZodNumber) {
       const typeDef = getTypeDef(schema)
       return typeDef.checks?.some((check) => check.kind === 'int') ? 'int' : 'float'
     }
+
     if (schema instanceof z.ZodBoolean) {
       return 'bool'
     }
+
     if (schema instanceof z.ZodArray) {
       const elementType = this.getPydanticType(schema.element)
       return `List[${elementType}]`
     }
+
     if (schema instanceof z.ZodObject) {
       // Check if we've already registered this schema
       if (this.schemaModels.has(schema)) {
         const modelName = this.schemaModels.get(schema)!
-        return `${className}.${modelName}`
+        return `${modelName}`
       }
+
       // Generate a generic model name as fallback
       const modelName = this.generateClassName(schema.description || 'Object')
-      return `${className}.${modelName}`
+      return `${modelName}`
     }
+
     if (schema instanceof z.ZodUnion) {
       const types = schema.options.map((t: z.ZodTypeAny) => this.getPydanticType(t))
       return `Union[${types.join(', ')}]`
     }
+
     if (schema instanceof z.ZodOptional) {
       const innerType = this.getPydanticType(schema._def.innerType)
       return `Optional[${innerType}]`
     }
+
     if (schema instanceof z.ZodRecord) {
       // Don't namespace built-in types like Dict
       const keyType = this.getPydanticType(schema._def.keyType)
       const valueType = this.getPydanticType(schema._def.valueType)
       return `Dict[${keyType}, ${valueType}]`
     }
+
     if (schema instanceof z.ZodFunction) {
       return 'str' // Mustache template fields are always strings
-    } else {
-      return 'Any'
     }
+
+    return 'Any'
   }
 
   /**

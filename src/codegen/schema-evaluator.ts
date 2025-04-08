@@ -7,22 +7,22 @@ import {z} from 'zod'
  */
 export interface SecureSchemaValidatorOptions {
   /**
-   * Maximum allowed AST nodes to prevent DoS attacks
-   */
-  maxAstNodes?: number
-
-  /**
    * Whether to perform AST validation
    */
   astValidation?: boolean
+
+  /**
+   * Maximum allowed AST nodes to prevent DoS attacks
+   */
+  maxAstNodes?: number
 }
 
 /**
  * Default options for the secure schema validator
  */
 const DEFAULT_OPTIONS: SecureSchemaValidatorOptions = {
-  maxAstNodes: 500,
   astValidation: true,
+  maxAstNodes: 500,
 }
 
 /**
@@ -32,7 +32,7 @@ const DEFAULT_OPTIONS: SecureSchemaValidatorOptions = {
  * @param parentMap - Map of nodes to their parent nodes
  * @returns An object with validation result and optional error message
  */
-export function validateAst(ast: any, parentMap: WeakMap<any, any>): {isValid: boolean; error?: string} {
+export function validateAst(ast: any, parentMap: WeakMap<any, any>): {error?: string; isValid: boolean} {
   let isValid = true
   let error: string | undefined
 
@@ -56,6 +56,7 @@ export function validateAst(ast: any, parentMap: WeakMap<any, any>): {isValid: b
         return true
       }
     }
+
     return false
   }
 
@@ -66,21 +67,33 @@ export function validateAst(ast: any, parentMap: WeakMap<any, any>): {isValid: b
 
   // Custom AST walker to check for unsafe patterns
   walk.simple(ast, {
-    // Block function declarations
-    FunctionDeclaration(node: any) {
-      issues.push(`Forbidden node type: FunctionDeclaration`)
-      isValid = false
-    },
-
-    FunctionExpression(node: any) {
-      issues.push(`Forbidden node type: FunctionExpression`)
-      isValid = false
-    },
-
     ArrowFunctionExpression(node: any) {
       // Allow arrow functions only in valid Zod method contexts
       if (!isValidZodMethodArg(node)) {
         issues.push(`Forbidden standalone arrow function`)
+        isValid = false
+      }
+    },
+
+    // Block async/await
+    AwaitExpression() {
+      issues.push('Await expressions are not allowed')
+      isValid = false
+    },
+
+    // Restrict function calls
+    CallExpression(node: any) {
+      if (node.callee.type === 'MemberExpression') {
+        const obj = node.callee.object
+        if (obj.type === 'Identifier' && obj.name !== 'z') {
+          issues.push(`Only calls to z.* methods are allowed, found: ${obj.name}`)
+          isValid = false
+        }
+      } else if (node.callee.type === 'Identifier' && node.callee.name === 'require') {
+        issues.push(`Forbidden function call: require`)
+        isValid = false
+      } else if (node.callee.type === 'Identifier' && !['z'].includes(node.callee.name)) {
+        issues.push(`Forbidden function call: ${node.callee.name}`)
         isValid = false
       }
     },
@@ -96,14 +109,8 @@ export function validateAst(ast: any, parentMap: WeakMap<any, any>): {isValid: b
       isValid = false
     },
 
-    // Block imports, exports
-    ImportDeclaration() {
-      issues.push(`Forbidden operation: ImportDeclaration`)
-      isValid = false
-    },
-
-    ExportNamedDeclaration() {
-      issues.push(`Forbidden operation: ExportNamedDeclaration`)
+    ExportAllDeclaration() {
+      issues.push(`Forbidden operation: ExportAllDeclaration`)
       isValid = false
     },
 
@@ -112,8 +119,19 @@ export function validateAst(ast: any, parentMap: WeakMap<any, any>): {isValid: b
       isValid = false
     },
 
-    ExportAllDeclaration() {
-      issues.push(`Forbidden operation: ExportAllDeclaration`)
+    ExportNamedDeclaration() {
+      issues.push(`Forbidden operation: ExportNamedDeclaration`)
+      isValid = false
+    },
+
+    // Block function declarations
+    FunctionDeclaration(node: any) {
+      issues.push(`Forbidden node type: FunctionDeclaration`)
+      isValid = false
+    },
+
+    FunctionExpression(node: any) {
+      issues.push(`Forbidden node type: FunctionExpression`)
       isValid = false
     },
 
@@ -141,6 +159,12 @@ export function validateAst(ast: any, parentMap: WeakMap<any, any>): {isValid: b
       }
     },
 
+    // Block imports, exports
+    ImportDeclaration() {
+      issues.push(`Forbidden operation: ImportDeclaration`)
+      isValid = false
+    },
+
     // Block dangerous property access
     MemberExpression(node: any) {
       if (node.property.type === 'Identifier') {
@@ -160,29 +184,6 @@ export function validateAst(ast: any, parentMap: WeakMap<any, any>): {isValid: b
         }
       }
     },
-
-    // Restrict function calls
-    CallExpression(node: any) {
-      if (node.callee.type === 'MemberExpression') {
-        const obj = node.callee.object
-        if (obj.type === 'Identifier' && obj.name !== 'z') {
-          issues.push(`Only calls to z.* methods are allowed, found: ${obj.name}`)
-          isValid = false
-        }
-      } else if (node.callee.type === 'Identifier' && node.callee.name === 'require') {
-        issues.push(`Forbidden function call: require`)
-        isValid = false
-      } else if (node.callee.type === 'Identifier' && !['z'].includes(node.callee.name)) {
-        issues.push(`Forbidden function call: ${node.callee.name}`)
-        isValid = false
-      }
-    },
-
-    // Block async/await
-    AwaitExpression() {
-      issues.push('Await expressions are not allowed')
-      isValid = false
-    },
   })
 
   if (nodeCount > DEFAULT_OPTIONS.maxAstNodes!) {
@@ -194,7 +195,7 @@ export function validateAst(ast: any, parentMap: WeakMap<any, any>): {isValid: b
     error = `Schema contains potentially unsafe operations: ${issues.join(', ')}`
   }
 
-  return {isValid, error}
+  return {error, isValid}
 }
 
 /**
@@ -207,7 +208,7 @@ export function validateAst(ast: any, parentMap: WeakMap<any, any>): {isValid: b
 export function secureEvaluateSchema(
   schemaString: string,
   options: SecureSchemaValidatorOptions = {},
-): {success: boolean; schema?: z.ZodType; error?: string} {
+): {error?: string; schema?: z.ZodType; success: boolean} {
   const mergedOptions = {...DEFAULT_OPTIONS, ...options}
   const trimmedSchema = schemaString.trim()
 
@@ -216,8 +217,8 @@ export function secureEvaluateSchema(
     if (mergedOptions.astValidation) {
       // Parse the schema string into an AST
       const ast = acorn.parse(trimmedSchema, {
-        ecmaVersion: 2020,
         allowAwaitOutsideFunction: false,
+        ecmaVersion: 2020,
         sourceType: 'script',
       })
 
@@ -232,7 +233,7 @@ export function secureEvaluateSchema(
 
         // Recursively process all properties that might contain child nodes
         for (const key in node) {
-          if (Object.prototype.hasOwnProperty.call(node, key)) {
+          if (Object.hasOwn(node, key)) {
             const child = node[key]
 
             if (child && typeof child === 'object') {
@@ -254,10 +255,10 @@ export function secureEvaluateSchema(
       buildParentChildRelationships(ast)
 
       // Validate the AST for security concerns
-      const {isValid, error} = validateAst(ast, parentMap)
+      const {error, isValid} = validateAst(ast, parentMap)
 
       if (!isValid) {
-        return {success: false, error}
+        return {error, success: false}
       }
     }
 
@@ -270,16 +271,16 @@ export function secureEvaluateSchema(
     // Phase 3: Validate Result
     if (!schema || typeof schema !== 'object' || !('_def' in schema)) {
       return {
-        success: false,
         error: 'The provided string did not evaluate to a valid Zod schema',
+        success: false,
       }
     }
 
-    return {success: true, schema}
+    return {schema, success: true}
   } catch (error) {
     return {
-      success: false,
       error: error instanceof Error ? `Evaluation error: ${error.message}` : 'Unknown evaluation error',
+      success: false,
     }
   }
 }

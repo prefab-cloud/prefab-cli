@@ -147,7 +147,7 @@ export class ZodGenerator {
    * Generate a schema line for a single config
    */
   generateSchemaLine(config: Config, language: SupportedLanguage = SupportedLanguage.TypeScript): SchemaLine {
-    const {schema: simplified, providence} = this.generateSimplifiedSchema(config, language)
+    const {providence, schema: simplified} = this.generateSimplifiedSchema(config, language)
     const zodType = ZodUtils.zodToString(simplified, config.key, providence, language)
 
     return this.massageSchemaLineForLanguage(language, config, {

@@ -27,7 +27,7 @@ export default class Generate extends APICommand {
     target: Flags.string({
       default: 'node-ts',
       description: 'language/framework to generate code for',
-      options: ['node-ts', 'react-ts', 'python-pydantic'],
+      options: ['node-ts', 'react-ts', 'python-pydantic', 'ruby'],
     }),
   }
 
@@ -66,6 +66,12 @@ export default class Generate extends APICommand {
         break
       }
 
+      case 'ruby': {
+        language = SupportedLanguage.Ruby
+
+        break
+      }
+
       default: {
         throw new Error(`Unsupported target: ${langInput}`)
       }
@@ -89,7 +95,12 @@ export default class Generate extends APICommand {
       this.verboseLog('Code generation complete. Size:', generatedCode.length)
 
       // Set filename based on language
-      const filename = language === SupportedLanguage.Python ? 'prefab.py' : 'prefab.ts'
+      const filename =
+        language === SupportedLanguage.Python
+          ? 'prefab.py'
+          : language === SupportedLanguage.Ruby
+          ? 'prefab.rb'
+          : 'prefab.ts'
       const outputDir = flags['output-dir']
 
       // Ensure the directory exists

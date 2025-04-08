@@ -6,8 +6,8 @@ import type {Config, ConfigFile} from './types.js'
 
 import {MustacheExtractor} from './mustache-extractor.js'
 import {secureEvaluateSchema} from './schema-evaluator.js'
-import {ZodUtils} from './zod-utils.js'
 import {SupportedLanguage} from './zod-generator.js'
+import {ZodUtils} from './zod-utils.js'
 
 export type SchemaWithProvidence = {
   providence: 'inferred' | 'user'

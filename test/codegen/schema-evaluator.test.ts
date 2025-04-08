@@ -14,7 +14,7 @@ describe('SchemaEvaluator', () => {
       if (result.schema) {
         const def = (result.schema as any)._def
         expect(def.typeName).to.equal('ZodObject')
-        const shape = (result.schema as z.ZodObject<any>).shape
+        const {shape} = result.schema as z.ZodObject<any>
         expect((shape.name as any)._def.typeName).to.equal('ZodString')
         expect((shape.age as any)._def.typeName).to.equal('ZodNumber')
       }
@@ -40,7 +40,7 @@ describe('SchemaEvaluator', () => {
       if (result.schema) {
         const def = (result.schema as any)._def
         expect(def.typeName).to.equal('ZodObject')
-        const shape = (result.schema as z.ZodObject<any>).shape
+        const {shape} = result.schema as z.ZodObject<any>
 
         expect((shape.id as any)._def.typeName).to.equal('ZodString')
         expect((shape.name as any)._def.typeName).to.equal('ZodString')
@@ -99,6 +99,7 @@ describe('SchemaEvaluator', () => {
       for (let i = 0; i < 100; i++) {
         complexSchema += `prop${i}: z.object({nested: z.string()}),`
       }
+
       complexSchema += '})'
 
       const result = secureEvaluateSchema(complexSchema, {maxAstNodes: 200})

@@ -1,5 +1,6 @@
 import chai, {expect} from 'chai'
 import {z} from 'zod'
+
 import {UnifiedPythonGenerator} from '../../../src/codegen/python/pydantic-generator.js'
 import {ZodUtils} from '../../../src/codegen/zod-utils.js'
 
@@ -37,11 +38,11 @@ describe('UnifiedPythonGenerator', () => {
   describe('Method generation', () => {
     it('should generate a method for a boolean type', () => {
       const methodCode = generator.generateMethodCode('is_feature_enabled', {
-        returnType: 'bool',
-        params: [],
         docstring: 'Check if feature is enabled',
-        valueType: 'BOOL',
         originalKey: 'is_feature_enabled',
+        params: [],
+        returnType: 'bool',
+        valueType: 'BOOL',
       })
 
       expect(methodCode).to.include(
@@ -56,11 +57,11 @@ describe('UnifiedPythonGenerator', () => {
 
     it('should generate a method for a float type', () => {
       const methodCode = generator.generateMethodCode('get_conversion_rate', {
-        returnType: 'float',
-        params: [],
         docstring: 'Get conversion rate',
-        valueType: 'DOUBLE',
         originalKey: 'get_conversion_rate',
+        params: [],
+        returnType: 'float',
+        valueType: 'DOUBLE',
       })
 
       expect(methodCode).to.include(
@@ -75,11 +76,11 @@ describe('UnifiedPythonGenerator', () => {
 
     it('should generate a method for a string type', () => {
       const methodCode = generator.generateMethodCode('get_api_url', {
-        returnType: 'str',
-        params: [],
         docstring: 'Get the API URL',
-        valueType: 'STRING',
         originalKey: 'get_api_url',
+        params: [],
+        returnType: 'str',
+        valueType: 'STRING',
       })
 
       expect(methodCode).to.include(
@@ -95,11 +96,11 @@ describe('UnifiedPythonGenerator', () => {
 
     it('should generate a method for a string list type', () => {
       const methodCode = generator.generateMethodCode('get_allowed_domains', {
-        returnType: 'List[str]',
-        params: [],
         docstring: 'Get allowed domains',
-        valueType: 'STRING_LIST',
         originalKey: 'get_allowed_domains',
+        params: [],
+        returnType: 'List[str]',
+        valueType: 'STRING_LIST',
       })
 
       expect(methodCode).to.include(
@@ -117,19 +118,19 @@ describe('UnifiedPythonGenerator', () => {
     it('should generate a method for a custom model', () => {
       generator.registerModel(
         z.object({
-          url: z.string(),
           port: z.number().int(),
           timeout: z.number(),
+          url: z.string(),
         }),
         'ServiceConfig',
       )
 
       const methodCode = generator.generateMethodCode('get_service_config', {
-        returnType: 'ServiceConfig',
-        params: [],
         docstring: 'Get the service configuration',
-        valueType: 'JSON',
         originalKey: 'get_service_config',
+        params: [],
+        returnType: 'ServiceConfig',
+        valueType: 'JSON',
       })
 
       expect(methodCode).to.include(
@@ -141,14 +142,14 @@ describe('UnifiedPythonGenerator', () => {
 
     it('should generate methods with parameters', () => {
       const methodCode = generator.generateMethodCode('get_user_preference', {
-        returnType: 'str',
-        params: [
-          {name: 'user_id', type: 'str', default: 'None'},
-          {name: 'preference_type', type: 'str', default: '"default"'},
-        ],
         docstring: 'Get user preference',
-        valueType: 'STRING',
         originalKey: 'get_user_preference',
+        params: [
+          {default: 'None', name: 'user_id', type: 'str'},
+          {default: '"default"', name: 'preference_type', type: 'str'},
+        ],
+        returnType: 'str',
+        valueType: 'STRING',
       })
 
       expect(methodCode).to.include(
@@ -161,13 +162,13 @@ describe('UnifiedPythonGenerator', () => {
     it('should generate method code with template parameters', () => {
       // Generate a method with template parameters
       const methodCode = generator.generateMethodCode('getGreetingTemplate', {
-        returnType: 'str',
-        params: [],
         docstring: 'Get a greeting template',
-        valueType: 'STRING',
         hasTemplateParams: true,
-        paramClassName: 'GreetingTemplateParams',
         originalKey: 'getGreetingTemplate',
+        paramClassName: 'GreetingTemplateParams',
+        params: [],
+        returnType: 'str',
+        valueType: 'STRING',
       })
 
       // Check method signature includes params parameter with properly qualified class name
@@ -237,7 +238,7 @@ describe('UnifiedPythonGenerator', () => {
   describe('Import calculation', () => {
     it('should calculate base imports correctly', () => {
       // Test with empty methods
-      const {imports, typingImports, needsJson} = generator.calculateNeededImports()
+      const {imports, needsJson, typingImports} = generator.calculateNeededImports()
 
       expect(imports).to.include('import logging')
       expect(imports).to.include('from prefab_cloud_python import Client, Context, ContextDictOrContext')
@@ -251,15 +252,15 @@ describe('UnifiedPythonGenerator', () => {
     it('should add imports for complex types', () => {
       // Register a complex model method
       const userSchema = z.object({
-        id: z.number().int(),
-        name: z.string(),
         email: z.string().email(),
+        id: z.number().int(),
         isActive: z.boolean(),
+        name: z.string(),
       })
 
       generator.registerMethod('get_user', userSchema, 'User', [], 'Get user data', 'JSON')
 
-      const {imports, typingImports, needsJson} = generator.calculateNeededImports()
+      const {imports, needsJson, typingImports} = generator.calculateNeededImports()
 
       // Should include pydantic imports
       expect(imports).to.include('from pydantic import BaseModel, ValidationError')
@@ -288,10 +289,10 @@ describe('UnifiedPythonGenerator', () => {
   describe('Model generation', () => {
     it('should generate a Pydantic model for an object schema', () => {
       const userSchema = z.object({
-        id: z.number().int(),
-        name: z.string(),
         email: z.string().email(),
+        id: z.number().int(),
         isActive: z.boolean(),
+        name: z.string(),
       })
 
       const modelCode = generator.generatePydanticModel(userSchema, 'User')
@@ -344,8 +345,8 @@ describe('UnifiedPythonGenerator', () => {
       // Add a complex type
       const configSchema = z.object({
         api_key: z.string(),
-        rate_limit: z.number().int(),
         debug_mode: z.boolean().default(false),
+        rate_limit: z.number().int(),
       })
 
       generator.registerMethod('get_config', configSchema, 'Config', [], 'Get service configuration', 'JSON')
@@ -391,11 +392,11 @@ describe('UnifiedPythonGenerator', () => {
 
       // Test method generation with a string list
       const methodCode = generator.generateMethodCode('get_tags', {
-        returnType: 'List[str]',
-        params: [],
         docstring: 'Get tags list',
-        valueType: 'STRING_LIST',
         originalKey: 'get_tags',
+        params: [],
+        returnType: 'List[str]',
+        valueType: 'STRING_LIST',
       })
 
       expect(methodCode).to.include('def get_tags(self')
@@ -409,14 +410,14 @@ describe('UnifiedPythonGenerator', () => {
     it('should register methods with array parameters', () => {
       // Test with a method that takes an array parameter
       const methodCode = generator.generateMethodCode('filter_items', {
-        returnType: 'List[str]',
-        params: [
-          {name: 'categories', type: 'List[str]', default: '[]'},
-          {name: 'limit', type: 'int', default: '10'},
-        ],
         docstring: 'Filter items by categories',
-        valueType: 'STRING_LIST',
         originalKey: 'filter_items',
+        params: [
+          {default: '[]', name: 'categories', type: 'List[str]'},
+          {default: '10', name: 'limit', type: 'int'},
+        ],
+        returnType: 'List[str]',
+        valueType: 'STRING_LIST',
       })
 
       expect(methodCode).to.include('def filter_items(self, categories: List[str] = [], limit: int = 10')
@@ -428,15 +429,15 @@ describe('UnifiedPythonGenerator', () => {
     it('should handle nested object structures', () => {
       // Define a nested schema
       const addressSchema = z.object({
-        street: z.string(),
         city: z.string(),
+        street: z.string(),
         zipCode: z.string(),
       })
 
       const userSchema = z.object({
-        name: z.string(),
-        email: z.string().email(),
         address: addressSchema,
+        email: z.string().email(),
+        name: z.string(),
       })
 
       // Register both models
@@ -478,11 +479,11 @@ describe('UnifiedPythonGenerator', () => {
 
       // Test method with dictionary return
       const methodCode = generator.generateMethodCode('get_metadata', {
-        returnType: 'Dict[str, str]',
-        params: [],
         docstring: 'Get metadata dictionary',
-        valueType: 'JSON',
         originalKey: 'get_metadata',
+        params: [],
+        returnType: 'Dict[str, str]',
+        valueType: 'JSON',
       })
 
       expect(methodCode).to.include('def get_metadata(self')
@@ -493,24 +494,24 @@ describe('UnifiedPythonGenerator', () => {
     it('should handle nested JSON objects with Mustache templates', () => {
       // Register a schema similar to the "url-schema" from the example
       const urlSchema = z.object({
-        url: z.string(),
-        timeout: z.number(),
         retries: z.number(),
+        timeout: z.number(),
+        url: z.string(),
       })
 
       // Create a JSON schema with a mustache template in the url property
       const urlWithMustacheSchema = z.object({
+        retries: z.number(),
+        timeout: z.number(),
         url: z
           .function()
           .args(
             z.object({
-              scheme: z.string(),
               host: z.string(),
+              scheme: z.string(),
             }),
           )
           .returns(z.string()),
-        timeout: z.number(),
-        retries: z.number(),
       })
 
       // Register the method with the schema
@@ -574,8 +575,8 @@ describe('UnifiedPythonGenerator', () => {
         .function()
         .args(
           z.object({
-            userId: z.number().int(),
             status: z.string(),
+            userId: z.number().int(),
           }),
         )
         .returns(z.string())
@@ -592,8 +593,8 @@ describe('UnifiedPythonGenerator', () => {
       expect(paramClass).to.exist
 
       // Check that parameters preserve their exact original names for mustache templates
-      expect(paramClass.fields[0]).to.deep.include({name: 'userId', type: 'int'})
-      expect(paramClass.fields[1]).to.deep.include({name: 'status', type: 'str'})
+      expect(paramClass.fields[0]).to.deep.include({name: 'status', type: 'str'})
+      expect(paramClass.fields[1]).to.deep.include({name: 'userId', type: 'int'})
     })
 
     it('should detect template parameters in registerMethod', () => {
@@ -602,8 +603,8 @@ describe('UnifiedPythonGenerator', () => {
         .function()
         .args(
           z.object({
-            name: z.string(),
             company: z.string(),
+            name: z.string(),
           }),
         )
         .returns(z.string())
@@ -626,8 +627,8 @@ describe('UnifiedPythonGenerator', () => {
       expect(method.paramClassName).to.equal('GetGreetingTemplateParams')
 
       // The imports should include pystache
-      const imports = (generator as any).imports
-      const standardImports = Array.from((imports as any).standardImports)
+      const {imports} = generator as any
+      const standardImports = [...(imports as any).standardImports]
       expect(standardImports).to.include('pystache')
     })
 
@@ -685,11 +686,11 @@ describe('UnifiedPythonGenerator', () => {
 
       // Generate method code
       const methodCode = generator.generateMethodCode('url_with_mustache', {
-        returnType: 'UrlConfig',
-        params: [],
         docstring: 'Get URL configuration',
-        valueType: 'JSON',
         originalKey: 'url.with.mustache',
+        params: [],
+        returnType: 'UrlConfig',
+        valueType: 'JSON',
       })
 
       // Verify the method name is sanitized correctly
@@ -741,11 +742,11 @@ describe('UnifiedPythonGenerator', () => {
       // ... existing code ...
 
       const methodCode = generator.generateMethodCode('get_config', {
-        returnType: 'ConfigModel',
-        params: [],
         docstring: 'Get config',
-        valueType: 'JSON',
         originalKey: 'get_config',
+        params: [],
+        returnType: 'ConfigModel',
+        valueType: 'JSON',
       })
 
       // ... assertions ...
@@ -761,11 +762,11 @@ describe('UnifiedPythonGenerator', () => {
       // Using private method for testing
       // @ts-ignore - accessing private method for testing
       const methodCode = generator.generateFallbackMethod('is_feature_enabled', {
-        returnType: 'bool',
-        params: [],
         docstring: 'Check if feature is enabled',
-        valueType: 'BOOL',
         originalKey: 'is_feature_enabled',
+        params: [],
+        returnType: 'bool',
+        valueType: 'BOOL',
       })
 
       expect(methodCode).to.include(
@@ -780,11 +781,11 @@ describe('UnifiedPythonGenerator', () => {
     it('should generate a fallback method for a float type', () => {
       // @ts-ignore - accessing private method for testing
       const methodCode = generator.generateFallbackMethod('get_conversion_rate', {
-        returnType: 'float',
-        params: [],
         docstring: 'Get conversion rate',
-        valueType: 'DOUBLE',
         originalKey: 'get_conversion_rate',
+        params: [],
+        returnType: 'float',
+        valueType: 'DOUBLE',
       })
 
       expect(methodCode).to.include(
@@ -799,11 +800,11 @@ describe('UnifiedPythonGenerator', () => {
     it('should generate a fallback method for a string type', () => {
       // @ts-ignore - accessing private method for testing
       const methodCode = generator.generateFallbackMethod('get_api_url', {
-        returnType: 'str',
-        params: [],
         docstring: 'Get the API URL',
-        valueType: 'STRING',
         originalKey: 'get_api_url',
+        params: [],
+        returnType: 'str',
+        valueType: 'STRING',
       })
 
       expect(methodCode).to.include(
@@ -818,11 +819,11 @@ describe('UnifiedPythonGenerator', () => {
     it('should generate a fallback method for a string list type', () => {
       // @ts-ignore - accessing private method for testing
       const methodCode = generator.generateFallbackMethod('get_allowed_domains', {
-        returnType: 'List[str]',
-        params: [],
         docstring: 'Get allowed domains',
-        valueType: 'STRING_LIST',
         originalKey: 'get_allowed_domains',
+        params: [],
+        returnType: 'List[str]',
+        valueType: 'STRING_LIST',
       })
 
       expect(methodCode).to.include(
@@ -837,20 +838,20 @@ describe('UnifiedPythonGenerator', () => {
     it('should generate a fallback method for a custom model', () => {
       generator.registerModel(
         z.object({
-          url: z.string(),
           port: z.number().int(),
           timeout: z.number(),
+          url: z.string(),
         }),
         'ServiceConfig',
       )
 
       // @ts-ignore - accessing private method for testing
       const methodCode = generator.generateFallbackMethod('get_service_config', {
-        returnType: 'ServiceConfig',
-        params: [],
         docstring: 'Get the service configuration',
-        valueType: 'JSON',
         originalKey: 'get_service_config',
+        params: [],
+        returnType: 'ServiceConfig',
+        valueType: 'JSON',
       })
 
       expect(methodCode).to.include(
@@ -865,14 +866,14 @@ describe('UnifiedPythonGenerator', () => {
     it('should generate fallback methods with parameters', () => {
       // @ts-ignore - accessing private method for testing
       const methodCode = generator.generateFallbackMethod('get_user_preference', {
-        returnType: 'str',
-        params: [
-          {name: 'user_id', type: 'str', default: 'None'},
-          {name: 'preference_type', type: 'str', default: '"default"'},
-        ],
         docstring: 'Get user preference',
-        valueType: 'STRING',
         originalKey: 'get_user_preference',
+        params: [
+          {default: 'None', name: 'user_id', type: 'str'},
+          {default: '"default"', name: 'preference_type', type: 'str'},
+        ],
+        returnType: 'str',
+        valueType: 'STRING',
       })
 
       expect(methodCode).to.include(
@@ -889,13 +890,13 @@ describe('UnifiedPythonGenerator', () => {
     it('should generate fallback method with template parameters', () => {
       // @ts-ignore - accessing private method for testing
       const methodCode = generator.generateFallbackMethod('getGreetingTemplate', {
-        returnType: 'str',
-        params: [],
         docstring: 'Get a greeting template',
-        valueType: 'STRING',
         hasTemplateParams: true,
-        paramClassName: 'GreetingTemplateParams',
         originalKey: 'getGreetingTemplate',
+        paramClassName: 'GreetingTemplateParams',
+        params: [],
+        returnType: 'str',
+        valueType: 'STRING',
       })
 
       // Check method signature includes params parameter with proper prefix

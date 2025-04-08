@@ -20,14 +20,14 @@ export default class Generate extends APICommand {
   ]
 
   static flags = {
-    target: Flags.string({
-      default: 'node-ts',
-      options: ['node-ts', 'react-ts', 'python-pydantic'],
-      description: 'language/framework to generate code for',
-    }),
     'output-dir': Flags.string({
       default: 'generated-sources',
       description: 'output directory for generated code',
+    }),
+    target: Flags.string({
+      default: 'node-ts',
+      description: 'language/framework to generate code for',
+      options: ['node-ts', 'react-ts', 'python-pydantic'],
     }),
   }
 
@@ -47,14 +47,28 @@ export default class Generate extends APICommand {
     // Map the input string to the appropriate enum value
     let language: SupportedLanguage
 
-    if (langInput === 'python-pydantic') {
-      language = SupportedLanguage.Python
-    } else if (langInput === 'react-ts') {
-      language = SupportedLanguage.React
-    } else if (langInput === 'node-ts') {
-      language = SupportedLanguage.TypeScript
-    } else {
-      throw new Error(`Unsupported target: ${langInput}`)
+    switch (langInput) {
+      case 'python-pydantic': {
+        language = SupportedLanguage.Python
+
+        break
+      }
+
+      case 'react-ts': {
+        language = SupportedLanguage.React
+
+        break
+      }
+
+      case 'node-ts': {
+        language = SupportedLanguage.TypeScript
+
+        break
+      }
+
+      default: {
+        throw new Error(`Unsupported target: ${langInput}`)
+      }
     }
 
     // Download the configuration using the APICommand's client

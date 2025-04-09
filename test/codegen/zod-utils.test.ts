@@ -503,4 +503,29 @@ describe('paramsOf', () => {
     expect(shape.name._def.typeName).to.equal('ZodString')
     expect(shape.age._def.typeName).to.equal('ZodNumber')
   })
+
+  it('should extract optional arguments schema from function schema', () => {
+    const argsSchema = z.object({name: z.string(), optional: z.string().optional()})
+    const fnSchema = z.function().args(argsSchema).returns(z.string())
+
+    const result = ZodUtils.paramsOf(fnSchema)
+    expect(result).to.equal(argsSchema)
+  })
+})
+
+describe('zodTypeToTypescript', () => {
+  it('should return the correct typescript type for a zod type', () => {
+    const result = ZodUtils.zodTypeToTypescript(z.string())
+    expect(result).to.equal('string')
+  })
+
+  it('should return the correct typescript type for an optional zod type', () => {
+    const result = ZodUtils.zodTypeToTypescript(z.string().optional())
+    expect(result).to.equal('string?')
+  })
+
+  it('should return the correct typescript type for an array of zod types', () => {
+    const result = ZodUtils.zodTypeToTypescript(z.object({age: z.number().optional(), name: z.string()}))
+    expect(result).to.equal('{ age?: number; name: string }')
+  })
 })

@@ -531,7 +531,7 @@ export const ZodUtils = {
       }
 
       case 'ZodOptional': {
-        return `${this.zodTypeToTypescript(zodType._def.innerType)}`
+        return `${this.zodTypeToTypescript(zodType._def.innerType)}?`
       }
 
       case 'ZodNull': {
@@ -557,7 +557,7 @@ export const ZodUtils = {
             const typeStr = isOptional
               ? this.zodTypeToTypescript(propType._def.innerType)
               : this.zodTypeToTypescript(propType)
-            props.push(`${key}: ${typeStr}`)
+            props.push(`${key}${isOptional ? '?' : ''}: ${typeStr}`)
           }
         }
 

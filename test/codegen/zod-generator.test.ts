@@ -406,7 +406,7 @@ describe('ZodGenerator', () => {
     })
   })
 
-  describe('renderAccessorMethod python for JSON with templates', () => {
+  describe('renderAccessorMethod ruby for JSON with templates', () => {
     it('should render a JSON object with template placeholders for Ruby', () => {
       const generator = new ZodGenerator(mockConfigFile, logger)
       const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfig, SupportedLanguage.Ruby)

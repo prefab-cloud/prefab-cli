@@ -94,7 +94,7 @@ describe('ZodUtils', () => {
         name: z.string(),
       }
       const result = ZodUtils.generateParamsType(schemaShape)
-      expect(result).to.equal('{ age: number; name: string }')
+      expect(result).to.equal('{ age?: number; name: string }')
     })
   })
 

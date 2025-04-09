@@ -10,8 +10,9 @@ export const ZodUtils = {
   generateParamsType(schemaShape: Record<string, z.ZodTypeAny>): string {
     const properties = Object.entries(schemaShape)
       .map(([key, type]) => {
-        const typeString = this.zodTypeToTsType(type)
-        return `${key}: ${typeString}`
+        const isOptional = type instanceof z.ZodOptional
+        const typeString = this.zodTypeToTsType(isOptional ? type._def.innerType : type)
+        return `${key}${isOptional ? '?' : ''}: ${typeString}`
       })
       .join('; ')
 

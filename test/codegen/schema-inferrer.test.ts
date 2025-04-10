@@ -202,7 +202,11 @@ describe('SchemaInferrer', () => {
       const config: Config = {
         configType: 'CONFIG',
         key: 'test',
-        rows: [{values: [{value: {string: 'foo {{name}}'}}]}, {values: [{value: {string: 'bar {{baz}}'}}]}],
+        rows: [
+          {values: [{value: {string: 'foo {{name}}'}}]},
+          {values: [{value: {string: 'bar {{baz}}'}}]},
+          {values: [{value: {string: 'fizz {{buzz}}'}}]},
+        ],
         valueType: 'STRING',
       }
       const configFile: ConfigFile = {
@@ -211,7 +215,7 @@ describe('SchemaInferrer', () => {
 
       const {schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.Python)
       expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.Python)).to.equal(
-        'z.function().args(z.object({name: z.string().optional(), baz: z.string().optional()})).returns(z.string())',
+        'z.function().args(z.object({name: z.string().optional(), baz: z.string().optional(), buzz: z.string().optional()})).returns(z.string())',
       )
     })
 

@@ -368,9 +368,9 @@ describe('ZodGenerator', () => {
       const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfigMultiValue)
 
       // Use a single multiline string assertion for better readability
-      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { template: (params: { other_placeholder?: string; placeholder?: string }) => string; num?: number } {
+      const expectedOutput = `exampleConfigObject(contexts?: Contexts | ContextObj): { template: (params: { other_placeholder: string; placeholder: string }) => string; num?: number } {
     const raw = this.get('example.config.object', contexts);
-    return { "template": (params: { other_placeholder?: string; placeholder?: string }) => Mustache.render(raw["template"] ?? "", params), "num": raw["num"] };
+    return { "template": (params: { other_placeholder: string; placeholder: string }) => Mustache.render(raw["template"] ?? "", params), "num": raw["num"] };
   }`
 
       // Normalize line endings before comparison

@@ -77,27 +77,6 @@ describe('ZodUtils', () => {
     })
   })
 
-  describe('generateParamsType', () => {
-    it('should generate TypeScript parameter type from schema shape', () => {
-      const schemaShape = {
-        age: z.number(),
-        isActive: z.boolean(),
-        name: z.string(),
-      }
-      const result = ZodUtils.generateParamsType(schemaShape)
-      expect(result).to.equal('{ age: number; isActive: boolean; name: string }')
-    })
-
-    it('should handle optional properties in schema shape', () => {
-      const schemaShape = {
-        age: z.number().optional(),
-        name: z.string(),
-      }
-      const result = ZodUtils.generateParamsType(schemaShape)
-      expect(result).to.equal('{ age?: number; name: string }')
-    })
-  })
-
   describe('keyToMethodName', () => {
     it('should convert simple keys to camelCase method names', () => {
       expect(ZodUtils.keyToMethodName('test')).to.equal('test')
@@ -495,21 +474,25 @@ describe('paramsOf', () => {
     const fnSchema = z.function().args(argsSchema).returns(z.boolean())
 
     const result = ZodUtils.paramsOf(fnSchema)
-    expect(result).to.equal(argsSchema)
-
-    // We can also check that the structure is correct
-    expect(result?._def.typeName).to.equal('ZodObject')
-    const shape = result?._def.shape()
-    expect(shape.name._def.typeName).to.equal('ZodString')
-    expect(shape.age._def.typeName).to.equal('ZodNumber')
+    expect(result).to.not.be.undefined
+    if (result) {
+      expect(ZodUtils.zodToString(result, '', 'user', SupportedLanguage.TypeScript)).to.equal(
+        'z.object({age: z.number(), name: z.string()})',
+      )
+    }
   })
 
-  it('should extract optional arguments schema from function schema', () => {
+  it('should remove optional arguments schema from function schema', () => {
     const argsSchema = z.object({name: z.string(), optional: z.string().optional()})
     const fnSchema = z.function().args(argsSchema).returns(z.string())
 
     const result = ZodUtils.paramsOf(fnSchema)
-    expect(result).to.equal(argsSchema)
+    expect(result).to.not.be.undefined
+    if (result) {
+      expect(ZodUtils.zodToString(result, '', 'user', SupportedLanguage.TypeScript)).to.equal(
+        'z.object({name: z.string(), optional: z.string()})',
+      )
+    }
   })
 })
 

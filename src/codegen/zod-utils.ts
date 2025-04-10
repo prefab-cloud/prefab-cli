@@ -5,21 +5,6 @@ import {SupportedLanguage} from './zod-generator.js'
 
 export const ZodUtils = {
   /**
-   * Generate TypeScript parameter type from Zod schema shape
-   */
-  generateParamsType(schemaShape: Record<string, z.ZodTypeAny>): string {
-    const properties = Object.entries(schemaShape)
-      .map(([key, type]) => {
-        const isOptional = type instanceof z.ZodOptional
-        const typeString = this.zodTypeToTsType(isOptional ? type._def.innerType : type)
-        return `${key}${isOptional ? '?' : ''}: ${typeString}`
-      })
-      .join('; ')
-
-    return `{ ${properties} }`
-  },
-
-  /**
    * Generate code for transforming raw data based on a Zod schema
    * @param zodType The Zod schema
    * @param propertyPath Current property path for nested properties
@@ -293,6 +278,7 @@ export const ZodUtils = {
 
   /**
    * Extract parameter schema from a Zod function schema
+   * Replace all optionals with their non-optional types, we want users to have to pass all params.
    * @param schema The Zod schema
    * @returns The parameters schema if it's a function, or undefined otherwise
    */
@@ -304,9 +290,27 @@ export const ZodUtils = {
       // Get the args schema (which is actually a ZodTuple)
       const argsSchema = schema._def.args
 
-      // If it's a tuple with a single item, return that item
+      // If it's a tuple with a single item, extract that item
       if (argsSchema._def.typeName === 'ZodTuple' && argsSchema._def.items && argsSchema._def.items.length === 1) {
-        return argsSchema._def.items[0]
+        const paramSchema = argsSchema._def.items[0]
+
+        // If the parameter is an object, process its properties
+        if (paramSchema._def.typeName === 'ZodObject') {
+          const shape = paramSchema._def.shape()
+          const newShape: Record<string, z.ZodTypeAny> = {}
+
+          // Remove optionality from all properties
+          for (const key in shape) {
+            if (Object.hasOwn(shape, key)) {
+              const propType = shape[key] as z.ZodTypeAny
+              newShape[key] = propType._def.typeName === 'ZodOptional' ? propType._def.innerType : propType
+            }
+          }
+
+          return z.object(newShape)
+        }
+
+        return paramSchema
       }
 
       // Otherwise return the args schema as is
@@ -430,7 +434,12 @@ export const ZodUtils = {
       const argsSchema = def.args
       const returnsSchema = def.returns
 
-      return `z.function().args(${this.zodToString(argsSchema, key, providence, language)}).returns(${this.zodToString(returnsSchema, key, providence, language)})`
+      return `z.function().args(${this.zodToString(argsSchema, key, providence, language)}).returns(${this.zodToString(
+        returnsSchema,
+        key,
+        providence,
+        language,
+      )})`
     }
 
     // Handle ZodTuple (used for function args)

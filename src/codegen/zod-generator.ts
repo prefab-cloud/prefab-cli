@@ -2,7 +2,6 @@ import Mustache from 'mustache'
 import fs from 'node:fs'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
-import {ZodTypeAny} from 'zod'
 
 import type {Config, ConfigFile} from './types.js'
 
@@ -15,6 +14,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export enum SupportedLanguage {
   Python = 'python',
   React = 'react',
+  Ruby = 'ruby',
   TypeScript = 'typescript',
 }
 
@@ -225,6 +225,10 @@ export class ZodGenerator {
 
     if (language === SupportedLanguage.React) {
       return 'react'
+    }
+
+    if (language === SupportedLanguage.Ruby) {
+      return 'ruby'
     }
 
     return 'typescript'

@@ -413,7 +413,7 @@ describe('ZodGenerator', () => {
 
       // Use a single multiline string assertion for better readability
       const expectedOutput = `def self.exampleConfigObject(default = NO_DEFAULT_PROVIDED, jit_context = NO_DEFAULT_PROVIDED)
-    raw = self.get('example.config.object', jit_context)
+    raw = self.get('example.config.object', default, jit_context)
     return { "template": ->(params) { Mustache.render(raw["template"], params)} }
   end`
 

@@ -80,6 +80,10 @@ export const ZodUtils = {
           return `(params: ${paramsType}) => Mustache.render(raw${propertyPath} ?? "", params)`
         }
 
+        if (language === SupportedLanguage.Ruby) {
+          return `->(params) { Mustache.render(raw${propertyPath}, params)}`
+        }
+
         return `lambda params: pystache.render(raw${propertyPath}, params)`
       }
 

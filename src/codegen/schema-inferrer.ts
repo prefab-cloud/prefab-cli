@@ -84,7 +84,7 @@ export class SchemaInferrer {
       } else {
         const existingType = typeA || typeB
         // Make the type optional if it exists in only one schema
-        mergedShape[key] = existingType.optional()
+        mergedShape[key] = this.isOptional(existingType) ? existingType : existingType.optional()
       }
     }
 

@@ -189,12 +189,12 @@ describe('SchemaInferrer', () => {
       const {schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.TypeScript)
       expect(result._def.typeName).to.equal('ZodObject')
       expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
-        'optionalRequiredAccess({systemMessage: z.function().args(optionalRequiredAccess({user: z.array(optionalRequiredAccess({name: z.string()})), admin: z.array(optionalRequiredAccess({name: z.string()}))})).returns(z.string()), nested: optionalRequiredAccess({stuff: z.array(z.unknown())})})',
+        'optionalRequiredAccess({systemMessage: z.function().args(optionalRequiredAccess({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()), nested: optionalRequiredAccess({stuff: z.array(z.object({name: z.string()}))})})',
       )
 
       const {schema: resultPython} = inferrer.zodForConfig(config, configFile, SupportedLanguage.Python)
       expect(ZodUtils.zodToString(resultPython, 'test', 'inferred', SupportedLanguage.Python)).to.equal(
-        'z.object({systemMessage: z.function().args(z.object({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()), nested: z.object({stuff: z.array(z.unknown())})})',
+        'z.object({systemMessage: z.function().args(z.object({user: z.array(z.object({name: z.string()})), admin: z.array(z.object({name: z.string()}))})).returns(z.string()), nested: z.object({stuff: z.array(z.object({name: z.string()}))})})',
       )
     })
 
@@ -279,7 +279,7 @@ describe('SchemaInferrer', () => {
       const {schema: result} = inferrer.zodForConfig(config, configFile, SupportedLanguage.TypeScript)
       expect(result._def.typeName).to.equal('ZodObject')
       expect(ZodUtils.zodToString(result, 'test', 'inferred', SupportedLanguage.TypeScript)).to.equal(
-        'optionalRequiredAccess({systemMessage: z.function().args(optionalRequiredAccess({user: z.array(optionalRequiredAccess({name: z.string()})).optional(), admin: z.array(optionalRequiredAccess({name: z.string()})).optional(), placeholder: z.string().optional()})).returns(z.string()), nested: optionalRequiredAccess({stuff: z.array(z.unknown()).optional(), otherStuff: z.function().args(optionalRequiredAccess({placeholder2: z.string()})).returns(z.string()).optional()})})',
+        'optionalRequiredAccess({systemMessage: z.function().args(optionalRequiredAccess({user: z.array(z.object({name: z.string()})).optional(), admin: z.array(z.object({name: z.string()})).optional(), placeholder: z.string().optional()})).returns(z.string()), nested: optionalRequiredAccess({stuff: z.array(z.object({name: z.string()})).optional(), otherStuff: z.function().args(optionalRequiredAccess({placeholder2: z.string()})).returns(z.string()).optional()})})',
       )
     })
 

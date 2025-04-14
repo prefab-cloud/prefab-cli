@@ -495,4 +495,5 @@ fish -c "cd ../../prefab-cloud/prefab-cli;bin/dev.js"
 
 ```
 yarn version
+npm publish --access public
 ```

@@ -24,13 +24,13 @@ export class SchemaInferrer {
         const firstItemType = typeof data[0]
         const isHomogeneous = data.every((item) => typeof item === firstItemType)
 
-        // For homogeneous arrays with non-object elements, use the first element's type
-        if (isHomogeneous && firstItemType !== 'object') {
+        // For homogeneous arrays, use the first element's type
+        if (isHomogeneous) {
           return z.array(this.jsonToInferredZod(data[0]))
         }
 
         // eslint-disable-next-line no-warning-comments
-        // TODO: we could handle mixed arrays here with a union type AND handle object types but we prefer the user to upload a schema
+        // TODO: we could handle mixed arrays here with a union type but we prefer the user to upload a schema
       }
 
       return z.array(z.unknown())

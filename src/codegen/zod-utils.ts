@@ -272,8 +272,9 @@ export const ZodUtils = {
     language: SupportedLanguage,
     providence: SchemaWithProvidence['providence'],
     props: string,
+    hasArrayParent: boolean = false,
   ): string {
-    if (language === SupportedLanguage.TypeScript && providence === 'inferred') {
+    if (language === SupportedLanguage.TypeScript && providence === 'inferred' && !hasArrayParent) {
       return `optionalRequiredAccess({${props}})`
     }
 
@@ -382,8 +383,10 @@ export const ZodUtils = {
     key: string,
     providence: SchemaWithProvidence['providence'],
     language: SupportedLanguage,
+    hasArrayParent: boolean = false,
   ): string {
     // Keep using any for internal properties that aren't exposed in the type definitions
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const def = schema._def as any
 
     // Check for primitive types
@@ -394,6 +397,7 @@ export const ZodUtils = {
     if (def.typeName === 'ZodNumber') {
       // Check if this is an integer by examining the checks array
       if (def.checks && Array.isArray(def.checks)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const hasIntCheck = def.checks.some((check: any) => check.kind === 'int')
         if (hasIntCheck) {
           return 'z.number().int()'
@@ -416,19 +420,21 @@ export const ZodUtils = {
     }
 
     if (def.typeName === 'ZodArray') {
-      const innerType = this.zodToString(def.type, key, providence, language)
+      const innerType = this.zodToString(def.type, key, providence, language, true)
       return `z.array(${innerType})`
     }
 
     // Handle ZodOptional
     if (def.typeName === 'ZodOptional') {
-      const innerType = this.zodToString(def.innerType, key, providence, language)
+      const innerType = this.zodToString(def.innerType, key, providence, language, hasArrayParent)
       return `${innerType}.optional()`
     }
 
     // Handle ZodUnion
     if (def.typeName === 'ZodUnion') {
-      const options = def.options.map((option: z.ZodType) => this.zodToString(option, key, providence, language))
+      const options = def.options.map((option: z.ZodType) =>
+        this.zodToString(option, key, providence, language, hasArrayParent),
+      )
       return `z.union([${options.join(', ')}])`
     }
 
@@ -438,34 +444,39 @@ export const ZodUtils = {
       const argsSchema = def.args
       const returnsSchema = def.returns
 
-      return `z.function().args(${this.zodToString(argsSchema, key, providence, language)}).returns(${this.zodToString(
+      return `z.function().args(${this.zodToString(argsSchema, key, providence, language, hasArrayParent)}).returns(${this.zodToString(
         returnsSchema,
         key,
         providence,
         language,
+        hasArrayParent,
       )})`
     }
 
     // Handle ZodTuple (used for function args)
     if (def.typeName === 'ZodTuple') {
       if (def.items && def.items.length === 1) {
-        return this.zodToString(def.items[0], key, providence, language)
+        return this.zodToString(def.items[0], key, providence, language, hasArrayParent)
       }
 
-      return this.zodToString(def.items[0], key, providence, language) // Just take the first item for simplicity
+      return this.zodToString(def.items[0], key, providence, language, hasArrayParent) // Just take the first item for simplicity
     }
 
     // Handle ZodObject
     if (def.typeName === 'ZodObject') {
       const shape = def.shape()
       const props = Object.entries(shape)
-        .map(([key, value]) => `${key}: ${this.zodToString(value as z.ZodTypeAny, key, providence, language)}`)
+        .map(
+          ([key, value]) =>
+            `${key}: ${this.zodToString(value as z.ZodTypeAny, key, providence, language, hasArrayParent)}`,
+        )
         .join(', ')
 
-      return this.objectTypeForLanguage(language, providence, props)
+      return this.objectTypeForLanguage(language, providence, props, hasArrayParent)
     }
 
     if (def.typeName === 'ZodEnum') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const values = def.values.map((v: string) => `'${v}'`).join(',')
       return `z.enum([${values}])`
     }

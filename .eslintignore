@@ -1,3 +1,4 @@
 /dist
 /tmp
 src/prefab-common/
+package.json

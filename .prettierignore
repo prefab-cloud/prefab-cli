@@ -3,3 +3,4 @@ src/prefab-common/
 .prettierignore
 package.json
 yarn.lock
+*.mustache

@@ -7,3 +7,4 @@ generated-sources/
 .vscode/
 prefab.*.config.json
 test/fixtures
+*.mustache

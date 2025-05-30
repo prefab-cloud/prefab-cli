@@ -6,22 +6,13 @@
       "request": "launch",
       "name": "Execute Prefab Command (dev)",
       "program": "${workspaceFolder}/bin/dev.js",
-      "runtimeArgs": [
-        "--loader=ts-node/esm",
-        "--no-warnings=ExperimentalWarning"
-      ],
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "args": [
-        "set-default"
-      ],
+      "runtimeArgs": ["--loader=ts-node/esm", "--no-warnings=ExperimentalWarning"],
+      "skipFiles": ["<node_internals>/**"],
+      "args": ["set-default"],
       "env": {
         "DEBUG": "*"
       },
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
-      ],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "console": "integratedTerminal"
     },
     {
@@ -29,22 +20,13 @@
       "request": "launch",
       "name": "Execute Prefab 'serve' Command (dev)",
       "program": "${workspaceFolder}/bin/dev.js",
-      "runtimeArgs": [
-        "--loader=ts-node/esm",
-        "--no-warnings=ExperimentalWarning"
-      ],
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "args": [
-        "serve"
-      ],
+      "runtimeArgs": ["--loader=ts-node/esm", "--no-warnings=ExperimentalWarning"],
+      "skipFiles": ["<node_internals>/**"],
+      "args": ["serve"],
       "env": {
         "DEBUG": "*"
       },
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
-      ],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "console": "integratedTerminal"
     },
     {
@@ -52,20 +34,12 @@
       "request": "launch",
       "name": "Run Current Test",
       "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "args": [
-        "${workspaceFolder}/node_modules/mocha/bin/mocha.js",
-        "${file}",
-        "--exit"
-      ],
+      "skipFiles": ["<node_internals>/**"],
+      "args": ["${workspaceFolder}/node_modules/mocha/bin/mocha.js", "${file}", "--exit"],
       "env": {
         "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
       },
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
-      ],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "console": "integratedTerminal"
     },
     {
@@ -73,20 +47,12 @@
       "request": "launch",
       "name": "Run All Tests",
       "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "args": [
-        "${workspaceFolder}/node_modules/mocha/bin/mocha.js",
-        "test/**/*.test.ts",
-        "--exit"
-      ],
+      "skipFiles": ["<node_internals>/**"],
+      "args": ["${workspaceFolder}/node_modules/mocha/bin/mocha.js", "test/**/*.test.ts", "--exit"],
       "env": {
         "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
       },
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
-      ],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "console": "integratedTerminal"
     }
   ]

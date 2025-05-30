@@ -1,3 +1,5 @@
 src/prefab-common/
 .eslintignore
 .prettierignore
+package.json
+yarn.lock

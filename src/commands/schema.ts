@@ -9,7 +9,7 @@ import {ConfigType, ConfigValue} from '../prefab-common/src/types.js'
 import {JsonObj} from '../result.js'
 import {checkmark} from '../util/color.js'
 
-// TODO this is a temporary fix for the schema type
+// TODO: this is a temporary fix for the schema type
 export enum Schema_SchemaType {
   JSON_SCHEMA = 2,
   UNKNOWN = 0,

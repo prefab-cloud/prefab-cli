@@ -476,7 +476,6 @@ export const ZodUtils = {
     }
 
     if (def.typeName === 'ZodEnum') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const values = def.values.map((v: string) => `'${v}'`).join(',')
       return `z.enum([${values}])`
     }

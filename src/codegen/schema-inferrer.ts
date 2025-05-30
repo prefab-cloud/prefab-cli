@@ -12,8 +12,6 @@ export type SchemaWithProvidence = {
   schema: z.ZodTypeAny
 }
 
-/* eslint-disable max-depth */
-
 export class SchemaInferrer {
   private jsonToInferredZod = (data: unknown): ZodTypeAny => {
     if (Array.isArray(data)) {
@@ -27,7 +25,6 @@ export class SchemaInferrer {
           return z.array(this.jsonToInferredZod(data[0]))
         }
 
-        // eslint-disable-next-line no-warning-comments
         // TODO: we could handle mixed arrays here with a union type but we prefer the user to upload a schema
       }
 

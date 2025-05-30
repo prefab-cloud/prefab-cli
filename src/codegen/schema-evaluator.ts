@@ -1,3 +1,6 @@
+// TODO: We should resolve these any references to ensure generation is fully type-safe
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import * as acorn from 'acorn'
 import * as walk from 'acorn-walk'
 import {z} from 'zod'
@@ -67,7 +70,7 @@ export function validateAst(ast: any, parentMap: WeakMap<any, any>): {error?: st
 
   // Custom AST walker to check for unsafe patterns
   walk.simple(ast, {
-    ArrowFunctionExpression(node: any) {
+    ArrowFunctionExpression(node) {
       // Allow arrow functions only in valid Zod method contexts
       if (!isValidZodMethodArg(node)) {
         issues.push(`Forbidden standalone arrow function`)
@@ -125,18 +128,18 @@ export function validateAst(ast: any, parentMap: WeakMap<any, any>): {error?: st
     },
 
     // Block function declarations
-    FunctionDeclaration(node: any) {
+    FunctionDeclaration() {
       issues.push(`Forbidden node type: FunctionDeclaration`)
       isValid = false
     },
 
-    FunctionExpression(node: any) {
+    FunctionExpression() {
       issues.push(`Forbidden node type: FunctionExpression`)
       isValid = false
     },
 
     // Block access to global objects and require
-    Identifier(node: any) {
+    Identifier(node) {
       const parent = parentMap.get(node)
       const forbiddenGlobals = [
         'window',
@@ -166,7 +169,7 @@ export function validateAst(ast: any, parentMap: WeakMap<any, any>): {error?: st
     },
 
     // Block dangerous property access
-    MemberExpression(node: any) {
+    MemberExpression(node) {
       if (node.property.type === 'Identifier') {
         const dangerousProps = [
           'constructor',
@@ -265,6 +268,7 @@ export function secureEvaluateSchema(
     // Phase 2: Execute with Function constructor
     // We're deliberately avoiding VM modules due to security concerns
     // The AST validation provides our primary security layer
+    // eslint-disable-next-line no-new-func
     const constructSchema = new Function('z', `return ${trimmedSchema}`)
     const schema = constructSchema(z)
 

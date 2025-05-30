@@ -69,7 +69,7 @@ describe('Python Generator Integration', () => {
               values: [
                 {
                   value: {
-                    // @ts-ignore: The local ConfigValue interface doesn't have string_list but the Python generator expects it
+                    // @ts-expect-error: The local ConfigValue interface doesn't have string_list but the Python generator expects it
                     string_list: {values: ['localhost', 'example.com', 'api.example.com']},
                   },
                 },

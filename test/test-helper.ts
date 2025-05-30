@@ -33,8 +33,7 @@ export const SECRET_VALUE = (actual: string) => {
   return true
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const deepCompare = (obj1: any, obj2: any): boolean => {
+const deepCompare = (obj1: unknown, obj2: unknown): boolean => {
   // Check if either of the values is ANY
   //
   // Realistically only the stub should have `ANY` but we don't want to care

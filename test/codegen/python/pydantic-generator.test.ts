@@ -260,7 +260,7 @@ describe('UnifiedPythonGenerator', () => {
 
       generator.registerMethod('get_user', userSchema, 'User', [], 'Get user data', 'JSON')
 
-      const {imports, needsJson, typingImports} = generator.calculateNeededImports()
+      const {imports, needsJson} = generator.calculateNeededImports()
 
       // Should include pydantic imports
       expect(imports).to.include('from pydantic import BaseModel, ValidationError')
@@ -442,7 +442,7 @@ describe('UnifiedPythonGenerator', () => {
 
       // Register both models
       const addressType = generator.registerModel(addressSchema, 'Address')
-      const userType = generator.registerModel(userSchema, 'User')
+      generator.registerModel(userSchema, 'User')
 
       // Address should be registered as a separate model
       expect(addressType).to.include('Address')
@@ -492,13 +492,6 @@ describe('UnifiedPythonGenerator', () => {
     })
 
     it('should handle nested JSON objects with Mustache templates', () => {
-      // Register a schema similar to the "url-schema" from the example
-      const urlSchema = z.object({
-        retries: z.number(),
-        timeout: z.number(),
-        url: z.string(),
-      })
-
       // Create a JSON schema with a mustache template in the url property
       const urlWithMustacheSchema = z.object({
         retries: z.number(),
@@ -737,30 +730,10 @@ describe('UnifiedPythonGenerator', () => {
     })
   })
 
-  describe('Class member generation', () => {
-    it('should generate imports section', () => {
-      // ... existing code ...
-
-      const methodCode = generator.generateMethodCode('get_config', {
-        docstring: 'Get config',
-        originalKey: 'get_config',
-        params: [],
-        returnType: 'ConfigModel',
-        valueType: 'JSON',
-      })
-
-      // ... assertions ...
-    })
-
-    it('should generate parameter classes', () => {
-      // ... existing code ...
-    })
-  })
-
   describe('Fallback method generation', () => {
     it('should generate a fallback method for a boolean type', () => {
       // Using private method for testing
-      // @ts-ignore - accessing private method for testing
+      // @ts-expect-error - accessing private method for testing
       const methodCode = generator.generateFallbackMethod('is_feature_enabled', {
         docstring: 'Check if feature is enabled',
         originalKey: 'is_feature_enabled',
@@ -779,7 +752,7 @@ describe('UnifiedPythonGenerator', () => {
     })
 
     it('should generate a fallback method for a float type', () => {
-      // @ts-ignore - accessing private method for testing
+      // @ts-expect-error - accessing private method for testing
       const methodCode = generator.generateFallbackMethod('get_conversion_rate', {
         docstring: 'Get conversion rate',
         originalKey: 'get_conversion_rate',
@@ -798,7 +771,7 @@ describe('UnifiedPythonGenerator', () => {
     })
 
     it('should generate a fallback method for a string type', () => {
-      // @ts-ignore - accessing private method for testing
+      // @ts-expect-error - accessing private method for testing
       const methodCode = generator.generateFallbackMethod('get_api_url', {
         docstring: 'Get the API URL',
         originalKey: 'get_api_url',
@@ -817,7 +790,7 @@ describe('UnifiedPythonGenerator', () => {
     })
 
     it('should generate a fallback method for a string list type', () => {
-      // @ts-ignore - accessing private method for testing
+      // @ts-expect-error - accessing private method for testing
       const methodCode = generator.generateFallbackMethod('get_allowed_domains', {
         docstring: 'Get allowed domains',
         originalKey: 'get_allowed_domains',
@@ -845,7 +818,7 @@ describe('UnifiedPythonGenerator', () => {
         'ServiceConfig',
       )
 
-      // @ts-ignore - accessing private method for testing
+      // @ts-expect-error - accessing private method for testing
       const methodCode = generator.generateFallbackMethod('get_service_config', {
         docstring: 'Get the service configuration',
         originalKey: 'get_service_config',
@@ -864,7 +837,7 @@ describe('UnifiedPythonGenerator', () => {
     })
 
     it('should generate fallback methods with parameters', () => {
-      // @ts-ignore - accessing private method for testing
+      // @ts-expect-error - accessing private method for testing
       const methodCode = generator.generateFallbackMethod('get_user_preference', {
         docstring: 'Get user preference',
         originalKey: 'get_user_preference',
@@ -888,7 +861,7 @@ describe('UnifiedPythonGenerator', () => {
     })
 
     it('should generate fallback method with template parameters', () => {
-      // @ts-ignore - accessing private method for testing
+      // @ts-expect-error - accessing private method for testing
       const methodCode = generator.generateFallbackMethod('getGreetingTemplate', {
         docstring: 'Get a greeting template',
         hasTemplateParams: true,

@@ -10,12 +10,12 @@ function expectToEqualWithNormalizedLineEndings(actual: string, expected: string
   expect(actual.trim().replaceAll('\r\n', '\n')).to.equal(expected)
 }
 
+const logger = (category: string | unknown, message?: unknown) => {
+  console.log(category, message)
+}
+
 // Simple tests using the actual filesystem and templates
 describe('ZodGenerator', () => {
-  const logger = (category: string | unknown, message?: unknown) => {
-    console.log(category, message)
-  }
-
   let mockConfigFile: ConfigFile
   let mockBoolConfig: Config
   let mockStringConfig: Config

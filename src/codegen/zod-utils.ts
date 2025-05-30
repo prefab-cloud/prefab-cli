@@ -1,7 +1,7 @@
 import {z} from 'zod'
 
 import {SchemaWithProvidence} from './schema-inferrer.js'
-import {SupportedLanguage} from './zod-generator.js'
+import {SupportedLanguage} from './types.js'
 
 export const ZodUtils = {
   /**

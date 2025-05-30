@@ -2,11 +2,9 @@ import type {ZodObject, ZodRawShape, ZodTypeAny} from 'zod'
 
 import {z} from 'zod'
 
-import type {Config, ConfigFile} from './types.js'
-
 import {MustacheExtractor} from './mustache-extractor.js'
 import {secureEvaluateSchema} from './schema-evaluator.js'
-import {SupportedLanguage} from './zod-generator.js'
+import {type Config, type ConfigFile, SupportedLanguage} from './types.js'
 import {ZodUtils} from './zod-utils.js'
 
 export type SchemaWithProvidence = {

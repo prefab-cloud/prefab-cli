@@ -1,7 +1,7 @@
 import {expect} from '@oclif/test'
 import {z} from 'zod'
 
-import {SupportedLanguage} from '../../src/codegen/zod-generator.js'
+import {SupportedLanguage} from '../../src/codegen/types.js'
 import {ZodUtils} from '../../src/codegen/zod-utils.js'
 
 describe('ZodUtils', () => {

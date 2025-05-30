@@ -1,7 +1,7 @@
 import {expect} from 'chai'
 
-import {Config, ConfigFile} from '../../src/codegen/types.js'
-import {SupportedLanguage, ZodGenerator} from '../../src/codegen/zod-generator.js'
+import {type Config, type ConfigFile, SupportedLanguage} from '../../src/codegen/types.js'
+import {ZodGenerator} from '../../src/codegen/zod-generator.js'
 
 /**
  * Helper function to compare strings with normalized line endings

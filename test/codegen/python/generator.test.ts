@@ -2,8 +2,7 @@ import {expect} from 'chai'
 
 import {generatePythonClientCode} from '../../../src/codegen/python/generator.js'
 import {SchemaInferrer} from '../../../src/codegen/schema-inferrer.js'
-import {Config, ConfigFile} from '../../../src/codegen/types.js'
-import {SupportedLanguage} from '../../../src/codegen/zod-generator.js'
+import {type Config, type ConfigFile, SupportedLanguage} from '../../../src/codegen/types.js'
 
 describe('Python Generator Integration', () => {
   it('should generate Python code from config files', () => {

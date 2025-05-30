@@ -4,7 +4,7 @@ import {z} from 'zod'
 import type {Config, ConfigFile} from '../../src/codegen/types.js'
 
 import {SchemaInferrer} from '../../src/codegen/schema-inferrer.js'
-import {SupportedLanguage} from '../../src/codegen/zod-generator.js'
+import {SupportedLanguage} from '../../src/codegen/types'
 import {ZodUtils} from '../../src/codegen/zod-utils.js'
 
 describe('SchemaInferrer', () => {

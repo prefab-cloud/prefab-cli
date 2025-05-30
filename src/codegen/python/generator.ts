@@ -1,6 +1,5 @@
 import {SchemaInferrer} from '../schema-inferrer.js'
-import {type ConfigFile} from '../types.js'
-import {SupportedLanguage} from '../zod-generator.js'
+import {type ConfigFile, SupportedLanguage} from '../types.js'
 import {UnifiedPythonGenerator} from './pydantic-generator.js'
 
 export function generatePythonClientCode(

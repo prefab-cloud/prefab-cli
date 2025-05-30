@@ -1,7 +1,7 @@
 import {z} from 'zod'
 
 import {SchemaWithProvidence} from './schema-inferrer.js'
-import {SupportedLanguage} from './zod-generator.js'
+import {SupportedLanguage} from './types.js'
 
 export const ZodUtils = {
   /**
@@ -476,7 +476,6 @@ export const ZodUtils = {
     }
 
     if (def.typeName === 'ZodEnum') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const values = def.values.map((v: string) => `'${v}'`).join(',')
       return `z.enum([${values}])`
     }

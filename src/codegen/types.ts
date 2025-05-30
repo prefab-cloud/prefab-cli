@@ -1,3 +1,10 @@
+export enum SupportedLanguage {
+  Python = 'python',
+  React = 'react',
+  Ruby = 'ruby',
+  TypeScript = 'typescript',
+}
+
 export interface ConfigValue {
   value: {
     bool?: boolean

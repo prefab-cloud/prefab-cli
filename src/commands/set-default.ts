@@ -213,6 +213,6 @@ export default class SetDefault extends APICommand {
 
     this.verboseLog(request.error)
 
-    this.err(`Failed to change default: ${request.status}`, {key, serverError: request.error})
+    return this.err(`Failed to change default: ${request.status}`, {key, serverError: request.error})
   }
 }

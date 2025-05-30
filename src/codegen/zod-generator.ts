@@ -3,20 +3,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 
-import type {Config, ConfigFile} from './types.js'
-
 import {generatePythonClientCode} from './python/generator.js'
 import {SchemaInferrer, SchemaWithProvidence} from './schema-inferrer.js'
+import {type Config, type ConfigFile, SupportedLanguage} from './types.js'
 import {ZodUtils} from './zod-utils.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
-export enum SupportedLanguage {
-  Python = 'python',
-  React = 'react',
-  Ruby = 'ruby',
-  TypeScript = 'typescript',
-}
 
 export interface AccessorMethod {
   isFeatureFlag: boolean

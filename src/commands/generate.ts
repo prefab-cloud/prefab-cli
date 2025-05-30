@@ -5,7 +5,8 @@ import * as path from 'node:path'
 import type {JsonObj} from '../result.js'
 
 import {ConfigDownloader} from '../codegen/config-downloader.js'
-import {SupportedLanguage, ZodGenerator} from '../codegen/zod-generator.js'
+import {SupportedLanguage} from '../codegen/types.js'
+import {ZodGenerator} from '../codegen/zod-generator.js'
 import {APICommand} from '../index.js'
 
 export default class Generate extends APICommand {
@@ -99,8 +100,8 @@ export default class Generate extends APICommand {
         language === SupportedLanguage.Python
           ? 'prefab.py'
           : language === SupportedLanguage.Ruby
-          ? 'prefab.rb'
-          : 'prefab.ts'
+            ? 'prefab.rb'
+            : 'prefab.ts'
       const outputDir = flags['output-dir']
 
       // Ensure the directory exists

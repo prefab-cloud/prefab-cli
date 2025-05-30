@@ -29,6 +29,7 @@
     "eslint-config-oclif": "^5",
     "eslint-config-oclif-typescript": "^3",
     "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-only-error": "^1.0.2",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
     "mocha": "^10",
@@ -64,7 +65,7 @@
   "scripts": {
     "build": "shx rm -rf dist && tsc -b && shx cp -r src/codegen/templates dist/codegen/",
     "lint": "eslint . --cache --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "yarn lint",
     "prepack": "yarn build && oclif manifest && oclif readme",

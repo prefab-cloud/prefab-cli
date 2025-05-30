@@ -2,7 +2,6 @@
  * Complete solution for generating Pydantic models and client classes from Zod schemas
  * with fixed duration detection and clean ESLint compliance
  */
-import {camelCase} from 'change-case'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import {fileURLToPath} from 'node:url'
@@ -113,14 +112,6 @@ class ImportCollector {
 
     return statements
   }
-}
-
-/**
- * Improved duration detection logic
- */
-function isDurationSchema(schema: z.ZodTypeAny): boolean {
-  // Direct check using the schema's isDuration method
-  return typeof (schema as any).isDuration === 'function' && (schema as any).isDuration()
 }
 
 /**
@@ -326,7 +317,7 @@ export class UnifiedPythonGenerator {
       return undefined
     }
 
-    const shape = (schema as any)._def.shape()
+    const shape = schema._def.shape()
     const allParams: Record<string, z.ZodTypeAny> = {}
 
     // Collect parameters from properties
@@ -337,7 +328,7 @@ export class UnifiedPythonGenerator {
       const propParams = ZodUtils.paramsOf(propSchema)
       if (propParams && isZodType(propParams)) {
         if (propParams instanceof z.ZodObject) {
-          const propParamsShape = (propParams as any)._def.shape()
+          const propParamsShape = propParams._def.shape()
           // Add all parameters from this property
           for (const paramKey of Object.keys(propParamsShape)) {
             // IMPORTANT: For Pystache template parameters, we must preserve the exact
@@ -356,7 +347,7 @@ export class UnifiedPythonGenerator {
       if (propSchema instanceof z.ZodObject) {
         const nestedParams = this.collectAllTemplateParams(propSchema)
         if (nestedParams && nestedParams instanceof z.ZodObject) {
-          const nestedShape = (nestedParams as any)._def.shape()
+          const nestedShape = nestedParams._def.shape()
           // Add all nested parameters with their original keys
           for (const nestedKey of Object.keys(nestedShape)) {
             // IMPORTANT: For Pystache template parameters, we must preserve the exact
@@ -528,7 +519,7 @@ ${extractionCode
    */
   public generatePydanticModel(schema: z.ZodTypeAny, className: string): string {
     if (schema instanceof z.ZodObject) {
-      const shapeFn = (schema as any)._def.shape
+      const shapeFn = schema._def.shape
       if (!shapeFn) {
         return `class ${className}(BaseModel):\n    pass`
       }
@@ -583,7 +574,7 @@ ${extractionCode
    */
   generatePythonFile(): string {
     // Calculate imports
-    const {imports, typingImports} = this.calculateNeededImports()
+    const {typingImports} = this.calculateNeededImports()
 
     // Generate the imports section
     let pythonCode = ''
@@ -619,10 +610,10 @@ ${extractionCode
     // Add the client class with nested types
     const className = this.options.className || 'PrefabTypedClient'
     pythonCode += `class ${className}:\n    """Client for accessing Prefab configuration with type-safe methods"""\n`
-    pythonCode += `    def __init__(self, client=None, use_global_client=False):\n        """\n        Initialize the typed client.\n        
-        Args:\n            client: A Prefab client instance. If not provided and use_global_client is False, 
+    pythonCode += `    def __init__(self, client=None, use_global_client=False):\n        """\n        Initialize the typed client.\n
+        Args:\n            client: A Prefab client instance. If not provided and use_global_client is False,
                        uses the global client at initialization time.\n            use_global_client: If True, dynamically calls prefab_cloud_python.get_client() for each request\n                              instead of storing a reference. Useful in long-running applications where\n                              the client might be reset or reconfigured.\n        """\n        self._prefab = prefab_cloud_python\n        self._use_global_client = use_global_client\n        self._client = None if use_global_client else (client or prefab_cloud_python.get_client())\n`
-    pythonCode += `    @property\n    def client(self):\n        """\n        Returns the client to use for the current request.\n        
+    pythonCode += `    @property\n    def client(self):\n        """\n        Returns the client to use for the current request.\n
         If use_global_client is True, dynamically retrieves the current global client.\n        Otherwise, returns the stored client instance.\n        """\n        if self._use_global_client:\n            return self._prefab.get_client()\n        return self._client\n`
 
     // Add parameter classes if we have any
@@ -1022,8 +1013,8 @@ ${extractionCode
 
     // For object schemas, compare their shape
     if (schema1 instanceof z.ZodObject && schema2 instanceof z.ZodObject) {
-      const shape1 = JSON.stringify((schema1 as any)._def.shape())
-      const shape2 = JSON.stringify((schema2 as any)._def.shape())
+      const shape1 = JSON.stringify(schema1._def.shape())
+      const shape2 = JSON.stringify(schema2._def.shape())
 
       return shape1 === shape2
     }
@@ -1129,8 +1120,6 @@ ${extractionCode
     const isBasicType = this.isBasicType(spec.returnType)
     const returnTypeStr = isBasicType ? spec.returnType : `'${typeName}.${spec.returnType}'`
 
-    // Determine if we're dealing with an optional type
-    const isOptionalType = spec.returnType.toLowerCase().includes('optional')
     // Use 'fallback' consistently instead of 'fallback_value'
     const paramName = 'fallback'
 
@@ -1164,7 +1153,7 @@ ${spec.hasTemplateParams ? '        params: Parameters for template rendering\n'
       .map((param) => `        ${param.name}: Description of ${param.name}`)
       .join('\n')}
         context: Optional context for the config lookup
-        
+
     Returns:
         ${returnTypeStr}: The configuration value
     """
@@ -1180,8 +1169,6 @@ ${spec.hasTemplateParams ? '        params: Parameters for template rendering\n'
    * Get the Python type for a Zod type
    */
   private getPydanticType(schema: z.ZodTypeAny): string {
-    const className = this.options.className || 'PrefabTypedClient'
-
     if (schema instanceof z.ZodString) {
       return 'str'
     }
@@ -1242,7 +1229,7 @@ ${spec.hasTemplateParams ? '        params: Parameters for template rendering\n'
   private hasNestedTemplateFunctions(schema: z.ZodTypeAny): boolean {
     // Check if this is a ZodObject that might contain nested template functions
     if (schema instanceof z.ZodObject) {
-      const shape = (schema as any)._def.shape()
+      const shape = schema._def.shape()
       // Check each property
       for (const propKey of Object.keys(shape)) {
         const propSchema = shape[propKey]

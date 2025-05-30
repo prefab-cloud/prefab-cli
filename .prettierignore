@@ -1,1 +1,3 @@
 src/prefab-common/
+.eslintignore
+.prettierignore

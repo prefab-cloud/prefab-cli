@@ -4,14 +4,14 @@ import {z} from 'zod'
 import type {Config, ConfigFile} from '../../src/codegen/types.js'
 
 import {SchemaInferrer} from '../../src/codegen/schema-inferrer.js'
-import {SupportedLanguage} from '../../src/codegen/zod-generator.js'
+import {SupportedLanguage} from '../../src/codegen/types'
 import {ZodUtils} from '../../src/codegen/zod-utils.js'
 
-describe('SchemaInferrer', () => {
-  const logger = (category: string | unknown, message?: unknown) => {
-    console.log(category, message)
-  }
+const logger = (category: string | unknown, message?: unknown) => {
+  console.log(category, message)
+}
 
+describe('SchemaInferrer', () => {
   const inferrer = new SchemaInferrer(logger)
 
   describe('zodForConfig', () => {
@@ -620,8 +620,8 @@ describe('SchemaInferrer', () => {
               {
                 value: {
                   schema: {
-                    schema: `z.object({ 
-                      name: z.string(), 
+                    schema: `z.object({
+                      name: z.string(),
                       tags: z.array(z.string()),
                       metadata: z.object({
                         created: z.string(),

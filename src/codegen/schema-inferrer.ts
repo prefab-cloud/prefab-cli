@@ -2,19 +2,15 @@ import type {ZodObject, ZodRawShape, ZodTypeAny} from 'zod'
 
 import {z} from 'zod'
 
-import type {Config, ConfigFile} from './types.js'
-
 import {MustacheExtractor} from './mustache-extractor.js'
 import {secureEvaluateSchema} from './schema-evaluator.js'
-import {SupportedLanguage} from './zod-generator.js'
+import {type Config, type ConfigFile, SupportedLanguage} from './types.js'
 import {ZodUtils} from './zod-utils.js'
 
 export type SchemaWithProvidence = {
   providence: 'inferred' | 'user'
   schema: z.ZodTypeAny
 }
-
-/* eslint-disable max-depth */
 
 export class SchemaInferrer {
   private jsonToInferredZod = (data: unknown): ZodTypeAny => {
@@ -29,7 +25,6 @@ export class SchemaInferrer {
           return z.array(this.jsonToInferredZod(data[0]))
         }
 
-        // eslint-disable-next-line no-warning-comments
         // TODO: we could handle mixed arrays here with a union type but we prefer the user to upload a schema
       }
 

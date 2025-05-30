@@ -1,6 +1,36 @@
 {
   "extends": ["oclif", "oclif-typescript", "prettier"],
+  "plugins": [
+    "only-error"
+  ],
   "rules": {
-    "no-throw-literal": "off"
-  }
+    "no-throw-literal": "off",
+    "unicorn/prefer-ternary": "off",
+    "no-inner-declarations": "off",
+    "unicorn/consistent-destructuring": "off",
+    "max-depth": "off",
+    "complexity": "off",
+    "max-params": "off",
+    "no-warning-comments": "off"
+  },
+  "overrides": [
+    {
+      "files": ["src/codegen/**/*", "test/codegen/**/*"],
+      "rules": {
+        "valid-jsdoc": "off"
+      }
+    },
+    {
+      "files": ["test/codegen/python/*.ts"],
+      "rules": {
+        "camelcase": "off"
+      }
+    },
+    {
+      "files": ["test/**/*.ts"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    }
+  ]
 }

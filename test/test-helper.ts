@@ -57,14 +57,18 @@ const deepCompare = (obj1: unknown, obj2: unknown): boolean => {
 
   // If both are objects (including arrays)
   if (obj1 && obj2 && typeof obj1 === 'object' && typeof obj2 === 'object') {
+    const o1 = obj1 as Record<string, unknown>
+    // Here obj2 might not be an object, make sure to handle accordingly
+    const o2 = obj2 as Record<string, unknown>
+
     // Check if both are arrays
-    if (Array.isArray(obj1) && Array.isArray(obj2)) {
-      if (obj1.length !== obj2.length) {
+    if (Array.isArray(o1) && Array.isArray(o2)) {
+      if (o1.length !== o2.length) {
         return false
       }
 
-      for (const [i, element] of obj1.entries()) {
-        if (!deepCompare(element, obj2[i])) {
+      for (const [i, element] of o1.entries()) {
+        if (!deepCompare(element, o2[i])) {
           return false
         }
       }
@@ -73,8 +77,8 @@ const deepCompare = (obj1: unknown, obj2: unknown): boolean => {
     }
 
     // If both are objects (but not arrays)
-    const keys1 = Object.keys(obj1)
-    const keys2 = Object.keys(obj2)
+    const keys1 = Object.keys(o1)
+    const keys2 = Object.keys(o2)
 
     if (keys1.length !== keys2.length) {
       return false
@@ -85,7 +89,7 @@ const deepCompare = (obj1: unknown, obj2: unknown): boolean => {
         return false
       }
 
-      if (!deepCompare(obj1[key], obj2[key])) {
+      if (!deepCompare(o1[key], o2[key])) {
         return false
       }
     }

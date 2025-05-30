@@ -66,6 +66,8 @@ export abstract class BaseCommand extends Command {
       this.log(result.message)
       return result.json ?? result.message
     }
+
+    return null
   }
 
   public verboseLog = (category: string | unknown, message?: unknown): void => {

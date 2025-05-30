@@ -85,6 +85,8 @@ export const overrideFor = ({
       }
     }
   }
+
+  return undefined
 }
 
 export const defaultValueFor = (envId: string, key: string): ConfigValue | undefined => {

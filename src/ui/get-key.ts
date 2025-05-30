@@ -24,14 +24,14 @@ const getKey = async ({
   command: CommandLike
   flags: Flags
   message: string
-}): Promise<{key: string | undefined; prefab: Prefab | undefined}> => {
+}): Promise<{key: null | string | undefined; prefab: Prefab | undefined}> => {
   if (!args.name && !isInteractive(flags)) {
     command.err("'name' argument is required when interactive mode isn't available.")
   }
 
   const prefab = await initPrefab(command, flags)
 
-  let key = args.name
+  let key: null | string | undefined = args.name
 
   if (!key) {
     key = await autocomplete({message, source: () => prefab.keys()})

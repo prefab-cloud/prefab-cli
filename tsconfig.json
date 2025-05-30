@@ -1,15 +1,19 @@
 {
   "compilerOptions": {
+    "alwaysStrict": true,
     "declaration": true,
+    "forceConsistentCasingInFileNames": true,
     "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noErrorTruncation": true,
+    "noImplicitReturns": true,
     "outDir": "dist",
     "rootDir": "src",
-    "target": "es2022",
-    "moduleResolution": "nodenext",
-    "strict": true
+    "strict": true,
+    "target": "es2022"
   },
-  "include": ["./src/**/*"],
   "exclude": ["./src/prefab-common/**/*.test.ts"],
+  "include": ["src/**/*.ts"],
   "ts-node": {
     "esm": true
   }

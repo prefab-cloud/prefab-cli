@@ -30,6 +30,8 @@ const autocomplete = async ({message, source}: Args) => {
 
     return unformat(result)
   } catch {}
+
+  return null
 }
 
 export default autocomplete

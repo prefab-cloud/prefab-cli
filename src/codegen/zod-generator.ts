@@ -50,9 +50,9 @@ export class ZodGenerator {
   /**
    * Generate code for the specified language
    */
-  generate(language: SupportedLanguage = SupportedLanguage.TypeScript, className?: string): string {
+  generate(language: SupportedLanguage = SupportedLanguage.TypeScript): string {
     if (language === SupportedLanguage.Python) {
-      return generatePythonClientCode(this.configFile, this.schemaInferrer, className || 'PrefabTypedClient')
+      return generatePythonClientCode(this.configFile, this.schemaInferrer, 'PrefabTypedClient')
     }
 
     // Get base template for the framework

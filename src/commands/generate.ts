@@ -89,10 +89,7 @@ export default class Generate extends APICommand {
       const generator = new ZodGenerator(configFile, this.verboseLog.bind(this))
       console.log(`Generating ${flags.target} code for configs...`)
 
-      // Determine the class name based on the language
-      const className = language === SupportedLanguage.Python ? 'PrefabTypedClient' : undefined
-
-      const generatedCode = generator.generate(language, className)
+      const generatedCode = generator.generate(language)
       this.verboseLog('Code generation complete. Size:', generatedCode.length)
 
       // Set filename based on language

@@ -141,8 +141,8 @@ describe('ZodGenerator', () => {
 
   describe('generate', () => {
     it('should generate a output for configs', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
-      const output = generator.generate(SupportedLanguage.TypeScript)
+      const generator = new ZodGenerator(SupportedLanguage.TypeScript, mockConfigFile, logger)
+      const output = generator.generate()
 
       expect(output).to.include('PrefabConfig')
     })
@@ -167,9 +167,9 @@ describe('ZodGenerator', () => {
           valueType: 'BOOL',
         },
       ]
-      const generator = new ZodGenerator(mockConfigFile, logger)
+      const generator = new ZodGenerator(SupportedLanguage.TypeScript, mockConfigFile, logger)
 
-      expect(() => generator.generate(SupportedLanguage.TypeScript)).to.throw(
+      expect(() => generator.generate()).to.throw(
         `Method 'exampleFeatureFlag' is already registered. Prefab key example.feature.flag conflicts with example-feature-flag`,
       )
     })
@@ -177,7 +177,7 @@ describe('ZodGenerator', () => {
 
   describe('generateSchemaLines', () => {
     it('should generate schema lines for configs', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
+      const generator = new ZodGenerator(SupportedLanguage.TypeScript, mockConfigFile, logger)
       const schemaLines = generator.generateSchemaLines()
 
       expect(schemaLines).to.have.lengthOf(4)
@@ -188,8 +188,8 @@ describe('ZodGenerator', () => {
 
   describe('generateAccessorMethod', () => {
     it('should generate a boolean accessor method correctly', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
-      const accessorMethod = generator.generateAccessorMethod(mockBoolConfig, SupportedLanguage.TypeScript)
+      const generator = new ZodGenerator(SupportedLanguage.TypeScript, mockConfigFile, logger)
+      const accessorMethod = generator.generateAccessorMethod(mockBoolConfig)
 
       expect(accessorMethod.methodName).to.equal('exampleFeatureFlag')
       expect(accessorMethod.key).to.equal('example.feature.flag')
@@ -199,8 +199,8 @@ describe('ZodGenerator', () => {
     })
 
     it('should generate a string accessor method correctly', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
-      const accessorMethod = generator.generateAccessorMethod(mockStringConfig, SupportedLanguage.TypeScript)
+      const generator = new ZodGenerator(SupportedLanguage.TypeScript, mockConfigFile, logger)
+      const accessorMethod = generator.generateAccessorMethod(mockStringConfig)
 
       expect(accessorMethod.methodName).to.equal('exampleConfigString')
       expect(accessorMethod.key).to.equal('example.config.string')
@@ -210,8 +210,8 @@ describe('ZodGenerator', () => {
     })
 
     it('should generate a template function accessor method correctly', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
-      const accessorMethod = generator.generateAccessorMethod(mockTemplateConfig, SupportedLanguage.TypeScript)
+      const generator = new ZodGenerator(SupportedLanguage.TypeScript, mockConfigFile, logger)
+      const accessorMethod = generator.generateAccessorMethod(mockTemplateConfig)
 
       expect(accessorMethod.methodName).to.equal('exampleConfigFunction')
       expect(accessorMethod.key).to.equal('example.config.function')
@@ -224,7 +224,7 @@ describe('ZodGenerator', () => {
 
   describe('renderAccessorMethod', () => {
     it('should render a boolean accessor method with the actual template', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
+      const generator = new ZodGenerator(SupportedLanguage.TypeScript, mockConfigFile, logger)
       const result = generator.renderAccessorMethod(mockBoolConfig)
 
       // Use a single multiline string assertion for better readability
@@ -238,7 +238,7 @@ describe('ZodGenerator', () => {
     })
 
     it('should render a template function accessor method with the actual template', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
+      const generator = new ZodGenerator(SupportedLanguage.TypeScript, mockConfigFile, logger)
       const result = generator.renderAccessorMethod(mockTemplateConfig)
 
       // Use a single multiline string assertion for better readability
@@ -252,7 +252,7 @@ describe('ZodGenerator', () => {
     })
 
     it('should render a JSON object accessor method with the actual template', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
+      const generator = new ZodGenerator(SupportedLanguage.TypeScript, mockConfigFile, logger)
       const result = generator.renderAccessorMethod(mockObjectConfig)
 
       // Use a single multiline string assertion for better readability
@@ -293,7 +293,7 @@ describe('ZodGenerator', () => {
       }
 
       // Create a new generator just for this config
-      const generator = new ZodGenerator(singleConfigFile, logger)
+      const generator = new ZodGenerator(SupportedLanguage.TypeScript, singleConfigFile, logger)
 
       // Generate the accessor method
       const accessorMethod = generator.renderAccessorMethod(complexConfig)
@@ -311,8 +311,8 @@ describe('ZodGenerator', () => {
 
   describe('renderAccessorMethod python', () => {
     it('should render a boolean accessor method with the actual template', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
-      const result = generator.renderAccessorMethod(mockBoolConfig, SupportedLanguage.Python)
+      const generator = new ZodGenerator(SupportedLanguage.Python, mockConfigFile, logger)
+      const result = generator.renderAccessorMethod(mockBoolConfig)
 
       // Use a single multiline string assertion for better readability
       const expectedOutput = `def exampleFeatureFlag(self):
@@ -323,8 +323,8 @@ describe('ZodGenerator', () => {
       expectToEqualWithNormalizedLineEndings(result, expectedOutput)
     })
     it('should render a template method with the actual template', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
-      const result = generator.renderAccessorMethod(mockTemplateConfig, SupportedLanguage.Python)
+      const generator = new ZodGenerator(SupportedLanguage.Python, mockConfigFile, logger)
+      const result = generator.renderAccessorMethod(mockTemplateConfig)
 
       // Use a single multiline string assertion for better readability
       const expectedOutput = `def exampleConfigFunction(self):
@@ -335,8 +335,8 @@ describe('ZodGenerator', () => {
       expectToEqualWithNormalizedLineEndings(result, expectedOutput)
     })
     it('should render a JSON object with the actual template', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
-      const result = generator.renderAccessorMethod(mockObjectConfig, SupportedLanguage.Python)
+      const generator = new ZodGenerator(SupportedLanguage.Python, mockConfigFile, logger)
+      const result = generator.renderAccessorMethod(mockObjectConfig)
 
       // Use a single multiline string assertion for better readability
       const expectedOutput = `def exampleConfigObject(self):
@@ -350,7 +350,7 @@ describe('ZodGenerator', () => {
 
   describe('renderAccessorMethod for JSON with templates', () => {
     it('should render a JSON object with template placeholders for TypeScript', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
+      const generator = new ZodGenerator(SupportedLanguage.TypeScript, mockConfigFile, logger)
       const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfig)
 
       // Use a single multiline string assertion for better readability
@@ -364,7 +364,7 @@ describe('ZodGenerator', () => {
     })
 
     it('should render a JSON object with multiple values and templates for TypeScript', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
+      const generator = new ZodGenerator(SupportedLanguage.TypeScript, mockConfigFile, logger)
       const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfigMultiValue)
 
       // Use a single multiline string assertion for better readability
@@ -380,8 +380,8 @@ describe('ZodGenerator', () => {
 
   describe('renderAccessorMethod python for JSON with templates', () => {
     it('should render a JSON object with template placeholders for Python', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
-      const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfig, SupportedLanguage.Python)
+      const generator = new ZodGenerator(SupportedLanguage.Python, mockConfigFile, logger)
+      const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfig)
 
       // Use a single multiline string assertion for better readability
       const expectedOutput = `def exampleConfigObject(self):
@@ -393,8 +393,8 @@ describe('ZodGenerator', () => {
     })
 
     it('should render a JSON object with multiple values and templates for Python', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
-      const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfigMultiValue, SupportedLanguage.Python)
+      const generator = new ZodGenerator(SupportedLanguage.Python, mockConfigFile, logger)
+      const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfigMultiValue)
 
       // Use a single multiline string assertion for better readability
       const expectedOutput = `def exampleConfigObject(self):
@@ -408,8 +408,8 @@ describe('ZodGenerator', () => {
 
   describe('renderAccessorMethod ruby for JSON with templates', () => {
     it('should render a JSON object with template placeholders for Ruby', () => {
-      const generator = new ZodGenerator(mockConfigFile, logger)
-      const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfig, SupportedLanguage.Ruby)
+      const generator = new ZodGenerator(SupportedLanguage.Ruby, mockConfigFile, logger)
+      const result = generator.renderAccessorMethod(mockObjectWithPlaceholderConfig)
 
       // Use a single multiline string assertion for better readability
       const expectedOutput = `def self.exampleConfigObject(default = NO_DEFAULT_PROVIDED, jit_context = NO_DEFAULT_PROVIDED)

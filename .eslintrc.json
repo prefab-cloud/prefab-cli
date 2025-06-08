@@ -9,7 +9,8 @@
     "no-throw-literal": "off",
     "no-warning-comments": "off",
     "unicorn/consistent-destructuring": "off",
-    "unicorn/prefer-ternary": "off"
+    "unicorn/prefer-ternary": "off",
+    "prefer-destructuring": "off"
   },
   "overrides": [
     {

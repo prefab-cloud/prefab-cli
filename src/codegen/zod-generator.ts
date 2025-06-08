@@ -53,6 +53,14 @@ export class ZodGenerator {
     this.log = log
   }
 
+  get filename(): string {
+    return this.language === SupportedLanguage.Python
+      ? 'prefab.py'
+      : this.language === SupportedLanguage.Ruby
+        ? 'prefab.rb'
+        : 'prefab.ts'
+  }
+
   /**
    * Generate code for the specified language
    */

@@ -1,6 +1,4 @@
 import {Flags} from '@oclif/core'
-import * as fs from 'node:fs'
-import * as path from 'node:path'
 
 import type {JsonObj} from '../result.js'
 
@@ -8,6 +6,7 @@ import {ConfigDownloader} from '../codegen/config-downloader.js'
 import {SupportedLanguage} from '../codegen/types.js'
 import {ZodGenerator} from '../codegen/zod-generator.js'
 import {APICommand} from '../index.js'
+import {createFileManager} from '../util/file-manager.js'
 
 export default class Generate extends APICommand {
   static aliases = ['gen']
@@ -92,24 +91,11 @@ export default class Generate extends APICommand {
       const generatedCode = generator.generate()
       this.verboseLog('Code generation complete. Size:', generatedCode.length)
 
-      // Set filename based on language
-      const filename =
-        language === SupportedLanguage.Python
-          ? 'prefab.py'
-          : language === SupportedLanguage.Ruby
-            ? 'prefab.rb'
-            : 'prefab.ts'
-      const outputDir = flags['output-dir']
+      const filename = generator.filename
+      const outputDirectory = flags['output-dir']
 
-      // Ensure the directory exists
-      this.verboseLog('Creating directory:', outputDir)
-      await fs.promises.mkdir(outputDir, {recursive: true})
-
-      // Write the generated code to the file
-      const outputFile = path.join(outputDir, filename)
-      this.verboseLog('Writing file:', outputFile)
-      await fs.promises.writeFile(outputFile, generatedCode)
-      this.verboseLog(`Generated ${langInput} code at ${outputFile}`)
+      const fileManager = createFileManager({outputDirectory, verboseLog: this.verboseLog.bind(this)})
+      await fileManager.writeFile({data: generatedCode, filename})
     } catch (error) {
       console.error('ERROR:', error)
       this.error(error as Error)

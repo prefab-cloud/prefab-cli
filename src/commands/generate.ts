@@ -41,41 +41,8 @@ export default class Generate extends APICommand {
     this.verboseLog('Language:', flags.target)
     this.verboseLog('Output directory:', flags['output-dir'])
 
-    // Get the target from the flag, using lowercase to ensure consistency
-    const langInput = flags.target?.toLowerCase()
-
-    // Map the input string to the appropriate enum value
-    let language: SupportedLanguage
-
-    switch (langInput) {
-      case 'python-pydantic': {
-        language = SupportedLanguage.Python
-
-        break
-      }
-
-      case 'react-ts': {
-        language = SupportedLanguage.React
-
-        break
-      }
-
-      case 'node-ts': {
-        language = SupportedLanguage.TypeScript
-
-        break
-      }
-
-      case 'ruby': {
-        language = SupportedLanguage.Ruby
-
-        break
-      }
-
-      default: {
-        throw new Error(`Unsupported target: ${langInput}`)
-      }
-    }
+    // Resolve the language input
+    const language = this.resolveLanguage(flags.target)
 
     // Download the configuration using the APICommand's client
     const downloader = new ConfigDownloader(this)
@@ -103,5 +70,29 @@ export default class Generate extends APICommand {
 
     this.verboseLog('=== GENERATE COMMAND END ===')
     return {success: true}
+  }
+
+  private resolveLanguage(languageTarget: string | undefined): SupportedLanguage {
+    switch (languageTarget?.toLowerCase()) {
+      case 'python-pydantic': {
+        return SupportedLanguage.Python
+      }
+
+      case 'react-ts': {
+        return SupportedLanguage.React
+      }
+
+      case 'node-ts': {
+        return SupportedLanguage.TypeScript
+      }
+
+      case 'ruby': {
+        return SupportedLanguage.Ruby
+      }
+
+      default: {
+        throw new Error(`Unsupported target: ${languageTarget}`)
+      }
+    }
   }
 }

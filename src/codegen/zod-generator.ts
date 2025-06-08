@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 
+import {BaseGenerator} from './code-generators/base-generator.js'
 import {generatePythonClientCode} from './python/generator.js'
 import {SchemaInferrer, SchemaWithProvidence} from './schema-inferrer.js'
 import {type Config, type ConfigFile, SupportedLanguage} from './types.js'
@@ -34,11 +35,9 @@ export interface TemplateData {
 /**
  * Generates typed code for configs using Zod for validation
  */
-export class ZodGenerator {
-  private configFile: ConfigFile
+export class ZodGenerator extends BaseGenerator {
   private dependencies: Set<string> = new Set()
   private language: SupportedLanguage
-  private log: (category: string | unknown, message?: unknown) => void
   private methods: {[key: string]: AccessorMethod} = {}
   private schemaInferrer: SchemaInferrer
 
@@ -47,10 +46,9 @@ export class ZodGenerator {
     configFile: ConfigFile,
     log: (category: string | unknown, message?: unknown) => void,
   ) {
+    super({configFile, log})
     this.language = language
-    this.configFile = configFile
     this.schemaInferrer = new SchemaInferrer(log)
-    this.log = log
   }
 
   get filename(): string {
@@ -165,6 +163,7 @@ export class ZodGenerator {
 
   generateSimplifiedSchema(config: Config): SchemaWithProvidence {
     const schemaObj = this.schemaInferrer.zodForConfig(config, this.configFile, this.language)
+
     return {
       providence: schemaObj.providence,
       schema: ZodUtils.simplifyFunctions(schemaObj.schema),

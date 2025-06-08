@@ -2,8 +2,9 @@ import {Flags} from '@oclif/core'
 
 import type {JsonObj} from '../result.js'
 
+import {BaseGenerator} from '../codegen/code-generators/base-generator.js'
 import {ConfigDownloader} from '../codegen/config-downloader.js'
-import {SupportedLanguage} from '../codegen/types.js'
+import {type ConfigFile, SupportedLanguage} from '../codegen/types.js'
 import {ZodGenerator} from '../codegen/zod-generator.js'
 import {APICommand} from '../index.js'
 import {createFileManager} from '../util/file-manager.js'
@@ -51,9 +52,9 @@ export default class Generate extends APICommand {
       const configFile = await downloader.downloadConfig()
       this.verboseLog('Config download complete.')
 
-      this.verboseLog('Creating generator...')
-      const generator = new ZodGenerator(language, configFile, this.verboseLog.bind(this))
-      console.log(`Generating ${flags.target} code for configs...`)
+      this.verboseLog('Resolving generator...')
+      const generator = this.resolveGenerator(language, configFile)
+      console.log(`Generating ${language} code for configs...`)
 
       const generatedCode = generator.generate()
       this.verboseLog('Code generation complete. Size:', generatedCode.length)
@@ -70,6 +71,10 @@ export default class Generate extends APICommand {
 
     this.verboseLog('=== GENERATE COMMAND END ===')
     return {success: true}
+  }
+
+  private resolveGenerator(language: SupportedLanguage, configFile: ConfigFile): BaseGenerator {
+    return new ZodGenerator(language, configFile, this.verboseLog.bind(this))
   }
 
   private resolveLanguage(languageTarget: string | undefined): SupportedLanguage {

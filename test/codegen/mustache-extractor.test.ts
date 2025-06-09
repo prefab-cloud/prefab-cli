@@ -3,10 +3,12 @@ import {z} from 'zod'
 
 import {MustacheExtractor} from '../../src/codegen/mustache-extractor.js'
 
+const log = () => {}
+
 describe('MustacheExtractor', () => {
   it('extracts simple placeholders', () => {
     const template = 'Hello {{name}}!'
-    const schema = MustacheExtractor.extractSchema(template)
+    const schema = MustacheExtractor.extractSchema(template, log)
     const shape = schema._def.shape()
 
     // Instead of deep equality, check that we have the expected property
@@ -18,7 +20,7 @@ describe('MustacheExtractor', () => {
 
   it('handles section with variables', () => {
     const template = '{{#user}}Name: {{name}}{{/user}}'
-    const schema = MustacheExtractor.extractSchema(template)
+    const schema = MustacheExtractor.extractSchema(template, log)
     const shape = schema._def.shape()
 
     // Check structure and type of user property
@@ -33,7 +35,7 @@ describe('MustacheExtractor', () => {
 
   it('handles inverted sections', () => {
     const template = '{{^logged_in}}Please log in{{/logged_in}}'
-    const schema = MustacheExtractor.extractSchema(template)
+    const schema = MustacheExtractor.extractSchema(template, log)
     const shape = schema._def.shape()
 
     expect(Object.keys(shape)).to.deep.equal(['logged_in'])
@@ -57,7 +59,7 @@ describe('MustacheExtractor', () => {
             Finally, you must speak with a {{accent}} accent.
         `
 
-    const schema = MustacheExtractor.extractSchema(template)
+    const schema = MustacheExtractor.extractSchema(template, log)
     const shape = schema._def.shape()
 
     // Validate the schema structure and types
@@ -81,7 +83,7 @@ describe('MustacheExtractor', () => {
             {{accent}}
         `
 
-    const schema = MustacheExtractor.extractSchema(template)
+    const schema = MustacheExtractor.extractSchema(template, log)
 
     // Valid data should parse successfully
     const validData = {

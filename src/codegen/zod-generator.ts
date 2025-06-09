@@ -163,15 +163,6 @@ export class ZodGenerator {
     })
   }
 
-  /**
-   * Generate schema lines for all configs
-   */
-  generateSchemaLines(): SchemaLine[] {
-    return this.configFile.configs
-      .filter((config) => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
-      .map((config) => this.generateSchemaLine(config))
-  }
-
   generateSimplifiedSchema(config: Config): SchemaWithProvidence {
     const schemaObj = this.schemaInferrer.zodForConfig(config, this.configFile, this.language)
     return {

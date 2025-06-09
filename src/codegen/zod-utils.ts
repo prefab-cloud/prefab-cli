@@ -488,54 +488,6 @@ export const ZodUtils = {
     return 'z.any()'
   },
 
-  /**
-   * Convert Zod types to TypeScript type strings
-   */
-  zodTypeToTsType(zodType: z.ZodTypeAny): string {
-    if (zodType instanceof z.ZodString) {
-      return 'string'
-    }
-
-    if (zodType instanceof z.ZodNumber) {
-      return 'number'
-    }
-
-    if (zodType instanceof z.ZodBoolean) {
-      return 'boolean'
-    }
-
-    if (zodType instanceof z.ZodArray) {
-      // Recursively get the type of array elements
-      return `Array<${this.zodTypeToTsType(zodType.element)}>`
-    }
-
-    if (zodType instanceof z.ZodObject) {
-      const shape = zodType._def.shape()
-      const innerProps = Object.entries(shape)
-        .map(([k, v]) => {
-          const typeString = this.zodTypeToTsType(v as z.ZodTypeAny)
-          return `${k}: ${typeString}`
-        })
-        .join('; ')
-      return `{ ${innerProps} }`
-    }
-
-    if (zodType instanceof z.ZodOptional) {
-      // Return the unwrapped type without adding the optional marker here
-      // The '?' will be added to the property name in the parent context
-      return this.zodTypeToTsType(zodType.unwrap())
-    }
-
-    if (zodType instanceof z.ZodEnum) {
-      // Handle enum types
-      const {values} = zodType._def
-      return values.map((v: string) => `'${v}'`).join(' | ')
-    }
-
-    // Default fallback
-    return 'any'
-  },
-
   // Convert a Zod type to its TypeScript equivalent
   zodTypeToTypescript(zodType: z.ZodTypeAny): string {
     if (!zodType || !zodType._def) return 'any'

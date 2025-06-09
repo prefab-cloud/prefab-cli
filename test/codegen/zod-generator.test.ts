@@ -175,17 +175,6 @@ describe('ZodGenerator', () => {
     })
   })
 
-  describe('generateSchemaLines', () => {
-    it('should generate schema lines for configs', () => {
-      const generator = new ZodGenerator(SupportedLanguage.TypeScript, mockConfigFile, logger)
-      const schemaLines = generator.generateSchemaLines()
-
-      expect(schemaLines).to.have.lengthOf(4)
-      expect(schemaLines[0].key).to.equal('example.feature.flag')
-      expect(schemaLines[0].schemaName).to.equal('exampleFeatureFlagSchema')
-    })
-  })
-
   describe('generateAccessorMethod', () => {
     it('should generate a boolean accessor method correctly', () => {
       const generator = new ZodGenerator(SupportedLanguage.TypeScript, mockConfigFile, logger)

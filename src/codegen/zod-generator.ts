@@ -158,7 +158,7 @@ export class ZodGenerator {
 
     return this.massageSchemaLineForLanguage(config, {
       key: config.key,
-      schemaName: ZodUtils.keyToMethodName(config.key) + 'Schema',
+      schemaName: ZodUtils.keyToSchemaName(config.key),
       zodType,
     })
   }

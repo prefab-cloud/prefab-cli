@@ -1,3 +1,5 @@
+import {z} from 'zod'
+
 export enum SupportedLanguage {
   Python = 'python',
   React = 'react',
@@ -37,3 +39,21 @@ export interface Config {
 export interface ConfigFile {
   configs: Config[]
 }
+
+export type SupportedZodTypes =
+  | z.ZodAnyDef
+  | z.ZodArrayDef
+  | z.ZodBooleanDef
+  | z.ZodEnumDef
+  | z.ZodFunctionDef
+  | z.ZodNullDef
+  | z.ZodNumberDef
+  | z.ZodObjectDef
+  | z.ZodOptionalDef
+  | z.ZodStringDef
+  | z.ZodTupleDef
+  | z.ZodUndefinedDef
+  | z.ZodUnionDef
+  | z.ZodUnknownDef
+
+export type ZodTypeSupported = z.ZodType<unknown, SupportedZodTypes, unknown>

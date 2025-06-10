@@ -1,6 +1,6 @@
 import {type ConfigFile} from '../types.js'
 
-interface BaseGeneratorArgs {
+export interface BaseGeneratorArgs {
   configFile: ConfigFile
   log: (category: string | unknown, message?: unknown) => void
 }

@@ -9,7 +9,11 @@
     "no-throw-literal": "off",
     "no-warning-comments": "off",
     "unicorn/consistent-destructuring": "off",
+    "unicorn/no-array-for-each": "off",
+    "unicorn/no-array-reduce": "off",
     "unicorn/prefer-ternary": "off",
+    "unicorn/switch-case-braces": "off",
+    "padding-line-between-statements": "off",
     "prefer-destructuring": "off"
   },
   "overrides": [

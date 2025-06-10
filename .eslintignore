@@ -2,4 +2,8 @@
 /tmp
 src/prefab-common/
 package.json
+yarn.lock
 generated-sources/
+.vscode/
+prefab.*.config.json
+test/fixtures

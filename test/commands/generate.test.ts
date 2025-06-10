@@ -21,35 +21,35 @@ describe('generate', () => {
     .command(['generate'])
     .it('runs generate without flags', (ctx) => {
       // Updated to match the new default behavior (node-ts is the default target)
-      expect(ctx.stdout).to.include('Generating node-ts code for configs')
+      expect(ctx.stdout).to.include('Generating typescript code for configs')
     })
 
   test
     .stdout()
     .command(['generate', '--target', 'node-ts'])
     .it('generates TypeScript definitions', (ctx) => {
-      expect(ctx.stdout).to.include('Generating node-ts code for configs')
+      expect(ctx.stdout).to.include('Generating typescript code for configs')
     })
 
   test
     .stdout()
     .command(['gen', '--target', 'node-ts'])
     .it('works with gen alias', (ctx) => {
-      expect(ctx.stdout).to.include('Generating node-ts code for configs')
+      expect(ctx.stdout).to.include('Generating typescript code for configs')
     })
 
   test
     .stdout()
     .command(['generate', '--target', 'react-ts'])
     .it('generates React TypeScript definitions', (ctx) => {
-      expect(ctx.stdout).to.include('Generating react-ts code for configs')
+      expect(ctx.stdout).to.include('Generating react code for configs')
     })
 
   test
     .stdout()
     .command(['generate', '--target', 'python-pydantic'])
     .it('generates Python code', (ctx) => {
-      expect(ctx.stdout).to.include('Generating python-pydantic code for configs')
+      expect(ctx.stdout).to.include('Generating python code for configs')
     })
 
   test

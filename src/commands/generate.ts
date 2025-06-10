@@ -1,13 +1,13 @@
 import {Flags} from '@oclif/core'
-import * as fs from 'node:fs'
-import * as path from 'node:path'
 
 import type {JsonObj} from '../result.js'
 
+import {BaseGenerator} from '../codegen/code-generators/base-generator.js'
 import {ConfigDownloader} from '../codegen/config-downloader.js'
-import {SupportedLanguage} from '../codegen/types.js'
+import {type ConfigFile, SupportedLanguage} from '../codegen/types.js'
 import {ZodGenerator} from '../codegen/zod-generator.js'
 import {APICommand} from '../index.js'
+import {createFileManager} from '../util/file-manager.js'
 
 export default class Generate extends APICommand {
   static aliases = ['gen']
@@ -42,41 +42,8 @@ export default class Generate extends APICommand {
     this.verboseLog('Language:', flags.target)
     this.verboseLog('Output directory:', flags['output-dir'])
 
-    // Get the target from the flag, using lowercase to ensure consistency
-    const langInput = flags.target?.toLowerCase()
-
-    // Map the input string to the appropriate enum value
-    let language: SupportedLanguage
-
-    switch (langInput) {
-      case 'python-pydantic': {
-        language = SupportedLanguage.Python
-
-        break
-      }
-
-      case 'react-ts': {
-        language = SupportedLanguage.React
-
-        break
-      }
-
-      case 'node-ts': {
-        language = SupportedLanguage.TypeScript
-
-        break
-      }
-
-      case 'ruby': {
-        language = SupportedLanguage.Ruby
-
-        break
-      }
-
-      default: {
-        throw new Error(`Unsupported target: ${langInput}`)
-      }
-    }
+    // Resolve the language input
+    const language = this.resolveLanguage(flags.target)
 
     // Download the configuration using the APICommand's client
     const downloader = new ConfigDownloader(this)
@@ -85,34 +52,18 @@ export default class Generate extends APICommand {
       const configFile = await downloader.downloadConfig()
       this.verboseLog('Config download complete.')
 
-      this.verboseLog('Creating generator...')
-      const generator = new ZodGenerator(configFile, this.verboseLog.bind(this))
-      console.log(`Generating ${flags.target} code for configs...`)
+      this.verboseLog('Resolving generator...')
+      const generator = this.resolveGenerator(language, configFile)
+      console.log(`Generating ${language} code for configs...`)
 
-      // Determine the class name based on the language
-      const className = language === SupportedLanguage.Python ? 'PrefabTypedClient' : undefined
-
-      const generatedCode = generator.generate(language, className)
+      const generatedCode = generator.generate()
       this.verboseLog('Code generation complete. Size:', generatedCode.length)
 
-      // Set filename based on language
-      const filename =
-        language === SupportedLanguage.Python
-          ? 'prefab.py'
-          : language === SupportedLanguage.Ruby
-            ? 'prefab.rb'
-            : 'prefab.ts'
-      const outputDir = flags['output-dir']
+      const filename = generator.filename
+      const outputDirectory = flags['output-dir']
 
-      // Ensure the directory exists
-      this.verboseLog('Creating directory:', outputDir)
-      await fs.promises.mkdir(outputDir, {recursive: true})
-
-      // Write the generated code to the file
-      const outputFile = path.join(outputDir, filename)
-      this.verboseLog('Writing file:', outputFile)
-      await fs.promises.writeFile(outputFile, generatedCode)
-      this.verboseLog(`Generated ${langInput} code at ${outputFile}`)
+      const fileManager = createFileManager({outputDirectory, verboseLog: this.verboseLog.bind(this)})
+      await fileManager.writeFile({data: generatedCode, filename})
     } catch (error) {
       console.error('ERROR:', error)
       this.error(error as Error)
@@ -120,5 +71,33 @@ export default class Generate extends APICommand {
 
     this.verboseLog('=== GENERATE COMMAND END ===')
     return {success: true}
+  }
+
+  private resolveGenerator(language: SupportedLanguage, configFile: ConfigFile): BaseGenerator {
+    return new ZodGenerator(language, configFile, this.verboseLog.bind(this))
+  }
+
+  private resolveLanguage(languageTarget: string | undefined): SupportedLanguage {
+    switch (languageTarget?.toLowerCase()) {
+      case 'python-pydantic': {
+        return SupportedLanguage.Python
+      }
+
+      case 'react-ts': {
+        return SupportedLanguage.React
+      }
+
+      case 'node-ts': {
+        return SupportedLanguage.TypeScript
+      }
+
+      case 'ruby': {
+        return SupportedLanguage.Ruby
+      }
+
+      default: {
+        throw new Error(`Unsupported target: ${languageTarget}`)
+      }
+    }
   }
 }

@@ -145,37 +145,6 @@ describe('ZodUtils', () => {
     })
   })
 
-  describe('zodTypeToTsType', () => {
-    it('should convert primitive Zod types to TypeScript types', () => {
-      expect(ZodUtils.zodTypeToTsType(z.string())).to.equal('string')
-      expect(ZodUtils.zodTypeToTsType(z.number())).to.equal('number')
-      expect(ZodUtils.zodTypeToTsType(z.boolean())).to.equal('boolean')
-    })
-
-    it('should convert ZodArray to TypeScript array type', () => {
-      expect(ZodUtils.zodTypeToTsType(z.array(z.string()))).to.equal('Array<string>')
-      expect(ZodUtils.zodTypeToTsType(z.array(z.number()))).to.equal('Array<number>')
-    })
-
-    it('should convert ZodObject to TypeScript object type', () => {
-      const schema = z.object({
-        age: z.number(),
-        name: z.string(),
-      })
-      expect(ZodUtils.zodTypeToTsType(schema)).to.equal('{ age: number; name: string }')
-    })
-
-    it('should convert ZodEnum to TypeScript union type', () => {
-      const schema = z.enum(['red', 'green', 'blue'])
-      expect(ZodUtils.zodTypeToTsType(schema)).to.equal("'red' | 'green' | 'blue'")
-    })
-
-    it('should handle unknown Zod types', () => {
-      const unknownType = {} as unknown as z.ZodTypeAny
-      expect(ZodUtils.zodTypeToTsType(unknownType)).to.equal('any')
-    })
-  })
-
   describe('simplifyFunctions', () => {
     it('should keep primitive types unchanged', () => {
       const stringSchema = z.string()

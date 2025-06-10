@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 
+import {BaseGenerator} from './code-generators/base-generator.js'
 import {generatePythonClientCode} from './python/generator.js'
 import {SchemaInferrer, SchemaWithProvidence} from './schema-inferrer.js'
 import {type Config, type ConfigFile, SupportedLanguage} from './types.js'
@@ -34,33 +35,44 @@ export interface TemplateData {
 /**
  * Generates typed code for configs using Zod for validation
  */
-export class ZodGenerator {
-  private configFile: ConfigFile
+export class ZodGenerator extends BaseGenerator {
   private dependencies: Set<string> = new Set()
-  private log: (category: string | unknown, message?: unknown) => void
+  private language: SupportedLanguage
   private methods: {[key: string]: AccessorMethod} = {}
   private schemaInferrer: SchemaInferrer
 
-  constructor(configFile: ConfigFile, log: (category: string | unknown, message?: unknown) => void) {
-    this.configFile = configFile
+  constructor(
+    language: SupportedLanguage,
+    configFile: ConfigFile,
+    log: (category: string | unknown, message?: unknown) => void,
+  ) {
+    super({configFile, log})
+    this.language = language
     this.schemaInferrer = new SchemaInferrer(log)
-    this.log = log
+  }
+
+  get filename(): string {
+    return this.language === SupportedLanguage.Python
+      ? 'prefab.py'
+      : this.language === SupportedLanguage.Ruby
+        ? 'prefab.rb'
+        : 'prefab.ts'
   }
 
   /**
    * Generate code for the specified language
    */
-  generate(language: SupportedLanguage = SupportedLanguage.TypeScript, className?: string): string {
-    if (language === SupportedLanguage.Python) {
-      return generatePythonClientCode(this.configFile, this.schemaInferrer, className || 'PrefabTypedClient')
+  generate(): string {
+    if (this.language === SupportedLanguage.Python) {
+      return generatePythonClientCode(this.configFile, this.schemaInferrer, 'PrefabTypedClient')
     }
 
     // Get base template for the framework
-    const templateName = this.getTemplateNameForLanguage(language)
+    const templateName = this.getTemplateNameForLanguage()
     const templatePath = path.join(__dirname, 'templates', `${templateName}.mustache`)
 
     if (!fs.existsSync(templatePath)) {
-      throw new Error(`Template for language '${language}' not found at ${templatePath}`)
+      throw new Error(`Template for language '${this.language}' not found at ${templatePath}`)
     }
 
     const baseTemplate = fs.readFileSync(templatePath, 'utf8')
@@ -71,7 +83,7 @@ export class ZodGenerator {
       .filter((config) => config.rows.length > 0)
       .filter(
         (config) =>
-          language !== SupportedLanguage.React ||
+          this.language !== SupportedLanguage.React ||
           config.configType === 'FEATURE_FLAG' ||
           config.sendToClientSdk === true,
       )
@@ -80,15 +92,15 @@ export class ZodGenerator {
     this.log('Exportable configs:', filteredConfigs.length)
 
     // Generate individual accessor methods
-    const accessorMethods = filteredConfigs.map((config) => this.renderAccessorMethod(config, language)).join('\n')
+    const accessorMethods = filteredConfigs.map((config) => this.renderAccessorMethod(config)).join('\n')
 
     // Generate individual schema lines
-    const schemaLines = filteredConfigs.map((config) => this.renderSchemaLine(config, language)).join(',\n  ')
+    const schemaLines = filteredConfigs.map((config) => this.renderSchemaLine(config)).join(',\n  ')
 
     // Render the base template with the generated content
     const result = Mustache.render(baseTemplate, {
       accessorMethods,
-      dependencies: this.renderDependencies(language),
+      dependencies: this.renderDependencies(),
       schemaLines,
     })
 
@@ -98,9 +110,9 @@ export class ZodGenerator {
   /**
    * Generate an accessor method for a single config
    */
-  generateAccessorMethod(config: Config, language: SupportedLanguage): AccessorMethod {
-    const {schema: schemaObj} = this.schemaInferrer.zodForConfig(config, this.configFile, language)
-    const returnValue = ZodUtils.generateReturnValueCode(schemaObj, '', language)
+  generateAccessorMethod(config: Config): AccessorMethod {
+    const {schema: schemaObj} = this.schemaInferrer.zodForConfig(config, this.configFile, this.language)
+    const returnValue = ZodUtils.generateReturnValueCode(schemaObj, '', this.language)
 
     const paramsSchema = ZodUtils.paramsOf(schemaObj)
     const params = paramsSchema ? ZodUtils.zodTypeToTypescript(paramsSchema) : ''
@@ -112,7 +124,7 @@ export class ZodGenerator {
       ? ZodUtils.zodTypeToTypescript(schemaObj._def.returns)
       : ZodUtils.zodTypeToTypescript(schemaObj)
 
-    const accessorMethod = this.massageAccessorMethodForLanguage(language, config, {
+    const accessorMethod = this.massageAccessorMethodForLanguage(config, {
       isFeatureFlag: config.configType === 'FEATURE_FLAG',
       isFunctionReturn: isFunction,
       key: config.key,
@@ -138,31 +150,20 @@ export class ZodGenerator {
   /**
    * Generate a schema line for a single config
    */
-  generateSchemaLine(config: Config, language: SupportedLanguage = SupportedLanguage.TypeScript): SchemaLine {
-    const {providence, schema: simplified} = this.generateSimplifiedSchema(config, language)
-    const zodType = ZodUtils.zodToString(simplified, config.key, providence, language)
+  generateSchemaLine(config: Config): SchemaLine {
+    const {providence, schema: simplified} = this.generateSimplifiedSchema(config)
+    const zodType = ZodUtils.zodToString(simplified, config.key, providence, this.language)
 
-    return this.massageSchemaLineForLanguage(language, config, {
+    return this.massageSchemaLineForLanguage(config, {
       key: config.key,
-      schemaName: ZodUtils.keyToMethodName(config.key) + 'Schema',
+      schemaName: ZodUtils.keyToSchemaName(config.key),
       zodType,
     })
   }
 
-  /**
-   * Generate schema lines for all configs
-   */
-  generateSchemaLines(language: SupportedLanguage = SupportedLanguage.TypeScript): SchemaLine[] {
-    return this.configFile.configs
-      .filter((config) => config.configType === 'FEATURE_FLAG' || config.configType === 'CONFIG')
-      .map((config) => this.generateSchemaLine(config, language))
-  }
+  generateSimplifiedSchema(config: Config): SchemaWithProvidence {
+    const schemaObj = this.schemaInferrer.zodForConfig(config, this.configFile, this.language)
 
-  generateSimplifiedSchema(
-    config: Config,
-    language: SupportedLanguage = SupportedLanguage.TypeScript,
-  ): SchemaWithProvidence {
-    const schemaObj = this.schemaInferrer.zodForConfig(config, this.configFile, language)
     return {
       providence: schemaObj.providence,
       schema: ZodUtils.simplifyFunctions(schemaObj.schema),
@@ -172,16 +173,16 @@ export class ZodGenerator {
   /**
    * Render a single accessor method for the given language
    */
-  renderAccessorMethod(config: Config, language: SupportedLanguage = SupportedLanguage.TypeScript): string {
-    const templateName = this.getTemplateNameForLanguage(language)
+  renderAccessorMethod(config: Config): string {
+    const templateName = this.getTemplateNameForLanguage()
     const templatePath = path.join(__dirname, 'templates', `${templateName}-accessor.mustache`)
 
     if (!fs.existsSync(templatePath)) {
-      throw new Error(`Accessor template for language '${language}' not found at ${templatePath}`)
+      throw new Error(`Accessor template for language '${this.language}' not found at ${templatePath}`)
     }
 
     const template = fs.readFileSync(templatePath, 'utf8')
-    const accessorMethod = this.generateAccessorMethod(config, language)
+    const accessorMethod = this.generateAccessorMethod(config)
 
     return Mustache.render(template, accessorMethod)
   }
@@ -189,16 +190,16 @@ export class ZodGenerator {
   /**
    * Render a single schema line for the given language
    */
-  renderSchemaLine(config: Config, language: SupportedLanguage = SupportedLanguage.TypeScript): string {
-    const templateName = this.getTemplateNameForLanguage(language)
+  renderSchemaLine(config: Config): string {
+    const templateName = this.getTemplateNameForLanguage()
     const templatePath = path.join(__dirname, 'templates', `${templateName}-schema.mustache`)
 
     if (!fs.existsSync(templatePath)) {
-      throw new Error(`Schema template for language '${language}' not found at ${templatePath}`)
+      throw new Error(`Schema template for language '${this.language}' not found at ${templatePath}`)
     }
 
     const template = fs.readFileSync(templatePath, 'utf8')
-    const schemaLine = this.generateSchemaLine(config, language)
+    const schemaLine = this.generateSchemaLine(config)
 
     return Mustache.render(template, schemaLine)
   }
@@ -206,39 +207,35 @@ export class ZodGenerator {
   /**
    * Get the template file name for the given language
    */
-  private getTemplateNameForLanguage(language: SupportedLanguage): string {
-    if (language === SupportedLanguage.TypeScript) {
-      return 'typescript'
-    }
+  private getTemplateNameForLanguage(): string {
+    switch (this.language) {
+      case SupportedLanguage.Python: {
+        return 'python'
+      }
 
-    if (language === SupportedLanguage.Python) {
-      return 'python'
-    }
+      case SupportedLanguage.React: {
+        return 'react'
+      }
 
-    if (language === SupportedLanguage.React) {
-      return 'react'
-    }
+      case SupportedLanguage.Ruby: {
+        return 'ruby'
+      }
 
-    if (language === SupportedLanguage.Ruby) {
-      return 'ruby'
+      default: {
+        return 'typescript'
+      }
     }
-
-    return 'typescript'
   }
 
   /**
    * Customize accessor method properties based on language requirements
    */
-  private massageAccessorMethodForLanguage(
-    language: SupportedLanguage,
-    config: Config,
-    accessorMethod: AccessorMethod,
-  ): AccessorMethod {
+  private massageAccessorMethodForLanguage(config: Config, accessorMethod: AccessorMethod): AccessorMethod {
     if (accessorMethod.isFunctionReturn) {
       this.dependencies.add('mustache')
     }
 
-    switch (language) {
+    switch (this.language) {
       case SupportedLanguage.TypeScript: {
         if (config.valueType === 'DURATION') {
           return {
@@ -269,12 +266,8 @@ export class ZodGenerator {
   /**
    * Customize schema line properties based on language requirements
    */
-  private massageSchemaLineForLanguage(
-    language: SupportedLanguage,
-    config: Config,
-    schemaLine: SchemaLine,
-  ): SchemaLine {
-    switch (language) {
+  private massageSchemaLineForLanguage(config: Config, schemaLine: SchemaLine): SchemaLine {
+    switch (this.language) {
       case SupportedLanguage.TypeScript: {
         if (config.valueType === 'DURATION') {
           return {
@@ -302,13 +295,13 @@ export class ZodGenerator {
     return schemaLine
   }
 
-  private renderDependencies(language: SupportedLanguage): string {
-    const templateName = this.getTemplateNameForLanguage(language)
+  private renderDependencies(): string {
+    const templateName = this.getTemplateNameForLanguage()
     return [...this.dependencies]
       .map((dep) => {
         const templatePath = path.join(__dirname, 'templates', `dependencies/${templateName}-${dep}.mustache`)
         if (!fs.existsSync(templatePath)) {
-          throw new Error(`Dependency template for language '${language}' not found at ${templatePath}`)
+          throw new Error(`Dependency template for language '${this.language}' not found at ${templatePath}`)
         }
 
         const template = fs.readFileSync(templatePath, 'utf8')

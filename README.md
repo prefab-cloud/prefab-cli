@@ -1,14 +1,15 @@
-Prefab CLI
-=================
+# Prefab CLI
 
 <!-- toc -->
-* [Usage](#usage)
-* [Commands](#commands)
+
+- [Usage](#usage)
+- [Commands](#commands)
 <!-- tocstop -->
 
 # Usage
 
 <!-- usage -->
+
 ```sh-session
 $ npm install -g @prefab-cloud/prefab
 $ prefab COMMAND
@@ -20,24 +21,26 @@ USAGE
   $ prefab COMMAND
 ...
 ```
+
 <!-- usagestop -->
 
 # Commands
 
 <!-- commands -->
-* [`prefab create NAME`](#prefab-create-name)
-* [`prefab download`](#prefab-download)
-* [`prefab gen`](#prefab-gen)
-* [`prefab generate`](#prefab-generate)
-* [`prefab generate-new-hex-key`](#prefab-generate-new-hex-key)
-* [`prefab get [NAME]`](#prefab-get-name)
-* [`prefab info [NAME]`](#prefab-info-name)
-* [`prefab interactive`](#prefab-interactive)
-* [`prefab list`](#prefab-list)
-* [`prefab override [NAME]`](#prefab-override-name)
-* [`prefab schema NAME`](#prefab-schema-name)
-* [`prefab serve DATA-FILE`](#prefab-serve-data-file)
-* [`prefab set-default [NAME]`](#prefab-set-default-name)
+
+- [`prefab create NAME`](#prefab-create-name)
+- [`prefab download`](#prefab-download)
+- [`prefab gen`](#prefab-gen)
+- [`prefab generate`](#prefab-generate)
+- [`prefab generate-new-hex-key`](#prefab-generate-new-hex-key)
+- [`prefab get [NAME]`](#prefab-get-name)
+- [`prefab info [NAME]`](#prefab-info-name)
+- [`prefab interactive`](#prefab-interactive)
+- [`prefab list`](#prefab-list)
+- [`prefab override [NAME]`](#prefab-override-name)
+- [`prefab schema NAME`](#prefab-schema-name)
+- [`prefab serve DATA-FILE`](#prefab-serve-data-file)
+- [`prefab set-default [NAME]`](#prefab-set-default-name)
 
 ## `prefab create NAME`
 
@@ -476,8 +479,8 @@ EXAMPLES
 ```
 
 _See code: [src/commands/set-default.ts](https://github.com/prefab-cloud/prefab-cli/blob/main/src/commands/set-default.ts)_
-<!-- commandsstop -->
 
+<!-- commandsstop -->
 
 ## Local Development
 

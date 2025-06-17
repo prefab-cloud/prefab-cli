@@ -62,8 +62,6 @@ export class NodeTypeScriptGenerator extends BaseTypescriptGenerator {
         methodName = `_${methodName}`
       }
 
-      console.log(config.key, methodName)
-
       if (uniqueMethods[methodName]) {
         throw new Error(
           `Method '${methodName}' is already registered. Prefab key ${config.key} conflicts with '${uniqueMethods[methodName]}'!`,

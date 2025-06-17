@@ -1,9 +1,7 @@
 import {z} from 'zod'
 
 export enum SupportedLanguage {
-  Python = 'python',
   React = 'react',
-  Ruby = 'ruby',
   TypeScript = 'typescript',
 }
 

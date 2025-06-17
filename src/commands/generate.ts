@@ -7,7 +7,6 @@ import {NodeTypeScriptGenerator} from '../codegen/code-generators/node-typescrip
 import {ReactTypeScriptGenerator} from '../codegen/code-generators/react-typescript-generator.js'
 import {ConfigDownloader} from '../codegen/config-downloader.js'
 import {type ConfigFile, SupportedLanguage} from '../codegen/types.js'
-import {ZodGenerator} from '../codegen/zod-generator.js'
 import {APICommand} from '../index.js'
 import {createFileManager} from '../util/file-manager.js'
 
@@ -19,7 +18,6 @@ export default class Generate extends APICommand {
   static examples = [
     '<%= config.bin %> <%= command.id %> --target node-ts',
     '<%= config.bin %> <%= command.id %> --target react-ts --output-dir custom/path',
-    '<%= config.bin %> <%= command.id %> --target python',
   ]
 
   static flags = {
@@ -30,7 +28,7 @@ export default class Generate extends APICommand {
     target: Flags.string({
       default: 'node-ts',
       description: 'language/framework to generate code for',
-      options: ['node-ts', 'react-ts', 'python-pydantic', 'ruby'],
+      options: ['node-ts', 'react-ts'],
     }),
   }
 
@@ -81,27 +79,17 @@ export default class Generate extends APICommand {
         return new NodeTypeScriptGenerator({configFile, log: this.verboseLog})
       case SupportedLanguage.React:
         return new ReactTypeScriptGenerator({configFile, log: this.verboseLog})
-      default:
-        return new ZodGenerator(language, configFile, this.verboseLog.bind(this))
     }
   }
 
   private resolveLanguage(languageTarget: string | undefined): SupportedLanguage {
     switch (languageTarget?.toLowerCase()) {
-      case 'python-pydantic': {
-        return SupportedLanguage.Python
-      }
-
       case 'react-ts': {
         return SupportedLanguage.React
       }
 
       case 'node-ts': {
         return SupportedLanguage.TypeScript
-      }
-
-      case 'ruby': {
-        return SupportedLanguage.Ruby
       }
 
       default: {

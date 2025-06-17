@@ -51,7 +51,6 @@
   "files": [
     "/bin",
     "/dist",
-    "/src/codegen/templates",
     "/oclif.manifest.json"
   ],
   "homepage": "https://github.com/prefab-cloud/prefab-cli",
@@ -68,7 +67,7 @@
   },
   "repository": "prefab-cloud/prefab-cli",
   "scripts": {
-    "build": "shx rm -rf dist && tsc -b && shx cp -r src/codegen/templates dist/codegen/",
+    "build": "shx rm -rf dist && tsc -b",
     "lint": "eslint \"**/*.{ts,md,json}\"",
     "format": "prettier \"**/*.{ts,md,json}\" --write",
     "postpack": "shx rm -f oclif.manifest.json",

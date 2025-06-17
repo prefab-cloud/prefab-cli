@@ -47,13 +47,6 @@ describe('generate', () => {
 
   test
     .stdout()
-    .command(['generate', '--target', 'python-pydantic'])
-    .it('generates Python code', (ctx) => {
-      expect(ctx.stdout).to.include('Generating python code for configs')
-    })
-
-  test
-    .stdout()
     .command(['generate', '--target', 'invalid'])
     .catch((error) => {
       expect(error.message).to.include('Expected --target=invalid to be one of:')

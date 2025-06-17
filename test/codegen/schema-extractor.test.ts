@@ -1,11 +1,20 @@
 import {expect} from 'chai'
+import {oneLineTrim} from 'common-tags'
 import {z} from 'zod'
 
+import {ZodToStringMapper} from '../../src/codegen/language-mappers/zod-to-string-mapper.js'
 import {SchemaExtractor} from '../../src/codegen/schema-extractor.js'
 import {type Config, type ConfigFile} from '../../src/codegen/types.js'
 
 // Custom duration type map returning a string
 const durationTypeMap = () => z.string()
+
+function expectSchemaMatchesString(schema: z.ZodTypeAny, expectedString: string): void {
+  const schemaString = new ZodToStringMapper().resolveType(schema).split(' ').join('')
+  const expectedStringResult = expectedString.split(' ').join('')
+
+  expect(oneLineTrim(schemaString)).to.equal(oneLineTrim(expectedStringResult))
+}
 
 describe('SchemaExtractor', () => {
   let mockLog: (category: string | unknown, message?: unknown) => void
@@ -54,10 +63,15 @@ describe('SchemaExtractor', () => {
 
       const result = schemaExtractor.execute({config, configFile})
 
-      expect(result._def.typeName).equal('ZodObject')
-      expect(Object.keys(result._def.shape()).sort()).to.deep.equal(['age', 'name'])
-      expect(result._def.shape().age._def.typeName).equal('ZodNumber')
-      expect(result._def.shape().name._def.typeName).equal('ZodString')
+      expectSchemaMatchesString(
+        result,
+        `
+          z.object({
+            name: z.string();
+            age: z.number().int()
+          })
+        `,
+      )
     })
 
     it('should infer schema when no user-defined schema is available', () => {
@@ -84,9 +98,7 @@ describe('SchemaExtractor', () => {
       }
 
       const result = schemaExtractor.execute({config, configFile})
-
-      // Verify the result is a string schema
-      expect(result._def.typeName).to.equal('ZodString')
+      expectSchemaMatchesString(result, 'z.string()')
     })
 
     it('should infer a union of schema when multiple schemas are found', () => {
@@ -135,16 +147,17 @@ describe('SchemaExtractor', () => {
 
       const result = schemaExtractor.execute({config, configFile})
 
-      expect(result._def.typeName).to.equal('ZodUnion')
-      expect(result._def.options.length).to.equal(2)
-      expect(result._def.options[0]._def.typeName).to.equal('ZodObject')
-      expect(Object.keys(result._def.options[0]._def.shape()).sort()).to.deep.equal([
-        'enterprise',
-        'premium',
-        'standard',
-      ])
-      expect(result._def.options[1]._def.typeName).to.equal('ZodObject')
-      expect(Object.keys(result._def.options[1]._def.shape()).sort()).to.deep.equal(['freemium', 'premium', 'standard'])
+      expectSchemaMatchesString(
+        result,
+        `
+          z.union(
+            [
+              z.object({enterprise: z.number(); premium: z.number(); standard: z.number()}),
+              z.object({freemium: z.number(); premium: z.number(); standard: z.number()})
+            ]
+          )
+        `,
+      )
     })
 
     it('should use custom duration type map when provided', () => {
@@ -172,8 +185,7 @@ describe('SchemaExtractor', () => {
 
       const result = schemaExtractor.execute({config, configFile, durationTypeMap})
 
-      // Verify the result uses our custom duration type
-      expect(result._def.typeName).to.equal('ZodString')
+      expectSchemaMatchesString(result, `z.string()`)
     })
 
     it('should replace strings with Mustache templates when found', () => {
@@ -201,14 +213,20 @@ describe('SchemaExtractor', () => {
 
       const result = schemaExtractor.execute({config, configFile})
 
-      // Verify the result is a function schema that takes a name string param and returns a string
-      expect(result._def.typeName).to.equal('ZodFunction')
-      expect(result._def.args._def.typeName).to.equal('ZodTuple')
-      expect(result._def.args._def.items.length).to.equal(1)
-      expect(result._def.args._def.items[0]._def.typeName).to.equal('ZodObject')
-      expect(Object.keys(result._def.args._def.items[0]._def.shape())).to.deep.equal(['name'])
-      expect(result._def.args._def.items[0]._def.shape().name._def.typeName).to.equal('ZodString')
-      expect(result._def.returns._def.typeName).to.equal('ZodString')
+      expectSchemaMatchesString(
+        result,
+        `
+        z.function()
+          .args(
+            z.object({
+              name: z.string()
+            })
+          )
+          .returns(
+            z.string()
+          )
+        `,
+      )
     })
 
     it('should replace strings with a union of Mustache templates when found', () => {
@@ -241,22 +259,25 @@ describe('SchemaExtractor', () => {
 
       const result = schemaExtractor.execute({config, configFile})
 
-      // Verify the result is a function schema that takes a name string param and returns a string
-      expect(result._def.typeName).to.equal('ZodFunction')
-      expect(result._def.args._def.typeName).to.equal('ZodTuple')
-      expect(result._def.args._def.items.length).to.equal(1)
-      expect(result._def.args._def.items[0]._def.typeName).to.equal('ZodUnion')
-      expect(result._def.args._def.items[0].options.length).to.equal(2)
-      expect(result._def.args._def.items[0].options[1]._def.typeName).to.equal('ZodObject')
-      expect(Object.keys(result._def.args._def.items[0].options[0]._def.shape()).sort()).to.deep.equal(['name'])
-      expect(result._def.args._def.items[0]._def.options[0]._def.shape().name._def.typeName).to.equal('ZodString')
-      expect(Object.keys(result._def.args._def.items[0].options[1]._def.shape()).sort()).to.deep.equal([
-        'differentName',
-      ])
-      expect(result._def.args._def.items[0]._def.options[1]._def.shape().differentName._def.typeName).to.equal(
-        'ZodString',
+      expectSchemaMatchesString(
+        result,
+        `
+        z.function()
+          .args(
+            z.union([
+              z.object({
+                name: z.string()
+              }),
+              z.object({
+                differentName: z.string()
+              })
+            ])
+          )
+          .returns(
+            z.string()
+          )
+        `,
       )
-      expect(result._def.returns._def.typeName).to.equal('ZodString')
     })
   })
 })

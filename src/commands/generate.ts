@@ -3,6 +3,8 @@ import {Flags} from '@oclif/core'
 import type {JsonObj} from '../result.js'
 
 import {BaseGenerator} from '../codegen/code-generators/base-generator.js'
+import {NodeTypeScriptGenerator} from '../codegen/code-generators/node-typescript-generator.js'
+import {ReactTypeScriptGenerator} from '../codegen/code-generators/react-typescript-generator.js'
 import {ConfigDownloader} from '../codegen/config-downloader.js'
 import {type ConfigFile, SupportedLanguage} from '../codegen/types.js'
 import {ZodGenerator} from '../codegen/zod-generator.js'
@@ -74,7 +76,14 @@ export default class Generate extends APICommand {
   }
 
   private resolveGenerator(language: SupportedLanguage, configFile: ConfigFile): BaseGenerator {
-    return new ZodGenerator(language, configFile, this.verboseLog.bind(this))
+    switch (language) {
+      case SupportedLanguage.TypeScript:
+        return new NodeTypeScriptGenerator({configFile, log: this.verboseLog})
+      case SupportedLanguage.React:
+        return new ReactTypeScriptGenerator({configFile, log: this.verboseLog})
+      default:
+        return new ZodGenerator(language, configFile, this.verboseLog.bind(this))
+    }
   }
 
   private resolveLanguage(languageTarget: string | undefined): SupportedLanguage {

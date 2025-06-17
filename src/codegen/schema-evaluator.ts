@@ -5,6 +5,8 @@ import * as acorn from 'acorn'
 import * as walk from 'acorn-walk'
 import {z} from 'zod'
 
+import {ZodTypeSupported} from './types.js'
+
 /**
  * Options for the secure schema validator
  */
@@ -211,7 +213,7 @@ export function validateAst(ast: any, parentMap: WeakMap<any, any>): {error?: st
 export function secureEvaluateSchema(
   schemaString: string,
   options: SecureSchemaValidatorOptions = {},
-): {error?: string; schema?: z.ZodType; success: boolean} {
+): {error?: string; schema?: ZodTypeSupported; success: boolean} {
   const mergedOptions = {...DEFAULT_OPTIONS, ...options}
   const trimmedSchema = schemaString.trim()
 

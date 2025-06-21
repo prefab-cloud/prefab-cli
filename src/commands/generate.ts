@@ -4,6 +4,7 @@ import type {JsonObj} from '../result.js'
 
 import {BaseGenerator} from '../codegen/code-generators/base-generator.js'
 import {NodeTypeScriptGenerator} from '../codegen/code-generators/node-typescript-generator.js'
+import {PythonGenerator} from '../codegen/code-generators/python-generator.js'
 import {ReactTypeScriptGenerator} from '../codegen/code-generators/react-typescript-generator.js'
 import {ConfigDownloader} from '../codegen/config-downloader.js'
 import {type ConfigFile, SupportedLanguage} from '../codegen/types.js'
@@ -28,7 +29,7 @@ export default class Generate extends APICommand {
     target: Flags.string({
       default: 'node-ts',
       description: 'language/framework to generate code for',
-      options: ['node-ts', 'react-ts'],
+      options: ['node-ts', 'react-ts', 'python-pydantic'],
     }),
   }
 
@@ -75,22 +76,23 @@ export default class Generate extends APICommand {
 
   private resolveGenerator(language: SupportedLanguage, configFile: ConfigFile): BaseGenerator {
     switch (language) {
-      case SupportedLanguage.TypeScript:
+      case SupportedLanguage.Node:
         return new NodeTypeScriptGenerator({configFile, log: this.verboseLog})
       case SupportedLanguage.React:
         return new ReactTypeScriptGenerator({configFile, log: this.verboseLog})
+      case SupportedLanguage.Python:
+        return new PythonGenerator({configFile, log: this.verboseLog})
     }
   }
 
   private resolveLanguage(languageTarget: string | undefined): SupportedLanguage {
     switch (languageTarget?.toLowerCase()) {
-      case 'react-ts': {
+      case 'react-ts':
         return SupportedLanguage.React
-      }
-
-      case 'node-ts': {
-        return SupportedLanguage.TypeScript
-      }
+      case 'node-ts':
+        return SupportedLanguage.Node
+      case 'python-pydantic':
+        return SupportedLanguage.Python
 
       default: {
         throw new Error(`Unsupported target: ${languageTarget}`)

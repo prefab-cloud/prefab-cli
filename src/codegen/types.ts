@@ -1,8 +1,17 @@
 import {z} from 'zod'
 
 export enum SupportedLanguage {
+  Node = 'node',
+  Python = 'python',
   React = 'react',
-  TypeScript = 'typescript',
+}
+
+export enum PythonTyping {
+  Any = 'Any',
+  Optional = 'Optional',
+  Tuple = 'Tuple',
+  TypedDict = 'TypedDict',
+  Union = 'Union',
 }
 
 export interface ConfigValue {

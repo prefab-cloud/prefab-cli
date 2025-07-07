@@ -4,14 +4,14 @@ import {ZodTypeSupported} from '../types.js'
 import {ZodBaseMapper} from './zod-base-mapper.js'
 
 export class ZodToTypescriptReturnValueMapper extends ZodBaseMapper {
-  private fieldName: string | undefined
+  private _fieldName: string | undefined
+  private _returnTypePropertyPath: string[]
   private FUNCTION_ARGUMENTS_NAME = 'params'
-  private returnTypePropertyPath: string[]
 
   constructor({fieldName, returnTypePropertyPath}: {fieldName?: string; returnTypePropertyPath?: string[]} = {}) {
     super()
-    this.fieldName = fieldName
-    this.returnTypePropertyPath = returnTypePropertyPath ?? []
+    this._fieldName = fieldName
+    this._returnTypePropertyPath = returnTypePropertyPath ?? []
   }
 
   any() {
@@ -20,7 +20,7 @@ export class ZodToTypescriptReturnValueMapper extends ZodBaseMapper {
 
   array() {
     // Explicity not supporting naviagtion into array items, as the number of items is not known at compile time
-    return `raw${this.printPath(this.returnTypePropertyPath)}`
+    return `raw${this.printPath(this._returnTypePropertyPath)}`
   }
 
   boolean() {
@@ -62,7 +62,7 @@ export class ZodToTypescriptReturnValueMapper extends ZodBaseMapper {
       .map(([fieldName, type]) => {
         const mapper = new ZodToTypescriptReturnValueMapper({
           fieldName,
-          returnTypePropertyPath: [...this.returnTypePropertyPath, fieldName],
+          returnTypePropertyPath: [...this._returnTypePropertyPath, fieldName],
         })
         return mapper.renderField(type)
       })
@@ -73,7 +73,7 @@ export class ZodToTypescriptReturnValueMapper extends ZodBaseMapper {
 
   optional(wrappedType: string) {
     // In TypeScript, we hoist the optional flag  to the field definition when operating directly on a field
-    if (this.fieldName) {
+    if (this._fieldName) {
       return wrappedType
     }
 
@@ -82,7 +82,7 @@ export class ZodToTypescriptReturnValueMapper extends ZodBaseMapper {
   }
 
   renderField(type: ZodTypeSupported): string {
-    if (!this.fieldName) {
+    if (!this._fieldName) {
       throw new Error('Field name must be set in the resolution context to render a field.')
     }
 
@@ -90,7 +90,7 @@ export class ZodToTypescriptReturnValueMapper extends ZodBaseMapper {
     // which always guarantees that the optional flag is set correctly.
     const resolved = this.resolveType(type)
 
-    return `"${this.fieldName}": ${resolved}`
+    return `"${this._fieldName}": ${resolved}`
   }
 
   string() {
@@ -143,6 +143,6 @@ export class ZodToTypescriptReturnValueMapper extends ZodBaseMapper {
   }
 
   private printPropertyPath(): string {
-    return this.printPath(this.returnTypePropertyPath)
+    return this.printPath(this._returnTypePropertyPath)
   }
 }

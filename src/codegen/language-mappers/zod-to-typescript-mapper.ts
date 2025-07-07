@@ -6,15 +6,15 @@ import {ZodBaseMapper} from './zod-base-mapper.js'
 export type ZodToTypescriptMapperTarget = 'accessor' | 'raw'
 
 export class ZodToTypescriptMapper extends ZodBaseMapper {
-  private fieldName: string | undefined
-  private optionalProperty: boolean
-  private target: ZodToTypescriptMapperTarget
+  private _fieldName: string | undefined
+  private _optionalProperty: boolean
+  private _target: ZodToTypescriptMapperTarget
 
   constructor({fieldName, target}: {fieldName?: string; target?: ZodToTypescriptMapperTarget} = {}) {
     super()
-    this.fieldName = fieldName
-    this.optionalProperty = false
-    this.target = target ?? 'accessor'
+    this._fieldName = fieldName
+    this._optionalProperty = false
+    this._target = target ?? 'accessor'
   }
 
   any() {
@@ -36,7 +36,7 @@ export class ZodToTypescriptMapper extends ZodBaseMapper {
   function(args: string, returns: string) {
     // When in raw mode, we return a string type for functions,
     // as this is what comes back from the server directly
-    if (this.target === 'raw') {
+    if (this._target === 'raw') {
       return 'string | undefined'
     }
 
@@ -68,7 +68,7 @@ export class ZodToTypescriptMapper extends ZodBaseMapper {
   object(properties: [string, z.ZodTypeAny][]) {
     const props = properties
       .map(([fieldName, type]) => {
-        const mapper = new ZodToTypescriptMapper({fieldName, target: this.target})
+        const mapper = new ZodToTypescriptMapper({fieldName, target: this._target})
         return mapper.renderField(type)
       })
       .join('; ')
@@ -78,8 +78,8 @@ export class ZodToTypescriptMapper extends ZodBaseMapper {
 
   optional(wrappedType: string) {
     // In TypeScript, we hoist the optional flag  to the field definition when operating directly on a field
-    if (this.fieldName) {
-      this.optionalProperty = true
+    if (this._fieldName) {
+      this._optionalProperty = true
       return wrappedType
     }
 
@@ -88,7 +88,7 @@ export class ZodToTypescriptMapper extends ZodBaseMapper {
   }
 
   renderField(type: ZodTypeSupported): string {
-    if (!this.fieldName) {
+    if (!this._fieldName) {
       throw new Error('Field name must be set to render a field.')
     }
 
@@ -96,7 +96,7 @@ export class ZodToTypescriptMapper extends ZodBaseMapper {
     // which always guarantees that the optional flag is set correctly.
     const resolved = this.resolveType(type)
 
-    return `"${this.fieldName}"${this.optionalProperty ? '?' : ''}: ${resolved}`
+    return `"${this._fieldName}"${this._optionalProperty ? '?' : ''}: ${resolved}`
   }
 
   string() {

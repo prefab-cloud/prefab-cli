@@ -13,12 +13,12 @@ export abstract class BaseGenerator {
   protected configFile: ConfigFile
   protected log: (category: string | unknown, message?: unknown) => void
 
-  private schemaExtractor: SchemaExtractor
+  private _schemaExtractor: SchemaExtractor
 
   constructor({configFile, log}: BaseGeneratorArgs) {
     this.configFile = configFile
     this.log = log
-    this.schemaExtractor = new SchemaExtractor(log)
+    this._schemaExtractor = new SchemaExtractor(log)
   }
 
   protected configurations() {
@@ -27,7 +27,7 @@ export abstract class BaseGenerator {
       .filter((config) => config.rows.length > 0)
       .sort((a, b) => a.key.localeCompare(b.key))
       .map((config) => {
-        const schema = this.schemaExtractor.execute({
+        const schema = this._schemaExtractor.execute({
           config,
           configFile: this.configFile,
           durationTypeMap: this.durationTypeMap,

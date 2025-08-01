@@ -32,8 +32,8 @@ export class NodeTypeScriptGenerator extends BaseTypescriptGenerator {
     export class PrefabTypesafeNode {
       constructor(private prefab: Prefab) { }
 
-      get<K extends keyof PrefabTypeGeneration.NodeServerConfigurationRaw>(key: K, contexts?: Contexts | ContextObj): PrefabTypeGeneration.NodeServerConfigurationRaw[K] {
-        return this.prefab.get(key, contexts) as PrefabTypeGeneration.NodeServerConfigurationRaw[K]
+      async get<K extends keyof PrefabTypeGeneration.NodeServerConfigurationRaw>(key: K, contexts?: Contexts | ContextObj): Promise<PrefabTypeGeneration.NodeServerConfigurationRaw[K]> {
+        return this.prefab.get(key, contexts) as Promise<PrefabTypeGeneration.NodeServerConfigurationRaw[K]>
       }
 
       ${this.generateAccessorMethods().join('\n\n      ') || '// No methods generated'}
@@ -74,15 +74,15 @@ export class NodeTypeScriptGenerator extends BaseTypescriptGenerator {
         const returnValue = new ZodToTypescriptReturnValueMapper().resolveType(config.schema)
 
         return stripIndent`
-          ${methodName}(contexts?: Contexts | ContextObj): PrefabTypeGeneration.NodeServerConfigurationAccessor['${config.key}'] {
-                  const raw = this.get('${config.key}', contexts)
+          async ${methodName}(contexts?: Contexts | ContextObj): Promise<PrefabTypeGeneration.NodeServerConfigurationAccessor['${config.key}']> {
+                  const raw = await this.get('${config.key}', contexts)
                   return ${returnValue}
                 }
           `
       }
 
       return stripIndent`
-        ${methodName}(contexts?: Contexts | ContextObj): PrefabTypeGeneration.NodeServerConfigurationAccessor['${config.key}'] {
+        async ${methodName}(contexts?: Contexts | ContextObj): Promise<PrefabTypeGeneration.NodeServerConfigurationAccessor['${config.key}']> {
                 return this.get('${config.key}', contexts)
               }
           `

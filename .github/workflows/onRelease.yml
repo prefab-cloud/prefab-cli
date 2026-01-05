@@ -10,10 +10,23 @@ on:
         description: tag that needs to publish
         type: string
         required: true
+
 jobs:
   npm:
-    uses: oclif/github-workflows/.github/workflows/npmPublish.yml@main
-    with:
-      tag: latest
-      githubTag: ${{ github.event.release.tag_name || inputs.tag }}
-    secrets: inherit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # required for npm OIDC trusted publishing
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: yarn
+          registry-url: https://registry.npmjs.org
+      - run: yarn install --network-timeout 600000
+      - run: yarn build
+      - run: npm publish --access public

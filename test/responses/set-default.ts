@@ -172,7 +172,7 @@ const cannedResponses: CannedResponses = {
     [
       {
         configKey: 'test.json',
-        currentVersionId: '17259086775344510',
+        currentVersionId: ANY,
         environmentId: '6',
         value: {
           json: {

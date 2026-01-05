@@ -105,7 +105,7 @@ export const getCannedResponse = async (
   let body: DefaultBodyType = {}
 
   if (request.method === 'POST') {
-    body = await request.json()
+    body = await request.clone().json()
 
     if (!body || typeof body !== 'object') {
       throw new Error('Expected http body to be an object')
